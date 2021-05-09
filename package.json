@@ -1,0 +1,24 @@
+{
+    "name": "ws.chat.server",
+    "version": "0.1.0",
+    "description": "WebSocket chat server",
+    "main": "server.js",
+    "scripts": {
+        "start": "node server.mjs"
+    },
+    "author": "sunladen",
+    "license": "MIT",
+    "engines": {
+        "node": "14.x"
+    },
+    "repository": {
+        "url": "https://github.com/sunladen/sunladen.git"
+    },
+    "dependencies": {
+        "ws": "^7.4.5"
+    },
+    "devDependencies": {
+        "eslint": "^7.26.0",
+        "eslint-config-mdcs": "^5.0.0"
+    }
+}
