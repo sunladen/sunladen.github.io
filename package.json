@@ -15,6 +15,7 @@
         "url": "https://github.com/sunladen/sunladen.git"
     },
     "dependencies": {
+        "sqlite3": "^5.0.2",
         "ws": "^7.4.5"
     },
     "devDependencies": {

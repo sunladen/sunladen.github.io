@@ -1,0 +1,110 @@
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
+input::-webkit-input-placeholder {
+    color:    white;
+    opacity:  1;
+}
+
+input:-moz-placeholder {
+    color:    white;
+    opacity:  1;
+}
+
+input::-moz-placeholder {
+    color:    white;
+    opacity:  1;
+}
+
+input.:-moz-placeholder {
+    color:    white;
+    opacity:  1;
+}
+
+.ws-chat {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    min-height: 4em;
+    min-width: 10em;
+    max-height: 50%;
+    width: 33%;
+    left: 10px;
+    bottom: 20px;
+    overflow-x: hidden;
+    font-family: 'Courier New', monospace;
+    color: #aaa;
+    border-radius: 5px;
+}
+
+.ws-chat-history {
+    flex: 1;
+    word-wrap: break-word;
+    height: calc(100% - 2em);
+    overflow-y: auto;
+    border-radius: 5px;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+}
+
+.ws-chat-input {
+    flex: 1;
+    max-height: 1.5em;
+    min-height: 1.5em;
+    border: 0;
+    border-radius: 5px;
+    outline: none;
+    overflow-x: hidden;
+    font-family: inherit;
+    font-size: inherit;
+    color: white;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+    background: none;
+}
+
+.ws-chat-message {
+    min-height: 0;
+}
+
+.ws-chat-timestamp {
+    color: #aaa;
+    margin-right: 0.5em;
+}
+
+.ws-chat-name {
+    color: #87d7f7;
+}
+
+.ws-chat-useroptions {
+    position: absolute;
+    background: rgb(0,0,0);
+    color: white;
+    border-radius: 5px;
+    min-height: 1.5em;
+    min-width: 5em;
+    padding: 5px;
+    cursor: pointer;
+}
+
+.ws-chat-useroption-text {
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 5px;
+}
+
+.ws-chat-useroption-toggle {
+    display: inline-block;
+    vertical-align: middle;
+    height: 1em;
+    width: 1em;
+    border-radius: 5px;
+    background: rgb(0,255,0);
+    border: 1px solid #555;
+}
+
+.ws-chat-highlight {
+    color: white;
+}

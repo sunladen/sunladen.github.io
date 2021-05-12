@@ -3,8 +3,38 @@
 import WebSocket from 'ws';
 import http from 'http';
 import fs from 'fs';
+import sqlite3 from 'sqlite3';
 import encoding from './encoding.mjs';
 
+// init .data directory
+const datapath = './.data';
+if ( ! fs.existsSync( datapath ) ) fs.mkdirSync( datapath );
+
+// init sqlite db
+const dbpath = './.data/sqlite.db';
+const exists = fs.existsSync( dbpath );
+const db = new sqlite3.Database( dbpath );
+
+// if ./.data/sqlite.db does not exist, create it, otherwise print records to console
+db.serialize( () => {
+
+	if ( ! exists ) {
+
+		db.run( 'CREATE TABLE accounts (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)' );
+		console.log( "New table accounts created!" );
+
+	} else {
+
+		console.log( 'Database "accounts" ready to go!' );
+		db.each( "SELECT * from accounts", ( err, row ) => {
+
+			if ( row ) console.log( `record: ${row.name}` );
+
+		} );
+
+	}
+
+} );
 
 
 const CLIENT_UPDATE_INTERVAL = 10000;
