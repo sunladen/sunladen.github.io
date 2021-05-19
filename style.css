@@ -23,6 +23,11 @@ input.:-moz-placeholder {
     opacity:  1;
 }
 
+.ws-chat-font {
+    font-family: 'Courier New', monospace;
+    font-size: 16pt;
+}
+
 .ws-chat {
     display: flex;
     flex-direction: column;
@@ -34,7 +39,6 @@ input.:-moz-placeholder {
     left: 10px;
     bottom: 20px;
     overflow-x: hidden;
-    font-family: 'Courier New', monospace;
     color: #aaa;
     border-radius: 5px;
 }
@@ -78,9 +82,9 @@ input.:-moz-placeholder {
     color: #87d7f7;
 }
 
-.ws-chat-useroptions {
+.ws-chat-mention-hover {
     position: absolute;
-    background: rgb(0,0,0);
+    background: rgb(40,40,40);
     color: white;
     border-radius: 5px;
     min-height: 1.5em;
@@ -89,22 +93,11 @@ input.:-moz-placeholder {
     cursor: pointer;
 }
 
-.ws-chat-useroption-text {
-    display: inline-block;
-    vertical-align: middle;
-    margin-left: 5px;
+.ws-chat-mention-hover-name {
+    color: orange;
 }
 
-.ws-chat-useroption-toggle {
-    display: inline-block;
-    vertical-align: middle;
-    height: 1em;
-    width: 1em;
-    border-radius: 5px;
-    background: rgb(0,255,0);
-    border: 1px solid #555;
-}
-
-.ws-chat-highlight {
-    color: white;
+.ws-chat-mention {
+    color: orange;
+    cursor: pointer;
 }

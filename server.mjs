@@ -15,7 +15,7 @@ const ws_identified = {};
 const ws_closed = {};
 const requests = {};
 
-const blacklisted_names = [ 'undefined', 'null', 'name', 'admin' ];
+const blacklisted_names = [ 'undefined', 'null', 'name', 'admin', 'guest' ];
 
 const datapath = './.data';
 const dbpath = `${datapath}/sqlite.db`;
@@ -25,31 +25,9 @@ var wss;
 
 requests.ident = ( ws, id ) => {
 
-	id = id.trim();
+	ws.request_id = id;
 
-	if ( id.length < 3 ) {
-
-		return send( ws, [ 'error', `Name '${id}' not long enough. Must be between 3 and 12 characters.`, 'ident' ] );
-
-	}
-
-	if ( id.length > 12 ) {
-
-		return send( ws, [ 'error', `Name '${id}' too long. Must be between 3 and 12 characters.`, 'ident' ] );
-
-	}
-
-	for ( var i = 0; i < blacklisted_names.length; i ++ ) {
-
-		if ( id.indexOf( blacklisted_names[ i ] ) > - 1 ) return send( ws, [ 'error', `Name '${id}' not available.`, 'ident' ] );
-
-	}
-
-	if ( ws_identified.hasOwnProperty( id ) && ws_identified[ id ] != ws ) {
-
-		return send( ws, [ 'error', `Name '${id}' not available`, 'ident' ] );
-
-	}
+	if ( ! nameIsValid( ws, id ) ) return;
 
 	var welcome = false;
 
@@ -59,6 +37,7 @@ requests.ident = ( ws, id ) => {
 		welcome = ! ws_identified.hasOwnProperty( id ) && ! ws_closed.hasOwnProperty( id );
 
 	}
+
 
 	ws_identified[ id ] = ws;
 
@@ -76,6 +55,7 @@ requests.ident = ( ws, id ) => {
 	}
 
 	ws.id = id;
+	delete ws[ 'ident_request_id' ];
 
 };
 
@@ -93,7 +73,48 @@ requests.say = ( ws, message ) => {
 
 
 
+requests.register = ( ws, name, password ) => {
+
+	if ( ! nameIsValid( ws, name ) ) return;
+
+	var salt = crypto.randomBytes( 16 ).toString( 'hex' );
+	var hash = crypto.createHmac( 'sha512', salt ).update( password ).digest( 'hex' );
+
+	db.query( `INSERT INTO accounts (name, salt, hash) VALUES( "${name}", "${salt}", "${hash}");` ).then( () => {
+
+		send( ws, [ 'success', 'Registration successful' ] );
+
+	} );
+
+};
+
+
+
+
+requests.login = ( ws, name, password ) => {
+
+	db.query( `SELECT salt, hash FROM accounts WHERE name="${name}";` ).then( ( err, row ) => {
+
+		if ( ! row ) {
+
+			send( ws, [ 'error', `Invalid username or password.` ] );
+			return false;
+
+		}
+
+		console.log( password === crypto.createHmac( 'sha512', row.salt ).update( password ).digest( 'hex' ) );
+
+
+	} );
+
+};
+
+
+
+
 function send( ws, message ) {
+
+	console.log( `${ws.id} -> `, message );
 
 	ws.send( encoding.encode( message ) );
 
@@ -104,9 +125,9 @@ function send( ws, message ) {
 function broadcast( origin_ws, message ) {
 
 	var origin_id = origin_ws ? origin_ws.id : '';
-	console.log( `${origin_id} -> broadcast`, message );
-
 	var encoded_message = encoding.encode( message );
+
+	console.log( `${origin_id} -> broadcast`, message );
 
 	wss.clients.forEach( ws => {
 
@@ -116,6 +137,60 @@ function broadcast( origin_ws, message ) {
 
 }
 
+
+
+function nameIsValid( ws, name ) {
+
+	if ( name.length < 3 ) {
+
+		send( ws, [ 'error', `Name '${name}' not long enough, must be between 3 and 12 characters` ] );
+		return false;
+
+	}
+
+	if ( name.length > 12 ) {
+
+		send( ws, [ 'error', `Name '${name}' too long, must be between 3 and 12 characters` ] );
+		return false;
+
+	}
+
+	for ( var i = 0; i < blacklisted_names.length; i ++ ) {
+
+		if ( name.toLowerCase().indexOf( blacklisted_names[ i ] ) > - 1 ) {
+
+			send( ws, [ 'error', `Name '${name}' not available` ] );
+			return false;
+
+		}
+
+	}
+
+	if ( name === ws.request_id ) return true;
+
+	if ( ws_identified.hasOwnProperty( name ) ) {
+
+		send( ws, [ 'error', `Name '${name}' not available` ] );
+		return false;
+
+	}
+
+	( async () => {
+
+		await db.get( `SELECT 1 FROM accounts WHERE name="${name}";`, ( err, row ) => {
+
+			if ( row ) return send( ws, [ 'error', `Name '${name}' not available` ] );
+
+		} );
+
+	} )();
+
+	return true;
+
+}
+
+
+
 // create .data directory if it doesn't exist
 if ( ! fs.existsSync( datapath ) ) fs.mkdirSync( datapath );
 
@@ -123,11 +198,30 @@ if ( ! fs.existsSync( datapath ) ) fs.mkdirSync( datapath );
 const dbinit = fs.existsSync( dbpath );
 const db = new sqlite3.Database( dbpath );
 
+// handle async / await operations
+db.query = function ( sql, params ) {
+
+	var self = this;
+
+	return new Promise( ( resolve, reject ) => {
+
+		self.all( sql, params, ( error, rows ) => {
+
+			error ? reject( error ) : resolve( { rows: rows } );
+
+		} );
+
+	} );
+
+};
+
+
+
 db.serialize( () => {
 
 	if ( ! dbinit ) {
 
-		db.run( 'CREATE TABLE accounts (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)' );
+		db.run( 'CREATE TABLE accounts (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, salt TEXT, hash TEXT, lastlogin DATETIME)' );
 		console.log( "New table accounts created!" );
 
 	} else {
@@ -150,6 +244,7 @@ process.on( "SIGINT", () => {
 
 	console.log( "SIGINT received, stopping..." );
 	broadcast( null, [ 'say', null, 'Server shut down' ] );
+	db.close();
 	process.exit();
 
 } );

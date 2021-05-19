@@ -8,20 +8,14 @@ export default class Chat {
 		var self = this;
 
 		this.id = localStorage.getItem( 'id' );
-		this.dom = utils.createElement( 'div', 'ws-chat' );
-		this.historyDom = utils.createElement( 'div', 'ws-chat-history', null, this.dom );
-		this.input = utils.createElement( 'input', 'ws-chat-input', null, this.dom );
+		this.dom = createElement( 'div', 'ws-chat ws-chat-font' );
+		this.historyDom = createElement( 'div', 'ws-chat-history', null, this.dom );
+		this.input = createElement( 'input', 'ws-chat-input', null, this.dom );
 		this.input.setAttribute( 'type', 'text' );
 		this.blur();
 		this.url = url;
 		this.ident_change_cache = {};
 		this.mutes = JSON.parse( localStorage.getItem( 'mutes' ) || '{}' );
-
-		this.re_rename = /^\/rename (\w+)$/;
-		this.re_help = /^\/(\?|help)$/;
-		this.re_mutes = /^\/mutes$/;
-		this.re_mute = /^\/mute (\w+)$/;
-		this.re_unmute = /^\/unmute (\w+)$/;
 
 		this.input.addEventListener( 'keyup', event => {
 
@@ -38,18 +32,33 @@ export default class Chat {
 
 				if ( message === '' ) return;
 				if ( ! message.startsWith( '/' ) ) return this.say( message );
-				if ( this.re_rename.test( message ) ) return this.rename( this.re_rename.exec( message )[ 1 ] );
-				if ( this.re_help.test( message ) ) return this.write( this.help() );
 
-				if ( this.re_mutes.test( message ) ) {
+				if ( re.register.test( message ) ) {
 
-					for ( var name in this.mutes ) this.write( utils.createNameElement( this, name ) );
+					var register = re.register.exec( message );
+					return this.register( register[ 1 ], register[ 2 ] );
+
+				}
+
+				if ( message.startsWith( '/login' ) ) return this.login( message );
+
+
+				if ( re.help.test( message ) ) return this.write( this.help() );
+
+				if ( re.mutes.test( message ) ) {
+
+					for ( var name in this.mutes ) {
+
+						this.write( `@${name}` );
+
+					}
+
 					return;
 
 				}
 
-				if ( this.re_mute.test( message ) ) return this.mute( this.re_mute.exec( message )[ 1 ] );
-				if ( this.re_unmute.test( message ) ) return this.unmute( this.re_unmute.exec( message )[ 1 ] );
+				if ( re.mute.test( message ) ) return this.mute( re.mute.exec( message )[ 1 ] );
+				if ( re.unmute.test( message ) ) return this.unmute( re.unmute.exec( message )[ 1 ] );
 
 				this.write( `Command '${message}' not found` );
 
@@ -80,7 +89,7 @@ export default class Chat {
 
 				if ( ! self.mutes.hasOwnProperty( id ) || ! self.mutes[ id ] ) {
 
-					this.write( `Welcome ${utils.createNameElement( this, id )}` );
+					this.write( `Welcome @${id}` );
 
 				}
 
@@ -98,13 +107,25 @@ export default class Chat {
 
 					this.id = newid;
 					localStorage.setItem( 'id', this.id );
-					this.write( `Successfully renamed to ${utils.createNameElement( this, newid )}` );
+
+					if ( this.register_requested ) {
+
+						delete this[ 'register_required' ];
+					    this.write( `Successfully registered as @${newid}` );
+
+					}
 
 				} else {
 
 					this.ident_change_cache[ newid ] = oldid;
 
 				}
+
+			},
+
+			success: ( message ) => {
+
+				this.write( message );
 
 			},
 
@@ -128,6 +149,8 @@ export default class Chat {
 			}
 
 		}, 1000 );
+
+		chat_instances.push( this );
 
 	}
 
@@ -188,17 +211,8 @@ export default class Chat {
 		this.dom.style.background = 'rgba(0,0,0,0.8)';
 		this.historyDom.style.overflowY = 'auto';
 		this.input.style.background = null;
-		this.input.setAttribute( 'placeholder', 'Type a message...' );
+		this.input.setAttribute( 'placeholder', '...' );
 		this.input.focus();
-
-		document.body.addEventListener( 'mousemove', e => {
-
-			// blur if input is not longer the active and mouse is outside chat box
-			if ( document.activeElement === this.input ) return;
-			var bcr = this.dom.getBoundingClientRect();
-			( e.clientX < bcr.left || e.clientX > bcr.right || e.clientY < bcr.top || e.clientY > bcr.bottom ) && this.blur();
-
-		} );
 
 	}
 
@@ -224,19 +238,10 @@ export default class Chat {
 		var now = new Date();
 		var minsec = `0${now.getHours()}`.slice( - 2 ) + ':' + `0${now.getMinutes()}`.slice( - 2 );
 
-		if ( ! this.lastwrite || this.lastwrite != minsec ) utils.createElement( 'div', 'ws-chat-timestamp', minsec, this.historyDom );
+		if ( ! this.lastwrite || this.lastwrite != minsec ) createElement( 'div', 'ws-chat-timestamp', minsec, this.historyDom );
 
-		var div = utils.createElement( 'div', 'ws-chat-message', null, this.historyDom );
-
-		if ( message instanceof Element ) {
-
-			div.append( message );
-
-		} else {
-
-			div.innerHTML = message;
-
-		}
+		var div = createElement( 'div', 'ws-chat-message', null, this.historyDom );
+		div.innerHTML = '';
 
 		if ( origin ) {
 
@@ -248,8 +253,17 @@ export default class Chat {
 
 			}
 
-			div.innerHTML = ' ' + div.innerHTML;
-			div.insertBefore( utils.createNameElement( this, origin ), div.firstChild );
+			div.innerHTML = `<span onmouseover="CHAT.mouseOverMention(this)" class="ws-chat-mention">${origin}</span>: `;
+
+		}
+
+		if ( message instanceof Element ) {
+
+			div.append( message );
+
+		} else {
+
+			div.innerHTML += message.replaceAll( re.mention, `<span onmouseover="CHAT.mouseOverMention(this)" class="ws-chat-mention">$1</span>` );
 
 		}
 
@@ -271,12 +285,6 @@ export default class Chat {
 
 	}
 
-	rename( name ) {
-
-		this.send( [ 'ident', name ] );
-
-	}
-
 	mute( name ) {
 
 		this.write( 'muted', name );
@@ -293,61 +301,91 @@ export default class Chat {
 
 	}
 
+	register( name, password ) {
+
+		this.register_requested = true;
+		this.send( [ 'register', name, password ] );
+
+	}
+
+	login( name, password ) {
+
+		var re = /^\/login (\w+) (\w+)$/;
+
+		if ( ! password ) {
+
+			if ( ! re.test( name ) ) return this.write( 'usage: /login &lt;name&gt; &lt;password&gt;' );
+
+			var args = re.exec( name );
+			name = args[ 1 ];
+			password = args[ 2 ];
+
+		}
+
+
+		this.send( [ 'login', name, password ] );
+
+	}
+
 }
 
 
 
+window.CHAT = {
 
-const utils = {
+	mouseOverMention: e => {
 
-	createNameElement: ( chat, name ) => {
+		var name = e.innerText;
 
-		var span = utils.createElement( 'span', 'ws-chat-name', name );
+		var hover = createElement( 'div', 'ws-chat-mention-hover ws-chat-font', null, document.body );
+		hover.style.left = `calc(${mouse.x}px - 1em)`;
+		hover.style.top = `calc(${mouse.y}px - 1em)`;
+		hover.addEventListener( 'mouseleave', () => hover.remove() );
 
-		span.addEventListener( 'click', event => {
+		createElement( 'div', 'ws-chat-mention', name, hover );
 
-			var div = utils.createElement( 'div', 'ws-chat-useroptions', name, document.body );
-			div.style.left = `calc(${event.clientX}px - 1em)`;
-			div.style.top = `calc(${event.clientY}px - 1em)`;
 
-			if ( name !== chat.id ) {
-
-				var muteoption = utils.createElement( 'div', 'ws-chat-useroption', null, div );
-				var toggle = utils.createElement( 'div', 'ws-chat-useroption-toggle', null, muteoption );
-
-				toggle.style.background = ( chat.mutes.hasOwnProperty( name ) && chat.mutes[ name ] ) ? 'green' : 'grey';
-				utils.createElement( 'div', 'ws-chat-useroption-text', 'mute', muteoption );
-
-				muteoption.addEventListener( 'click', () => {
-
-					var muted = chat.mutes.hasOwnProperty( name );
-					muted ? chat.unmute( name ) : chat.mute( name );
-					toggle.style.background = muted ? 'grey' : 'green';
-
-				} );
-
-			}
-
-			div.addEventListener( 'mouseleave', () => {
-
-				div.remove();
-
-			} );
-
-		} );
-
-		return span;
-
-	},
-
-	createElement: ( tagName, className, content, parent ) => {
-
-		var div = document.createElement( tagName );
-		if ( className ) div.className = className;
-		if ( content != undefined ) content instanceof Element ? div.append( content ) : div.textContent = content;
-		parent && parent.append( div );
-		return div;
 
 	}
 
 };
+
+
+const chat_instances = [];
+const mouse = { x: 0, y: 0 };
+const re = {
+	help: /^\/(\?|help)$/,
+	mutes: /^\/mutes$/,
+	mute: /^\/mute (\w+)$/,
+	unmute: /^\/unmute (\w+)$/,
+	register: /^\/register (\w+) (\w+)$/,
+	mention: /@(\w+)/g,
+};
+
+function createElement( tagName, className, content, parent ) {
+
+	var div = document.createElement( tagName );
+	if ( className ) div.className = className;
+	if ( content != undefined ) content instanceof Element ? div.append( content ) : div.textContent = content;
+	parent && parent.append( div );
+	return div;
+
+}
+
+
+document.body.addEventListener( 'mousemove', e => {
+
+	var x = mouse.x = e.clientX;
+	var y = mouse.y = e.clientY;
+
+	// blur if input is not longer the active and mouse is outside chat box
+	for ( var i = 0; i < chat_instances.length; i ++ ) {
+
+		var chat = chat_instances[ i ];
+		if ( document.activeElement === chat.input ) return;
+		var bcr = chat.dom.getBoundingClientRect();
+		( x < bcr.left || x > bcr.right || y < bcr.top || y > bcr.bottom ) && chat.blur();
+
+	}
+
+} );
