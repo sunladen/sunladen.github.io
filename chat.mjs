@@ -7,14 +7,13 @@ export default class Chat {
 
 		var self = this;
 
-		this.id = localStorage.getItem( 'id' );
+		this.id = this.guest_id = localStorage.getItem( 'guest_id' );
 		this.dom = createElement( 'div', 'ws-chat ws-chat-font' );
 		this.historyDom = createElement( 'div', 'ws-chat-history', null, this.dom );
 		this.input = createElement( 'input', 'ws-chat-input', null, this.dom );
 		this.input.setAttribute( 'type', 'text' );
 		this.blur();
 		this.url = url;
-		this.ident_change_cache = {};
 		this.mutes = JSON.parse( localStorage.getItem( 'mutes' ) || '{}' );
 
 		this.input.addEventListener( 'keyup', event => {
@@ -74,14 +73,16 @@ export default class Chat {
 
 			connected: ( id ) => {
 
-				if ( ! this.id ) {
+				if ( ! this.guest_id ) {
 
-					this.id = id;
-					localStorage.setItem( 'id', this.id );
+					this.guest_id = id;
+					localStorage.setItem( 'guest_id', this.guest_id );
 
 				}
 
-				this.send( [ 'ident', this.id ] );
+                this.id = this.guest_id;
+
+                this.send( [ 'guest_id', this.guest_id ] );
 
 			},
 
@@ -101,33 +102,24 @@ export default class Chat {
 
 			},
 
-			ident_change: ( oldid, newid ) => {
-
-				if ( this.id === oldid ) {
-
-					this.id = newid;
-					localStorage.setItem( 'id', this.id );
-
-					if ( this.register_requested ) {
-
-						delete this[ 'register_required' ];
-					    this.write( `Successfully registered as @${newid}` );
-
-					}
-
-				} else {
-
-					this.ident_change_cache[ newid ] = oldid;
-
-				}
-
-			},
-
 			success: ( message ) => {
 
 				this.write( message );
 
 			},
+
+			registered: ( name ) => {
+
+			    this.write( `Successfully registered. Login to continue as '${name}'.` );
+
+			},
+
+            loggedin: ( name ) => {
+
+                this.id = name;
+			    this.write( `Welcome @${name}` );
+
+            }
 
 			say: ( id, message ) => {
 
@@ -245,14 +237,6 @@ export default class Chat {
 
 		if ( origin ) {
 
-			if ( this.ident_change_cache.hasOwnProperty( origin ) ) {
-
-				var oldname = this.ident_change_cache[ origin ];
-				delete this.ident_change_cache[ origin ];
-				origin = `${oldname} - ${origin}`;
-
-			}
-
 			div.innerHTML = `<span onmouseover="CHAT.mouseOverMention(this)" class="ws-chat-mention">${origin}</span>: `;
 
 		}
@@ -263,7 +247,7 @@ export default class Chat {
 
 		} else {
 
-			div.innerHTML += message.replaceAll( re.mention, `<span onmouseover="CHAT.mouseOverMention(this)" class="ws-chat-mention">$1</span>` );
+			div.innerHTML += message.replaceAll( /@([\w-]+)/g, `<span onmouseover="CHAT.mouseOverMention(this)" class="ws-chat-mention">$1</span>` );
 
 		}
 
@@ -359,7 +343,6 @@ const re = {
 	mute: /^\/mute (\w+)$/,
 	unmute: /^\/unmute (\w+)$/,
 	register: /^\/register (\w+) (\w+)$/,
-	mention: /@(\w+)/g,
 };
 
 function createElement( tagName, className, content, parent ) {

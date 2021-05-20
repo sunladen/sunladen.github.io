@@ -10,12 +10,12 @@ import encoding from './encoding.mjs';
 
 const CLIENT_UPDATE_INTERVAL = 10000;
 const ws_connection = {};
-const ws_welcomed = {};
+const ws_guest = {};
 const ws_identified = {};
 const ws_closed = {};
 const requests = {};
 
-const blacklisted_names = [ 'undefined', 'null', 'name', 'admin', 'guest' ];
+const blacklisted_names = [ 'undefined', 'null', 'name', 'admin' ];
 
 const datapath = './.data';
 const dbpath = `${datapath}/sqlite.db`;
@@ -23,7 +23,7 @@ const dbpath = `${datapath}/sqlite.db`;
 var wss;
 
 
-requests.ident = ( ws, id ) => {
+requests.guest_id = ( ws, id ) => {
 
 	ws.request_id = id;
 
@@ -45,17 +45,13 @@ requests.ident = ( ws, id ) => {
 
 	if ( welcome ) {
 
-		ws_welcomed[ id ] = ws;
+		ws_guest[ id ] = ws;
 		broadcast( null, [ 'welcome', id ] );
-
-	} else if ( ws_welcomed.hasOwnProperty( ws.id ) ) {
-
-		broadcast( null, [ 'ident_change', ws.id, id ] );
 
 	}
 
 	ws.id = id;
-	delete ws[ 'ident_request_id' ];
+	delete ws[ 'request_id' ];
 
 };
 
@@ -80,9 +76,9 @@ requests.register = ( ws, name, password ) => {
 	var salt = crypto.randomBytes( 16 ).toString( 'hex' );
 	var hash = crypto.createHmac( 'sha512', salt ).update( password ).digest( 'hex' );
 
-	db.query( `INSERT INTO accounts (name, salt, hash) VALUES( "${name}", "${salt}", "${hash}");` ).then( () => {
+	db.run( `INSERT INTO accounts (name, salt, hash) VALUES( "${name}", "${salt}", "${hash}");`, () => {
 
-		send( ws, [ 'success', 'Registration successful' ] );
+		send( ws, [ 'registered', name ] );
 
 	} );
 
@@ -93,17 +89,17 @@ requests.register = ( ws, name, password ) => {
 
 requests.login = ( ws, name, password ) => {
 
-	db.query( `SELECT salt, hash FROM accounts WHERE name="${name}";` ).then( ( err, row ) => {
+	db.all( `SELECT salt, hash FROM accounts WHERE name="${name}";`, ( err, rows ) => {
 
-		if ( ! row ) {
+		if ( ! rows.length ) return send( ws, [ 'error', 'Invalid username or password' ] );
 
-			send( ws, [ 'error', `Invalid username or password.` ] );
-			return false;
+		var row = rows[ 0 ];
+		var hash = crypto.createHmac( 'sha512', row.salt ).update( password ).digest( 'hex' );
 
-		}
+		if ( row.hash !== hash ) return send( ws, [ 'error', 'Invalid username or password' ] );
 
-		console.log( password === crypto.createHmac( 'sha512', row.salt ).update( password ).digest( 'hex' ) );
-
+		send( ws, [ 'loggedin', name ] );
+		broadcast( ws, [ 'welcome', id ] );
 
 	} );
 
@@ -198,22 +194,6 @@ if ( ! fs.existsSync( datapath ) ) fs.mkdirSync( datapath );
 const dbinit = fs.existsSync( dbpath );
 const db = new sqlite3.Database( dbpath );
 
-// handle async / await operations
-db.query = function ( sql, params ) {
-
-	var self = this;
-
-	return new Promise( ( resolve, reject ) => {
-
-		self.all( sql, params, ( error, rows ) => {
-
-			error ? reject( error ) : resolve( { rows: rows } );
-
-		} );
-
-	} );
-
-};
 
 
 
@@ -329,9 +309,7 @@ wss.on( 'connection', ws => {
 	} );
 
 	ws_connection[ ws.id ] = ws;
-
 	console.log( `${ws.id} connected` );
-
 	send( ws, [ 'connected', ws.id ] );
 
 } );

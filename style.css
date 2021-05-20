@@ -35,8 +35,8 @@ input.:-moz-placeholder {
     min-height: 4em;
     min-width: 10em;
     max-height: 50%;
-    width: 33%;
     left: 10px;
+    right: 10px;
     bottom: 20px;
     overflow-x: hidden;
     color: #aaa;
