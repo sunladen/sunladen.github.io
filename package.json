@@ -17,10 +17,10 @@
     },
     "dependencies": {
         "sqlite3": "^5.0.2",
-        "ws": "^7.4.5"
+        "ws": "^7.4.6"
     },
     "devDependencies": {
-        "eslint": "^7.26.0",
+        "eslint": "^7.27.0",
         "eslint-config-mdcs": "^5.0.0"
     }
 }

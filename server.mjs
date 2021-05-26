@@ -14,7 +14,7 @@ const CLIENT_UPDATE_INTERVAL = 10000;
 const ws_connection = {};
 const ws_identified = {};
 const ws_sessions = {};
-const ws_closed = {};
+const ws_loggedin = {};
 const requests = {};
 
 const blacklisted_names = [ 'admin', 'sunladen' ];
@@ -34,8 +34,6 @@ requests.ident = ( ws, id, aslogin ) => {
 	if ( ws_connection.hasOwnProperty( ws.id ) ) delete ws_connection[ ws.id ];
 
 	console.log( `ws_identified[ '${id}' ] = ws;` );
-
-	if ( ws_closed.hasOwnProperty( id ) ) delete ws_closed[ id ];
 
 	var welcome = ! ws_identified.hasOwnProperty( id );
 	var ident_message;
@@ -61,7 +59,11 @@ requests.ident = ( ws, id, aslogin ) => {
 		login: {
 			help: 'Login to a named account',
 			args: { name: [ 'name', 'password' ], re: [ '\\w+', '\\w+' ] }
-		}
+		},
+		logout: {
+			help: 'Logout of named account',
+			args: { name: [], re: [] }
+		},
 	} ] );
 
 	if ( welcome ) {
@@ -96,7 +98,7 @@ requests.say = ( ws, message ) => {
 
 requests.register = async ( ws, name, password ) => {
 
-	if ( await nameIsValid( ws, name ) ) return;
+	if ( ! await nameIsValid( ws, name ) ) return;
 
 	await db.createAccount( name, password );
 
@@ -117,22 +119,27 @@ requests.login = async ( ws, name, password ) => {
 
 	var account = await db.accountByName( name );
 
-	if ( ! account ) return send( ws, [ 'error', 'Invalid username or password' ] );
+	if ( ! account ) return send( ws, [ 'error', 'Invalid username or password (1)' ] );
+
+	console.log( account );
 
 	var hash = crypto.createHmac( 'sha512', account.salt ).update( password ).digest( 'hex' );
 
-	if ( hash !== account.hash ) return send( ws, [ 'error', 'Invalid username or password' ] );
+	if ( hash !== account.hash ) return send( ws, [ 'error', 'Invalid username or password (2)' ] );
 
-	ws.id = name;
-	//ws_identified[ ws.id ] = ws;
-	//ws_sessions[ ws.session_id ] = ws.id;
-
-	//send( ws, [ 'loggedin', name ] );
-	//broadcast( ws, [ 'welcome', name ] );
 	requests.ident( ws, name, true );
+
+	ws_loggedin[ name ] = ws;
 
 };
 
+
+
+requests.logout = async ( ws ) => {
+
+	if ( ! ws_loggedin.hasOwnProperty( ws.id ) ) return send( ws, [ 'error', `Not logged in` ] );
+
+};
 
 
 
@@ -287,15 +294,11 @@ if ( ! fs.existsSync( datapath ) ) fs.mkdirSync( datapath );
 
 			ws.session_id = re_session_id.exec( req.url )[ 1 ];
 
-			console.log( `ws_sessions.hasOwnProperty( '${ws.session_id}' ) = ${ws_sessions.hasOwnProperty( ws.session_id )}` );
-
 			if ( ws_sessions.hasOwnProperty( ws.session_id ) ) {
 
 				ws.id = ws_sessions[ ws.session_id ];
-				console.log( `ws.id = ${ws_sessions[ ws.session_id ]}` );
 				ws_identified[ ws.id ] = ws;
-
-		    if ( ws_closed.hasOwnProperty( ws.id ) ) delete ws_closed[ ws.id ];
+		        if ( ws_loggedin.hasOwnProperty( ws.id ) ) ws_loggedin[ ws.id ] = ws;
 
 			}
 
@@ -306,14 +309,6 @@ if ( ! fs.existsSync( datapath ) ) fs.mkdirSync( datapath );
 		ws.id = ws.id ? ws.id : 'Guest-' + Math.floor( ( 1 + Math.random() ) * 0x10000 ).toString( 16 );
 		console.log( `(2) ws.id = ${ws.id}` );
 		ws.last_heard = ( new Date() ).getTime();
-
-		ws.on( 'close', () => {
-
-			if ( ws_connection.hasOwnProperty( ws.id ) ) delete ws_connection[ ws.id ];
-			//if ( ws_identified.hasOwnProperty( ws.id ) ) delete ws_identified[ ws.id ];
-			ws_closed[ ws.id ] = ws;
-
-		} );
 
 		ws.on( 'pong', () => {
 
@@ -386,30 +381,21 @@ if ( ! fs.existsSync( datapath ) ) fs.mkdirSync( datapath );
 
 			if ( ws.last_heard < expired ) {
 
+				var session_id = ws_identified[ id ].session_id;
+
+				delete ws_identified[ id ];
+
+				if ( ws_sessions.hasOwnProperty( session_id ) ) delete ws_sessions[ session_id ];
+				if ( ws_loggedin.hasOwnProperty( id ) ) delete ws_loggedin[ id ];
+
 				console.log( `${ws.id} disconnected, ${id}` );
 				broadcast( ws, [ 'disconnected', id ] );
-				var session_id = ws_identified[ id ].session_id;
-				if ( ws_sessions.hasOwnProperty( session_id ) ) delete ws_sessions[ session_id ];
-				delete ws_identified[ id ];
+
 				ws.terminate();
 
 			}
 
 			ws.ping();
-
-		}
-
-		for ( const id in ws_closed ) {
-
-			var ws = ws_closed[ id ];
-
-			if ( ws.last_heard < expired ) {
-
-				console.log( `${ws.id} closed` );
-				delete ws_closed[ id ];
-				ws.terminate();
-
-			}
 
 		}
 

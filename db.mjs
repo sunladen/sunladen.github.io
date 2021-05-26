@@ -36,6 +36,13 @@ async function init( dbpath ) {
 }
 
 
+function close() {
+
+	db.close();
+
+}
+
+
 async function createAccount( name, password ) {
 
 	if ( await accountByName( name ) ) {
@@ -47,6 +54,8 @@ async function createAccount( name, password ) {
 
 	var salt = crypto.randomBytes( 16 ).toString( 'hex' );
 	var hash = crypto.createHmac( 'sha512', salt ).update( password ).digest( 'hex' );
+
+	console.log( name, salt, hash );
 
 	await new Promise( res => {
 
@@ -73,4 +82,4 @@ async function accountByName( name ) {
 
 
 
-export default { init, createAccount };
+export default { init, close, createAccount, accountByName };
