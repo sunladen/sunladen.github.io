@@ -3,55 +3,72 @@
 import WebSocket from 'ws';
 import http from 'http';
 import fs from 'fs';
-import sqlite3 from 'sqlite3';
 import crypto from 'crypto';
+
 import encoding from './encoding.mjs';
+import db from './db.mjs';
+
 
 
 const CLIENT_UPDATE_INTERVAL = 10000;
 const ws_connection = {};
-const ws_guest = {};
 const ws_identified = {};
+const ws_sessions = {};
 const ws_closed = {};
 const requests = {};
 
-const blacklisted_names = [ 'undefined', 'null', 'name', 'admin' ];
+const blacklisted_names = [ 'admin', 'sunladen' ];
+const known_names = [];
 
 const datapath = './.data';
 const dbpath = `${datapath}/sqlite.db`;
 
+
 var wss;
 
 
-requests.guest_id = ( ws, id ) => {
+requests.ident = ( ws, id, aslogin ) => {
 
-	ws.request_id = id;
+	if ( ! nameIsValid( ws, id, true ) ) return;
 
-	if ( ! nameIsValid( ws, id ) ) return;
+	if ( ws_connection.hasOwnProperty( ws.id ) ) delete ws_connection[ ws.id ];
 
-	var welcome = false;
-
-	if ( ws_connection.hasOwnProperty( ws.id ) ) {
-
-		delete ws_connection[ ws.id ];
-		welcome = ! ws_identified.hasOwnProperty( id ) && ! ws_closed.hasOwnProperty( id );
-
-	}
-
-
-	ws_identified[ id ] = ws;
+	console.log( `ws_identified[ '${id}' ] = ws;` );
 
 	if ( ws_closed.hasOwnProperty( id ) ) delete ws_closed[ id ];
 
-	if ( welcome ) {
+	var welcome = ! ws_identified.hasOwnProperty( id );
+	var ident_message;
 
-		ws_guest[ id ] = ws;
-		broadcast( null, [ 'welcome', id ] );
+	if ( ! aslogin && welcome && ! id.startsWith( 'Guest-' ) ) {
+
+		ident_message = `Not logged in as '${id}'`;
+		id = ws.id;
 
 	}
 
+	known_names[ id ] = null;
+
 	ws.id = id;
-	delete ws[ 'request_id' ];
+	ws_identified[ id ] = ws;
+	ws_sessions[ ws.session_id ] = id;
+	send( ws, [ 'ident', id, ident_message ] );
+	send( ws, [ 'setCommands', {
+		register: {
+			help: 'Register a new account',
+			args: { name: [ 'name', 'password' ], re: [ '\\w+', '\\w+' ] }
+		},
+		login: {
+			help: 'Login to a named account',
+			args: { name: [ 'name', 'password' ], re: [ '\\w+', '\\w+' ] }
+		}
+	} ] );
+
+	if ( welcome ) {
+
+		broadcast( null, [ 'welcome', id ] );
+
+	}
 
 };
 
@@ -61,47 +78,58 @@ requests.guest_id = ( ws, id ) => {
 requests.say = ( ws, message ) => {
 
 	// remove XML/HTML markup from message
-	message = message.replace( /(<([^>]+)>)/ig, "" );
-	broadcast( ws, [ 'say', ws.id, message ] );
+	message = message.replace( re_tags, '' );
+
+	// markup referenced names
+	message = message.replace( re_name, ( match, name ) => {
+
+		return known_names.hasOwnProperty( name ) ? `@${name}` : `@&#8203;${name}`;
+
+	} );
+
+	broadcast( null, [ 'say', message, ws.id ] );
 
 };
 
 
 
 
-requests.register = ( ws, name, password ) => {
+requests.register = async ( ws, name, password ) => {
 
-	if ( ! nameIsValid( ws, name ) ) return;
+	if ( await nameIsValid( ws, name ) ) return;
 
-	var salt = crypto.randomBytes( 16 ).toString( 'hex' );
-	var hash = crypto.createHmac( 'sha512', salt ).update( password ).digest( 'hex' );
+	await db.createAccount( name, password );
 
-	db.run( `INSERT INTO accounts (name, salt, hash) VALUES( "${name}", "${salt}", "${hash}");`, () => {
-
-		send( ws, [ 'registered', name ] );
-
-	} );
+	send( ws, [ 'success', `Successfully registered. Login to continue as '${name}'.` ] );
 
 };
 
 
 
 
-requests.login = ( ws, name, password ) => {
+requests.login = async ( ws, name, password ) => {
 
-	db.all( `SELECT salt, hash FROM accounts WHERE name="${name}";`, ( err, rows ) => {
+	if ( ws_identified.hasOwnProperty( name ) ) {
 
-		if ( ! rows.length ) return send( ws, [ 'error', 'Invalid username or password' ] );
+		return send( ws, [ 'error', `Name '${name}' already logged in` ] );
 
-		var row = rows[ 0 ];
-		var hash = crypto.createHmac( 'sha512', row.salt ).update( password ).digest( 'hex' );
+	}
 
-		if ( row.hash !== hash ) return send( ws, [ 'error', 'Invalid username or password' ] );
+	var account = await db.accountByName( name );
 
-		send( ws, [ 'loggedin', name ] );
-		broadcast( ws, [ 'welcome', id ] );
+	if ( ! account ) return send( ws, [ 'error', 'Invalid username or password' ] );
 
-	} );
+	var hash = crypto.createHmac( 'sha512', account.salt ).update( password ).digest( 'hex' );
+
+	if ( hash !== account.hash ) return send( ws, [ 'error', 'Invalid username or password' ] );
+
+	ws.id = name;
+	//ws_identified[ ws.id ] = ws;
+	//ws_sessions[ ws.session_id ] = ws.id;
+
+	//send( ws, [ 'loggedin', name ] );
+	//broadcast( ws, [ 'welcome', name ] );
+	requests.ident( ws, name, true );
 
 };
 
@@ -134,8 +162,11 @@ function broadcast( origin_ws, message ) {
 }
 
 
+const re_tags = /(<([^>]+)>)/ig;
+const re_name = /@([\w-]+)/ig;
 
-function nameIsValid( ws, name ) {
+
+async function nameIsValid( ws, name, self_identity ) {
 
 	if ( name.length < 3 ) {
 
@@ -162,7 +193,7 @@ function nameIsValid( ws, name ) {
 
 	}
 
-	if ( name === ws.request_id ) return true;
+	if ( self_identity ) return true;
 
 	if ( ws_identified.hasOwnProperty( name ) ) {
 
@@ -171,15 +202,13 @@ function nameIsValid( ws, name ) {
 
 	}
 
-	( async () => {
+	if ( await db.accountByName( name ) ) {
 
-		await db.get( `SELECT 1 FROM accounts WHERE name="${name}";`, ( err, row ) => {
+	    send( ws, [ 'error', `Name '${name}' not available` ] );
+		return false;
 
-			if ( row ) return send( ws, [ 'error', `Name '${name}' not available` ] );
+	}
 
-		} );
-
-	} )();
 
 	return true;
 
@@ -190,180 +219,201 @@ function nameIsValid( ws, name ) {
 // create .data directory if it doesn't exist
 if ( ! fs.existsSync( datapath ) ) fs.mkdirSync( datapath );
 
-// check if database needs initialising
-const dbinit = fs.existsSync( dbpath );
-const db = new sqlite3.Database( dbpath );
+
+( async () => {
+
+	await db.init( dbpath );
+
+	process.on( "SIGINT", () => {
+
+		console.log( "SIGINT received, stopping..." );
+		broadcast( null, [ 'say', null, 'Server shut down' ] );
+		db.close();
+		process.exit();
+
+	} );
 
 
+	const httpserver = http.createServer( ( req, res ) => {
+
+		if ( "GET" === req.method ) {
+
+			var content = "";
+
+			try {
+
+				var filepath = "." + ( ( "/" === req.url ) ? "/index.html" : req.url );
+
+				content = fs.readFileSync( filepath );
+
+				res.writeHead( 200, {
+					"Content-Type": {
+						html: "text/html",
+						js: "text/javascript",
+						mjs: "text/javascript",
+						css: "text/css",
+						json: "application/json"
+					}[ filepath.split( "." ).pop().toLowerCase() ] || "text/*"
+				} );
+
+			} catch ( err ) {
+
+				res.code = "ENOENT" === err.code ? 404 : 500, res.writeHead( res.code, { "Content-Type": "text/html" } ), content = "<!doctype html><html><head><title>PBBG</title></head><body>" + err.message + "</body></html>";
+
+			}
+
+			return res.end( content, "utf-8" );
+
+		}
+
+	} );
 
 
-db.serialize( () => {
+	httpserver.listen( process.env.PORT || 7714, () => {
 
-	if ( ! dbinit ) {
+		console.log( `Server started on ${process.env.PORT ? 'port ' + process.env.PORT : 'http://localhost:7714'}` );
 
-		db.run( 'CREATE TABLE accounts (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, salt TEXT, hash TEXT, lastlogin DATETIME)' );
-		console.log( "New table accounts created!" );
+	} );
 
-	} else {
+	wss = new WebSocket.Server( { server: httpserver } );
 
-		console.log( 'Database "accounts" ready to go!' );
-		db.each( "SELECT * from accounts", ( err, row ) => {
+	const re_session_id = /[?&]{1}session=(\w+)/;
 
-			if ( row ) console.log( `record: ${row.name}` );
+	wss.on( 'connection', ( ws, req ) => {
+
+		console.log( `connection -> ${req.url}` );
+
+		if ( re_session_id.test( req.url ) ) {
+
+			ws.session_id = re_session_id.exec( req.url )[ 1 ];
+
+			console.log( `ws_sessions.hasOwnProperty( '${ws.session_id}' ) = ${ws_sessions.hasOwnProperty( ws.session_id )}` );
+
+			if ( ws_sessions.hasOwnProperty( ws.session_id ) ) {
+
+				ws.id = ws_sessions[ ws.session_id ];
+				console.log( `ws.id = ${ws_sessions[ ws.session_id ]}` );
+				ws_identified[ ws.id ] = ws;
+
+		    if ( ws_closed.hasOwnProperty( ws.id ) ) delete ws_closed[ ws.id ];
+
+			}
+
+		}
+
+		console.log( `(1) ws.id = ${ws.id}` );
+
+		ws.id = ws.id ? ws.id : 'Guest-' + Math.floor( ( 1 + Math.random() ) * 0x10000 ).toString( 16 );
+		console.log( `(2) ws.id = ${ws.id}` );
+		ws.last_heard = ( new Date() ).getTime();
+
+		ws.on( 'close', () => {
+
+			if ( ws_connection.hasOwnProperty( ws.id ) ) delete ws_connection[ ws.id ];
+			//if ( ws_identified.hasOwnProperty( ws.id ) ) delete ws_identified[ ws.id ];
+			ws_closed[ ws.id ] = ws;
 
 		} );
 
-	}
+		ws.on( 'pong', () => {
 
-} );
+			if ( ! ws_identified.hasOwnProperty( ws.id ) ) return;
+			ws_identified[ ws.id ].last_heard = ( new Date() ).getTime();
 
+		} );
 
+		ws.on( 'message', message => {
 
+			var encoded_message = message.buffer.slice( message.byteOffset, message.byteOffset + message.byteLength );
+			var decoded_message = encoding.decode( encoded_message );
 
-process.on( "SIGINT", () => {
+			console.log( `${ws.id}: ${decoded_message}` );
 
-	console.log( "SIGINT received, stopping..." );
-	broadcast( null, [ 'say', null, 'Server shut down' ] );
-	db.close();
-	process.exit();
+			if ( ! Array.isArray( decoded_message ) ) return;
 
-} );
+			var request = decoded_message.shift();
 
+			requests.hasOwnProperty( request ) && requests[ request ]( ws, ...decoded_message );
 
-const httpserver = http.createServer( ( req, res ) => {
+		} );
 
-	if ( "GET" === req.method ) {
+		//if ( ! ws_identified.hasOwnProperty( ws.id ) ) broadcast( null, [ 'welcome', ws.id ] );
 
-		var content = "";
+		if ( ws_identified.hasOwnProperty( ws.id ) ) {
 
-		try {
+			console.log( `${ws.id} reconnected` );
 
-			var filepath = "." + ( ( "/" === req.url ) ? "/index.html" : req.url );
+		} else {
 
-			content = fs.readFileSync( filepath );
-
-			res.writeHead( 200, {
-				"Content-Type": {
-					html: "text/html",
-					js: "text/javascript",
-					mjs: "text/javascript",
-					css: "text/css",
-					json: "application/json"
-				}[ filepath.split( "." ).pop().toLowerCase() ] || "text/*"
-			} );
-
-		} catch ( err ) {
-
-			res.code = "ENOENT" === err.code ? 404 : 500, res.writeHead( res.code, { "Content-Type": "text/html" } ), content = "<!doctype html><html><head><title>PBBG</title></head><body>" + err.message + "</body></html>";
+	    ws_connection[ ws.id ] = ws;
+	    ws.session_id = Math.floor( ( 1 + Math.random() ) * 0x1000000000000000 ).toString( 16 );
+	    console.log( `${ws.id} connected` );
+	    ws_sessions[ ws.session_id ] = ws.id;
 
 		}
 
-		return res.end( content, "utf-8" );
-
-	}
-
-} );
-
-
-httpserver.listen( process.env.PORT || 7714, () => {
-
-	console.log( `Server started on ${process.env.PORT ? 'port ' + process.env.PORT : 'http://localhost:7714'}` );
-
-} );
-
-wss = new WebSocket.Server( { server: httpserver } );
-
-wss.on( 'connection', ws => {
-
-	ws.id = 'Guest-' + Math.floor( ( 1 + Math.random() ) * 0x10000 ).toString( 16 ).substring( 1 );
-	ws.last_heard = ( new Date() ).getTime();
-
-	ws.on( 'close', () => {
-
-		if ( ws_connection.hasOwnProperty( ws.id ) ) delete ws_connection[ ws.id ];
-		if ( ws_identified.hasOwnProperty( ws.id ) ) delete ws_identified[ ws.id ];
-		ws_closed[ ws.id ] = ws;
+		send( ws, [ 'connected', ws.id, ws.session_id ] );
 
 	} );
 
-	ws.on( 'pong', () => {
-
-		if ( ! ws_identified.hasOwnProperty( ws.id ) ) return;
-		ws_identified[ ws.id ].last_heard = ( new Date() ).getTime();
-
-	} );
-
-	ws.on( 'message', message => {
-
-		var encoded_message = message.buffer.slice( message.byteOffset, message.byteOffset + message.byteLength );
-		var decoded_message = encoding.decode( encoded_message );
-
-		console.log( `${ws.id}: ${decoded_message}` );
-
-		if ( ! Array.isArray( decoded_message ) ) return;
-
-		var request = decoded_message.shift();
-
-		requests.hasOwnProperty( request ) && requests[ request ]( ws, ...decoded_message );
-
-	} );
-
-	ws_connection[ ws.id ] = ws;
-	console.log( `${ws.id} connected` );
-	send( ws, [ 'connected', ws.id ] );
-
-} );
 
 
+	setInterval( () => {
 
-setInterval( () => {
+		var expired = ( new Date() ).getTime() - CLIENT_UPDATE_INTERVAL * 2;
 
-	var expired = ( new Date() ).getTime() - CLIENT_UPDATE_INTERVAL * 2;
+		for ( const id in ws_connection ) {
 
-	for ( const id in ws_connection ) {
+			var ws = ws_connection[ id ];
 
-		var ws = ws_connection[ id ];
+			if ( ws.last_heard < expired ) {
 
-		if ( ws.last_heard < expired ) {
+				console.log( `${id} failed to identify` );
+				var session_id = ws_connection[ id ].session_id;
+				if ( ws_sessions.hasOwnProperty( session_id ) ) delete ws_sessions[ session_id ];
+				delete ws_connection[ id ];
+				ws.terminate();
 
-			console.log( `${id} failed to identify` );
-			delete ws_connection[ id ];
-			ws.terminate();
+			}
 
 		}
 
-	}
+		for ( const id in ws_identified ) {
 
-	for ( const id in ws_identified ) {
+			var ws = ws_identified[ id ];
 
-		var ws = ws_identified[ id ];
+			console.log( `${ws.id} last_heard ${ws.last_heard - expired}` );
 
-		if ( ws.last_heard < expired ) {
+			if ( ws.last_heard < expired ) {
 
-			console.log( `${ws.id} disconnected, ${id}` );
-			broadcast( ws, [ 'disconnected', ws.id ] );
-			delete ws_identified[ id ];
-			ws.terminate();
+				console.log( `${ws.id} disconnected, ${id}` );
+				broadcast( ws, [ 'disconnected', id ] );
+				var session_id = ws_identified[ id ].session_id;
+				if ( ws_sessions.hasOwnProperty( session_id ) ) delete ws_sessions[ session_id ];
+				delete ws_identified[ id ];
+				ws.terminate();
 
-		}
+			}
 
-		ws.ping();
-
-	}
-
-	for ( const id in ws_closed ) {
-
-		var ws = ws_closed[ id ];
-
-		if ( ws.last_heard < expired ) {
-
-			console.log( `${ws.id} closed` );
-			delete ws_closed[ id ];
-			ws.terminate();
+			ws.ping();
 
 		}
 
-	}
+		for ( const id in ws_closed ) {
 
-}, CLIENT_UPDATE_INTERVAL );
+			var ws = ws_closed[ id ];
+
+			if ( ws.last_heard < expired ) {
+
+				console.log( `${ws.id} closed` );
+				delete ws_closed[ id ];
+				ws.terminate();
+
+			}
+
+		}
+
+	}, CLIENT_UPDATE_INTERVAL );
+
+} )();
 
