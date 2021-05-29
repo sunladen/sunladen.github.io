@@ -1,32 +1,29 @@
 import encoding from './encoding.mjs';
+import api from './api.mjs';
 
 
 export default class Chat {
 
-	constructor( url ) {
+	constructor( url, dom ) {
 
 		var self = this;
 
-		this.id = localStorage.getItem( 'id' );
-		this.session_id = localStorage.getItem( 'session_id' );
-		this.url = this.session_id ? `${url}?session=${this.session_id}` : url;
-		this.dom = E( 'div', 'ws-chat ws-chat-font' );
-		this.dom_history = E( 'div', 'ws-chat-history', null, this.dom );
+		this.id = {
+			name: localStorage.getItem( 'name' ),
+			session: localStorage.getItem( 'session' )
+		};
+		this.url = this.id.session ? `${url}?session=${this.id.session}` : url;
 
-		this.dom_bar = E( 'div', 'ws-chat-bar', null, this.dom );
-		this.dom_name = E( 'span', 'ws-chat-name', 'name', this.dom_bar );
-		this.input = E( 'input', 'ws-chat-input', null, this.dom_bar );
-		this.input.setAttribute( 'type', 'text' );
-
-		this.re_at_name = new RegExp( '@([\\w-]+)', 'g' );
-		this.re_ends_at_name = new RegExp( '@([\\w-]+)$' );
+		this.re = {
+			at_name: new RegExp( '@([\\w-]+)', 'g' ),
+		    at_name_end: new RegExp( '@([\\w-]+)$' )
+		};
 
 		this.known_names = {};
 		this.muted = JSON.parse( localStorage.getItem( 'muted' ) || '{}' );
-		this.history = [];
-		this.history_index = 0;
+		this.history = JSON.parse( localStorage.getItem( 'input_history' ) || '[]' );
+		this.history_index = this.history.length;
 		this.commands = {};
-
 
 		this.setCommand( 'help', {
 			help: 'List available commands',
@@ -62,30 +59,96 @@ export default class Chat {
 			exec: () => this.mutes()
 		} );
 
+	    this.setCommand( 'register', {
+			help: 'Register a new account',
+			args: { name: [ 'name', 'password' ], re: [ '\\w+', '\\w+' ] }
+		} );
 
-		this.input.addEventListener( 'focus', () => this.focus() );
+		this.setCommand( 'login', {
+			help: 'Login to a named account',
+			args: { name: [ 'name', 'password' ], re: [ '\\w+', '\\w+' ] }
+		} );
 
-		this.input.addEventListener( 'keydown', event => event.key === 'Tab' && event.preventDefault() );
+		this.setCommand( 'logout', {
+			help: 'Logout of named account',
+			args: { name: [], re: [] }
+		} );
 
-		this.input.addEventListener( 'keyup', event => {
+		api.connected = ( ws, name, session ) => {
 
-			var key = event.key;
+			localStorage.setItem( 'session', this.id.session = session );
+			this.dom.name.textContent = this.id.name || name;
+			this.known_names[ this.id.name || name ] = null;
+			api.send( this.ws, 'ident', this.id.name || name );
+
+		};
+
+		api.ident = ( ws, name, err ) => {
+
+			localStorage.setItem( 'name', this.id.name = name );
+			this.dom.name.textContent = name;
+			this.known_names[ name ] = null;
+			err && this.error( err );
+
+		};
+
+	    api.disconnected = ( ws, name ) => {
+
+			this.write( `@${name} disconnected` );
+
+		};
+
+	    api.welcome = ( name ) => {
+
+			this.known_names[ name ] = null;
+
+			! this.muted.hasOwnProperty( name ) && this.write( `Welcome @${name}` );
+
+		},
+
+	    api.error = ( message ) => {
+
+			this.write( message );
+
+		};
+
+
+		api.success = ( message ) => {
+
+			this.write( message );
+
+		};
+
+
+		this.dom = {};
+		this.dom.chat = E( 'div', 'ws-chat ws-chat-font' );
+		this.dom.history = E( 'div', 'ws-chat-history', null, this.dom.chat );
+		this.dom.bar = E( 'div', 'ws-chat-bar', null, this.dom.chat );
+		this.dom.name = E( 'span', 'ws-chat-name', 'name', this.dom.bar );
+
+		this.dom.input = E( 'input', 'ws-chat-input', null, this.dom.bar );
+		this.dom.input.setAttribute( 'type', 'text' );
+		this.dom.input.addEventListener( 'focus', () => this.focus() );
+		this.dom.input.addEventListener( 'keydown', e => e.key === 'Tab' && e.preventDefault() );
+		this.dom.input.addEventListener( 'keyup', e => {
+
+			var key = e.key;
 
 			if ( key === 'ArrowUp' || key === 'ArrowDown' ) {
 
 				// Up / Down input history
-				this.history_index + key === 'ArrowUp' ? - 1 : 1;
+				this.history_index += key === 'ArrowUp' ? - 1 : 1;
 				this.history_index = Math.max( 0, Math.min( this.history.length, this.history_index ) );
-				this.input.value = this.history[ this.history_index ] ?? '';
+				this.dom.input.value = this.history[ this.history_index ] ?? '';
 				return;
 
 			}
 
-			var message = this.input.value;
+			var message = this.dom.input.value;
 
 			// Auto-complete a @name
-			if ( key === 'Tab' && this.re_ends_at_name.test( message ) )
-				return this.autocomplete( this.re_ends_at_name.exec( message )[ 1 ], this.known_names );
+			if ( key === 'Tab' && this.re.at_name_end.test( message ) )
+				return this.autocomplete( this.re.at_name_end.exec( message )[ 1 ], this.known_names );
 
 			// Auto-complete a /command
 			if ( key === 'Tab' && message.startsWith( '/' ) && message.length > 1 )
@@ -107,8 +170,12 @@ export default class Chat {
 			message = message.replace( /(<([^>]+)>)/ig, '' ).trim();
 
 			this.history.push( message );
+			while ( this.history.length > 30 ) this.history.shift();
+			console.log( JSON.stringify( this.history ) );
+		    localStorage.setItem( 'input_history', JSON.stringify( this.history ) );
+
 			this.history_index = this.history.length;
-			this.input.value = '';
+			this.dom.input.value = '';
 
 			if ( message === '' ) return;
 
@@ -128,7 +195,9 @@ export default class Chat {
 
 		} );
 
+		instances.push( this );
 
+		this.blur();
 		this.reconnect();
 
 		this.reconnectInterval = setInterval( () => {
@@ -144,9 +213,7 @@ export default class Chat {
 
 		window.addEventListener( 'beforeunload', () => clearInterval( this.reconnectInterval ) );
 
-		instances.push( this );
-
-		this.blur();
+		if ( dom ) dom.append( this.dom.chat );
 
 	}
 
@@ -157,27 +224,9 @@ export default class Chat {
 		this.ws.binaryType = 'arraybuffer';
 		this.ws.onopen = () => {};
 
-		this.ws.onmessage = event => {
-
-			var message = encoding.decode( event.data );
-			var response = message.shift();
-			typeof this[ response ] === 'function' && this[ response ]( ...message );
-
-		};
-
+		this.ws.onmessage = message => api.receive( this.ws, message );
 		this.ws.onclose = () => this.ws = null;
-		this.ws.onerror = event => console.log( event ) || ( this.ws = null );
-
-	}
-
-
-	connected( id, session_id ) {
-
-		this.session_id = session_id;
-		localStorage.setItem( 'session_id', this.session_id );
-		this.dom_name.textContent = this.id || id;
-		this.known_names[ this.id || id ] = null;
-		this.send( [ 'ident', this.id || id ] );
+		this.ws.onerror = e => console.log( e ) || ( this.ws = null );
 
 	}
 
@@ -189,82 +238,50 @@ export default class Chat {
 	}
 
 
-	disconnected( id ) {
-
-		this.write( `@${id} disconnected` );
-
-	}
-
-
-	ident( id, message ) {
-
-		this.id = id;
-		localStorage.setItem( 'id', id );
-		this.dom_name.textContent = id;
-		this.known_names[ id ] = null;
-		message && this.write( message );
-
-	}
-
-
-	welcome( id ) {
-
-		this.known_names[ id ] = null;
-
-		! this.muted.hasOwnProperty( id ) && this.write( `Welcome @${id}` );
-
-	}
-
-
-	setCommands( commands ) {
-
-		for ( var command in commands ) this.setCommand( command, commands[ command ] );
-
-	}
-
-
-	loggedin( name ) {
-
-		this.id = name;
-		localStorage.setItem( 'id', this.id );
-		this.write( `Welcome @${name}` );
-
-	}
-
-
+	/**
+	 * Focus chat input.
+	 */
 	focus() {
 
-		this.dom.style.background = 'rgba(0,0,0,0.5)';
-		this.dom_history.style.color = '#fff';
-		this.input.setAttribute( 'placeholder', '...' );
-		this.input.focus();
+		this.dom.chat.style.background = 'rgba(0,0,0,0.5)';
+		this.dom.history.style.color = '#fff';
+		this.dom.input.setAttribute( 'placeholder', '...' );
+		this.dom.input.focus();
 
 	}
 
 
+	/**
+	 * Blur or unfocus from chat input.
+	 */
 	blur() {
 
-		this.dom_history.style.color = '#333';
-		this.dom.style.background = null;
-		this.input.removeAttribute( 'placeholder' );
+		this.dom.history.style.color = '#333';
+		this.dom.chat.style.background = null;
+		this.dom.input.removeAttribute( 'placeholder' );
 
 	}
 
 
-	write( message, origin ) {
+	/**
+	 * Writes a message to chat history.
+	 * @param {(string|Element)} message - The message
+	 * @param {string} author - The author of the message
+	 */
+	write( message, author ) {
 
-		if ( origin && this.muted.hasOwnProperty( origin ) ) return;
+		if ( author && this.muted.hasOwnProperty( author ) ) return;
 
 		var time = timestamp();
 
-		if ( ! this.lastwrite || this.lastwrite != time ) E( 'div', 'ws-chat-timestamp', time, this.dom_history );
+		if ( ! this.lastwrite || this.lastwrite != time ) E( 'div', 'ws-chat-timestamp', time, this.dom.history );
 
-		var div = E( 'div', 'ws-chat-message', '', this.dom_history );
+		var div = E( 'div', 'ws-chat-message', '', this.dom.history );
 
-		if ( origin ) {
+		if ( author ) {
 
-			this.known_names[ origin ] = null;
-			div.innerHTML = markup( 'name', origin );
+			this.known_names[ author ] = null;
+			div.innerHTML = markup( 'name', author );
 
 		}
 
@@ -274,42 +291,21 @@ export default class Chat {
 
 		} else {
 
-			var names = message.match( this.re_at_name );
+			var names = message.match( this.re.at_name );
 			if ( names ) names.forEach( name => this.known_names[ name.substring( 1 ) ] = null );
-			div.innerHTML += message.replaceAll( this.re_at_name, markup( 'name', '$1' ) );
+			div.innerHTML += message.replaceAll( this.re.at_name, markup( 'name', '$1' ) );
 
 		}
 
-		this.dom_history.scrollTo( 0, this.dom_history.scrollHeight );
+		this.dom.history.scrollTo( 0, this.dom.history.scrollHeight );
 		this.lastwrite = time;
 
 	}
 
 
-	error( error ) {
+	say( message, author ) {
 
-		this.write( error );
-
-	}
-
-
-	success( message ) {
-
-		this.write( message );
-
-	}
-
-
-	send( message ) {
-
-		this.ws && this.ws.send( encoding.encode( message ) );
-
-	}
-
-
-	say( message, origin ) {
-
-		origin ? this.write( message, origin ) : this.send( [ 'say', message ] );
+		author ? this.write( message, author ) : api.send( this.ws, 'say', message );
 
 	}
 
@@ -369,7 +365,7 @@ export default class Chat {
 
 		var expand = `${shortest.substring( 0, i )}`;
 
-		expand === typed ? this.write( matches.join( ' &nbsp; ' ) ) : this.input.value += expand.substring( typed.length );
+		expand === typed ? this.write( matches.join( ' &nbsp; ' ) ) : this.dom.input.value += expand.substring( typed.length );
 
 		callback && callback( matches );
 
@@ -386,7 +382,7 @@ export default class Chat {
 
 			args = Array.from( ...args );
 			args[ 0 ] = command;
-			this.send( args );
+			api.send( this.ws, args );
 
 		};
 
@@ -435,16 +431,16 @@ function E( tagName, className, content, parent ) {
 }
 
 
-function mousetrack( event ) {
+function mousetrack( e ) {
 
-	var x = mouse.x = event.clientX;
-	var y = mouse.y = event.clientY;
+	var x = mouse.x = e.clientX;
+	var y = mouse.y = e.clientY;
 
 	instances.forEach( chat => {
 
 		// blur if input is not longer the active and mouse is outside input area
-		if ( document.activeElement === chat.input ) return;
-		var bcr = chat.input.getBoundingClientRect();
+		if ( document.activeElement === chat.dom.input ) return;
+		var bcr = chat.dom.input.getBoundingClientRect();
 		( x < bcr.left || x > bcr.right || y < bcr.top || y > bcr.bottom ) && chat.blur();
 
 	} );

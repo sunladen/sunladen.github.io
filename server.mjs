@@ -4,10 +4,9 @@ import WebSocket from 'ws';
 import http from 'http';
 import fs from 'fs';
 import crypto from 'crypto';
-
-import encoding from './encoding.mjs';
 import db from './db.mjs';
-
+import api from './api.mjs';
+import encoding from './encoding.mjs';
 
 
 const CLIENT_UPDATE_INTERVAL = 10000;
@@ -27,7 +26,7 @@ const dbpath = `${datapath}/sqlite.db`;
 var wss;
 
 
-requests.ident = ( ws, id, aslogin ) => {
+api.ident = ( ws, id, err ) => {
 
 	if ( ! nameIsValid( ws, id, true ) ) return;
 
@@ -36,11 +35,11 @@ requests.ident = ( ws, id, aslogin ) => {
 	console.log( `ws_identified[ '${id}' ] = ws;` );
 
 	var welcome = ! ws_identified.hasOwnProperty( id );
-	var ident_message;
+	var err;
 
-	if ( ! aslogin && welcome && ! id.startsWith( 'Guest-' ) ) {
+	if ( welcome && ! id.startsWith( 'Guest-' ) ) {
 
-		ident_message = `Not logged in as '${id}'`;
+		err = `Not logged in as '${id}'`;
 		id = ws.id;
 
 	}
@@ -50,27 +49,10 @@ requests.ident = ( ws, id, aslogin ) => {
 	ws.id = id;
 	ws_identified[ id ] = ws;
 	ws_sessions[ ws.session_id ] = id;
-	send( ws, [ 'ident', id, ident_message ] );
-	send( ws, [ 'setCommands', {
-		register: {
-			help: 'Register a new account',
-			args: { name: [ 'name', 'password' ], re: [ '\\w+', '\\w+' ] }
-		},
-		login: {
-			help: 'Login to a named account',
-			args: { name: [ 'name', 'password' ], re: [ '\\w+', '\\w+' ] }
-		},
-		logout: {
-			help: 'Logout of named account',
-			args: { name: [], re: [] }
-		},
-	} ] );
 
-	if ( welcome ) {
+	api.send( ws, 'ident', id, err );
 
-		broadcast( null, [ 'welcome', id ] );
-
-	}
+	if ( welcome ) broadcast( null, [ 'welcome', id ] );
 
 };
 
@@ -121,15 +103,23 @@ requests.login = async ( ws, name, password ) => {
 
 	if ( ! account ) return send( ws, [ 'error', 'Invalid username or password (1)' ] );
 
-	console.log( account );
-
 	var hash = crypto.createHmac( 'sha512', account.salt ).update( password ).digest( 'hex' );
 
 	if ( hash !== account.hash ) return send( ws, [ 'error', 'Invalid username or password (2)' ] );
 
-	requests.ident( ws, name, true );
+	if ( ws_connection.hasOwnProperty( ws.id ) ) delete ws_connection[ ws.id ];
+	if ( ws_identified.hasOwnProperty( ws.id ) ) delete ws_identified[ ws.id ];
+	if ( known_names.hasOwnProperty( ws.id ) ) delete known_names[ ws.id ];
 
-	ws_loggedin[ name ] = ws;
+	ws.id = name;
+
+	ws_identified[ ws.id ] = ws;
+	ws_sessions[ ws.session_id ] = ws.id;
+	ws_loggedin[ ws.id ] = ws;
+	known_names[ ws.id ] = null;
+
+	api.send( ws, 'ident', ws.id );
+	broadcast( null, [ 'welcome', id ] );
 
 };
 
@@ -317,22 +307,7 @@ if ( ! fs.existsSync( datapath ) ) fs.mkdirSync( datapath );
 
 		} );
 
-		ws.on( 'message', message => {
-
-			var encoded_message = message.buffer.slice( message.byteOffset, message.byteOffset + message.byteLength );
-			var decoded_message = encoding.decode( encoded_message );
-
-			console.log( `${ws.id}: ${decoded_message}` );
-
-			if ( ! Array.isArray( decoded_message ) ) return;
-
-			var request = decoded_message.shift();
-
-			requests.hasOwnProperty( request ) && requests[ request ]( ws, ...decoded_message );
-
-		} );
-
-		//if ( ! ws_identified.hasOwnProperty( ws.id ) ) broadcast( null, [ 'welcome', ws.id ] );
+		ws.on( 'message', message => api.receive( ws, message ) );
 
 		if ( ws_identified.hasOwnProperty( ws.id ) ) {
 
@@ -340,10 +315,10 @@ if ( ! fs.existsSync( datapath ) ) fs.mkdirSync( datapath );
 
 		} else {
 
-	    ws_connection[ ws.id ] = ws;
-	    ws.session_id = Math.floor( ( 1 + Math.random() ) * 0x1000000000000000 ).toString( 16 );
-	    console.log( `${ws.id} connected` );
-	    ws_sessions[ ws.session_id ] = ws.id;
+	    	ws_connection[ ws.id ] = ws;
+	    	ws.session_id = Math.floor( ( 1 + Math.random() ) * 0x1000000000000000 ).toString( 16 );
+	    	console.log( `${ws.id} connected` );
+	    	ws_sessions[ ws.session_id ] = ws.id;
 
 		}
 
