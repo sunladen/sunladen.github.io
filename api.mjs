@@ -11,14 +11,14 @@ const api = {
 	 */
 	send: ( ws, message, ...args ) => {
 
-		console.log( args );
-
 		args = args.length ? Array.from( args ) : [];
 		args.unshift( message );
 
-		console.log( `→ ${args} → ${ws.id ? ws.id : ''}` );
+		var encoded_message = encoding.encode( args );
 
-		ws.send( encoding.encode( args ) );
+		console.log( `→ ${args} → ${encoded_message}[${encoded_message.length}] → ${ws.id ? ws.id : ''}` );
+
+		ws.send( encoded_message );
 
 	},
 
@@ -26,15 +26,16 @@ const api = {
 	 * Recieve a message from the websocket.
 	 * @param {WebSocket} ws
 	 * @param {string} message
+	 * @param {object=api.client} api - API context (api.client|api.server)
 	 */
-	receive: ( ws, message ) => {
+	receive: ( ws, message, api = api.client ) => {
 
 		var encoded_message = ( typeof window === 'undefined' ) ?
 			message.buffer.slice( message.byteOffset, message.byteOffset + message.byteLength ) :
 			message.data;
 		var decoded_message = encoding.decode( encoded_message );
 
-		console.log( `← ${decoded_message}${ws ? ' ← ' + ws.id : ''}` );
+		console.log( `← ${decoded_message}${ws.id ? ' ← ' + ws.id : ''}` );
 
 		if ( ! Array.isArray( decoded_message ) ) return;
 
@@ -44,83 +45,113 @@ const api = {
 
 	},
 
-	/**
-	 * Receive a connected response from server. ( server -> client )
-	 * @param {WebSocket} ws
-	 * @param {string} name
-	 * @param {string} session
-	 */
-	connected: ( ws, name, session ) => {
 
-		console.log( "API: No listener for 'connected'" );
+	client: {
 
-	},
+		/**
+	     * Receive a connected response.
+	     * @param {WebSocket} ws
+	     * @param {string} name
+	     * @param {string} session
+	     */
+		connected: ( ws, name, session ) => no_listener,
 
-	/**
-	 * Receive an identity response. ( server <-> client )
-	 * @param {WebSocket} ws
-	 * @param {string} name
-	 * @param {string=} err
-	 */
-	ident: ( ws, name, err ) => {
+		/**
+	     * Receive an identity response.
+	     * @param {WebSocket} ws
+	     * @param {string} name - Name server identifies client as
+	     * @param {string=} err - Error message on error
+	     */
+		ident: ( ws, name, err ) => no_listener,
 
-		console.log( "API: No listener for 'ident'" );
+		/**
+	     * Receive a disconnected message.
+	     * @param {WebSocket} ws
+	     * @param {string} name - Name of client disconnected
+	     */
+		disconnected: ( ws, name ) => no_listener,
 
-	},
+		/**
+	     * Receive a welcome response.
+	     * @param {WebSocket} ws
+	     * @param {string} name - Name of client being welcomed
+	     */
+		welcome: ( ws, name ) => no_listener,
 
-	/**
-	 * Receive a disconnected message from server. ( server -> client )
-	 * @param {WebSocket} ws
-	 * @param {string} name
-	 */
-	disconnected: ( ws, name ) => {
+		/**
+	     * Receive an error message.
+	     * @param {WebSocket} ws
+	     * @param {string} message
+	     */
+		error: ( ws, message ) => no_listener,
 
-		console.log( "API: No listener for 'disconnected'" );
+		/**
+	     * Receive a success message.
+	     * @param {WebSocket} ws
+	     * @param {string} message
+	     */
+		success: ( ws, message ) => no_listener,
 
-	},
-
-	/**
-	 * Receive a welcome response from server. ( server -> client )
-	 * @param {string} name
-	 */
-	welcome( ws, name ) {
-
-		console.log( "API: No listener for 'welcome'" );
-
-	},
-
-	/**
-	 * Receive a login message. ( server <-> client )
-	 * @param {string} name
-	 */
-	login( ws, name, password ) {
-
-		console.log( "API: No listener for 'login'" );
-
-	},
-
-	/**
-	 * Receive an error message from server. ( server -> client )
-	 * @param {string} message
-	 */
-	error( ws, message ) {
-
-		this.write( message );
+		/**
+	     * Receive a say message.
+	     * @param {WebSocket} ws
+	     * @param {string} message
+	     * @param {string=} author - Author of say
+	     */
+		say: ( ws, message, author ) => no_listener,
 
 	},
 
-	/**
-	 * Receive a success message from server. ( server -> client )
-	 * @param {string} message
-	 */
-	success( ws, message ) {
+	server: {
 
-		this.write( message );
+		/**
+		 * Receive an identity request.
+	     * @param {WebSocket} ws
+	     * @param {string} name - Name client wishes to be identified as
+	     */
+		ident: ( ws, name ) => no_listener,
 
-	},
 
+		/**
+		 * Receive a say message.
+    	 * @param {WebSocket} ws
+    	 * @param {string} message
+    	 */
+		say: ( ws, message ) => no_listener,
+
+		/**
+    	 * Receive a register request.
+    	 * @param {WebSocket} ws
+    	 * @param {string} name
+     	 * @param {string} password
+    	 */
+		register: ( ws, name, password ) => no_listener,
+
+		/**
+    	 * Receive a login request.
+    	 * @param {WebSocket} ws
+    	 * @param {string} name
+    	 * @param {string} password
+    	 */
+		login: ( ws, name, password ) => no_listener,
+
+		/**
+    	 * Receive a logout request.
+    	 * @param {WebSocket} ws
+    	 */
+		logout: ( ws ) => no_listener,
+
+	}
 
 };
+
+
+
+function no_listener() {
+
+	console.log( `API: No listener for '${no_listener.caller}'` );
+
+}
 
 
 export default api;

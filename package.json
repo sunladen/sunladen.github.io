@@ -1,26 +1,27 @@
 {
-    "name": "ws.chat.server",
-    "version": "0.1.0",
-    "description": "WebSocket chat server",
-    "main": "server.js",
-    "scripts": {
-        "start": "export $(cat .env | xargs) && node server.mjs",
-        "check": "ncu -u"
-    },
-    "author": "sunladen",
-    "license": "MIT",
-    "engines": {
-        "node": "14.x"
-    },
-    "repository": {
-        "url": "https://github.com/sunladen/sunladen.git"
-    },
-    "dependencies": {
-        "sqlite3": "^5.0.2",
-        "ws": "^7.4.6"
-    },
-    "devDependencies": {
-        "eslint": "^7.27.0",
-        "eslint-config-mdcs": "^5.0.0"
-    }
+	"name": "ws.chat.server",
+	"version": "0.1.0",
+	"description": "WebSocket chat server",
+	"main": "server.js",
+	"scripts": {
+		"start": "export $(cat .env | xargs) && node server.mjs",
+		"check": "ncu -u"
+	},
+	"author": "sunladen",
+	"license": "MIT",
+	"engines": {
+		"node": "14.x"
+	},
+	"repository": {
+		"url": "https://github.com/sunladen/sunladen.git"
+	},
+	"dependencies": {
+		"sqlite3": "^5.0.2",
+		"ws": "^7.4.6"
+	},
+	"devDependencies": {
+		"npm-check-updates": "^11.5.13",
+		"eslint": "^7.27.0",
+		"eslint-config-mdcs": "^5.0.0"
+	}
 }

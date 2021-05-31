@@ -1,3 +1,32 @@
+const common_words = [ 'connected', 'Guest-', 'ident', 'welcome', 'error', 'success', 'say', 'disconnected', 'register', 'login', 'logout' ];
+const tokens = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.split( '' );
+const re_common_words = new RegExp( `(${common_words.join( '|' )})`, 'g' );
+const re_tokens = new RegExp( '\\$[\\w]', 'g' );
+const word_to_token_map = {};
+const token_to_word_map = {};
+
+for ( var i = 0; i < common_words.length; i ++ ) {
+
+	var word = common_words[ i ];
+	var token = `$${tokens.shift()}`;
+	word_to_token_map[ word ] = token;
+	token_to_word_map[ token ] = word;
+
+}
+
+function word_to_token( word ) {
+
+	return word_to_token_map[ word ];
+
+}
+
+function token_to_word( token ) {
+
+	return token_to_word_map[ token ];
+
+}
+
+
 function encode( value ) {
 
 	var type = typeof value;
@@ -91,6 +120,9 @@ function encode( value ) {
 		return buf;
 
 	}
+
+	// compress string by replacing common words with tokens
+	string_value = string_value.replace( re_common_words, word_to_token );
 
 	var length = string_value.length;
 
@@ -206,7 +238,9 @@ function decode( arraybuffer ) {
 		var value = String.fromCharCode.apply( null, uint8array.subarray( i, i + length ) );
 
 		arraybuffer._offset += length;
-		return value;
+
+		// return uncompressed replacement of tokens to words
+		return value.replace( re_tokens, token_to_word );
 
 	}
 

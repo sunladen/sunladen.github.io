@@ -1,5 +1,3 @@
-'use strict';
-
 import WebSocket from 'ws';
 import http from 'http';
 import fs from 'fs';
@@ -26,7 +24,7 @@ const dbpath = `${datapath}/sqlite.db`;
 var wss;
 
 
-api.ident = ( ws, id, err ) => {
+api.server.ident = ( ws, id ) => {
 
 	if ( ! nameIsValid( ws, id, true ) ) return;
 
@@ -52,14 +50,13 @@ api.ident = ( ws, id, err ) => {
 
 	api.send( ws, 'ident', id, err );
 
-	if ( welcome ) broadcast( null, [ 'welcome', id ] );
+	if ( welcome ) broadcast( null, 'welcome', id );
 
 };
 
 
 
-
-requests.say = ( ws, message ) => {
+api.server.say = ( ws, message ) => {
 
 	// remove XML/HTML markup from message
 	message = message.replace( re_tags, '' );
@@ -71,45 +68,49 @@ requests.say = ( ws, message ) => {
 
 	} );
 
-	broadcast( null, [ 'say', message, ws.id ] );
+	broadcast( null, 'say', message, ws.id );
 
 };
 
 
 
-
-requests.register = async ( ws, name, password ) => {
+api.server.register = async ( ws, name, password ) => {
 
 	if ( ! await nameIsValid( ws, name ) ) return;
 
 	await db.createAccount( name, password );
 
-	send( ws, [ 'success', `Successfully registered. Login to continue as '${name}'.` ] );
+	api.send( ws, 'success', `Successfully registered. Login to continue as '${name}'.` );
 
 };
 
 
 
+api.server.login = async ( ws, name, password ) => {
 
-requests.login = async ( ws, name, password ) => {
+	console.log( '1' );
 
-	if ( ws_identified.hasOwnProperty( name ) ) {
+	if ( ws_identified.hasOwnProperty( name ) ) return api.send( ws, 'error', `Name '${name}' already logged in` );
 
-		return send( ws, [ 'error', `Name '${name}' already logged in` ] );
-
-	}
+	console.log( '2' );
 
 	var account = await db.accountByName( name );
 
-	if ( ! account ) return send( ws, [ 'error', 'Invalid username or password (1)' ] );
+	console.log( '3' );
+	if ( ! account ) return api.send( ws, 'error', 'Invalid username or password' );
 
+	console.log( '4' );
 	var hash = crypto.createHmac( 'sha512', account.salt ).update( password ).digest( 'hex' );
 
-	if ( hash !== account.hash ) return send( ws, [ 'error', 'Invalid username or password (2)' ] );
+	console.log( '5' );
+	if ( hash !== account.hash ) return api.send( ws, 'error', 'Invalid username or password' );
 
+	console.log( '6' );
 	if ( ws_connection.hasOwnProperty( ws.id ) ) delete ws_connection[ ws.id ];
 	if ( ws_identified.hasOwnProperty( ws.id ) ) delete ws_identified[ ws.id ];
 	if ( known_names.hasOwnProperty( ws.id ) ) delete known_names[ ws.id ];
+
+	console.log( 'here' );
 
 	ws.id = name;
 
@@ -118,43 +119,38 @@ requests.login = async ( ws, name, password ) => {
 	ws_loggedin[ ws.id ] = ws;
 	known_names[ ws.id ] = null;
 
-	api.send( ws, 'ident', ws.id );
-	broadcast( null, [ 'welcome', id ] );
+	api.send( ws, 'ident', name );
+	broadcast( null, 'welcome', name );
 
 };
 
 
 
-requests.logout = async ( ws ) => {
+api.server.logout = async ( ws ) => {
 
-	if ( ! ws_loggedin.hasOwnProperty( ws.id ) ) return send( ws, [ 'error', `Not logged in` ] );
+	if ( ! ws_loggedin.hasOwnProperty( ws.id ) ) return api.send( ws, 'error', `Not logged in` );
+
+	delete ws_sessions[ ws.session_id ];
+	delete ws_connection[ ws.id ];
+	delete ws_identified[ ws.id ];
+	delete ws_loggedin[ ws.id ];
+
+	ws.terminate();
 
 };
 
 
 
-function send( ws, message ) {
+function broadcast( ws, message, ...args ) {
 
-	console.log( `${ws.id} -> `, message );
+	args = args.length ? Array.from( args ) : [];
+	args.unshift( message );
 
-	ws.send( encoding.encode( message ) );
+	console.log( `${ws ? ws.id + ' ' : ''}→ ${args} → broadcast` );
 
-}
+	var encoded_message = encoding.encode( args );
 
-
-
-function broadcast( origin_ws, message ) {
-
-	var origin_id = origin_ws ? origin_ws.id : '';
-	var encoded_message = encoding.encode( message );
-
-	console.log( `${origin_id} -> broadcast`, message );
-
-	wss.clients.forEach( ws => {
-
-		if ( ws !== origin_ws ) ws.send( encoded_message );
-
-	} );
+	wss.clients.forEach( _ws => ws !== _ws && _ws.send( encoded_message ) );
 
 }
 
@@ -167,14 +163,14 @@ async function nameIsValid( ws, name, self_identity ) {
 
 	if ( name.length < 3 ) {
 
-		send( ws, [ 'error', `Name '${name}' not long enough, must be between 3 and 12 characters` ] );
+		api.send( ws, 'error', `Name '${name}' not long enough, must be between 3 and 12 characters` );
 		return false;
 
 	}
 
 	if ( name.length > 12 ) {
 
-		send( ws, [ 'error', `Name '${name}' too long, must be between 3 and 12 characters` ] );
+		api.send( ws, 'error', `Name '${name}' too long, must be between 3 and 12 characters` );
 		return false;
 
 	}
@@ -183,7 +179,7 @@ async function nameIsValid( ws, name, self_identity ) {
 
 		if ( name.toLowerCase().indexOf( blacklisted_names[ i ] ) > - 1 ) {
 
-			send( ws, [ 'error', `Name '${name}' not available` ] );
+			api.send( ws, 'error', `Name '${name}' not available` );
 			return false;
 
 		}
@@ -194,14 +190,14 @@ async function nameIsValid( ws, name, self_identity ) {
 
 	if ( ws_identified.hasOwnProperty( name ) ) {
 
-		send( ws, [ 'error', `Name '${name}' not available` ] );
+		api.send( ws, 'error', `Name '${name}' not available` );
 		return false;
 
 	}
 
 	if ( await db.accountByName( name ) ) {
 
-	    send( ws, [ 'error', `Name '${name}' not available` ] );
+	    api.send( ws, 'error', `Name '${name}' not available` );
 		return false;
 
 	}
@@ -224,7 +220,7 @@ if ( ! fs.existsSync( datapath ) ) fs.mkdirSync( datapath );
 	process.on( "SIGINT", () => {
 
 		console.log( "SIGINT received, stopping..." );
-		broadcast( null, [ 'say', null, 'Server shut down' ] );
+		broadcast( null, 'say', 'Server shut down' );
 		db.close();
 		process.exit();
 
@@ -235,21 +231,25 @@ if ( ! fs.existsSync( datapath ) ) fs.mkdirSync( datapath );
 
 		if ( "GET" === req.method ) {
 
-			var content = "";
+			var content;
 
 			try {
 
 				var filepath = "." + ( ( "/" === req.url ) ? "/index.html" : req.url );
 
-				content = fs.readFileSync( filepath );
+				content = fs.readFileSync( filepath, 'binary' );
 
 				res.writeHead( 200, {
 					"Content-Type": {
-						html: "text/html",
-						js: "text/javascript",
-						mjs: "text/javascript",
-						css: "text/css",
-						json: "application/json"
+						html: 'text/html',
+						js: 'text/javascript',
+						mjs: 'text/javascript',
+						css: 'text/css',
+						json: 'application/json',
+						jpeg: 'image/jpeg',
+						jpg: 'image/jpg',
+						png: 'image/png',
+						svg: 'image/svg+xml'
 					}[ filepath.split( "." ).pop().toLowerCase() ] || "text/*"
 				} );
 
@@ -259,7 +259,8 @@ if ( ! fs.existsSync( datapath ) ) fs.mkdirSync( datapath );
 
 			}
 
-			return res.end( content, "utf-8" );
+			res.write( content, "binary" );
+			res.end();
 
 		}
 
@@ -307,7 +308,7 @@ if ( ! fs.existsSync( datapath ) ) fs.mkdirSync( datapath );
 
 		} );
 
-		ws.on( 'message', message => api.receive( ws, message ) );
+		ws.on( 'message', message => api.receive( ws, message, api.server ) );
 
 		if ( ws_identified.hasOwnProperty( ws.id ) ) {
 
@@ -322,7 +323,7 @@ if ( ! fs.existsSync( datapath ) ) fs.mkdirSync( datapath );
 
 		}
 
-		send( ws, [ 'connected', ws.id, ws.session_id ] );
+		api.send( ws, 'connected', ws.id, ws.session_id );
 
 	} );
 
@@ -364,7 +365,7 @@ if ( ! fs.existsSync( datapath ) ) fs.mkdirSync( datapath );
 				if ( ws_loggedin.hasOwnProperty( id ) ) delete ws_loggedin[ id ];
 
 				console.log( `${ws.id} disconnected, ${id}` );
-				broadcast( ws, [ 'disconnected', id ] );
+				broadcast( ws, 'disconnected', id );
 
 				ws.terminate();
 

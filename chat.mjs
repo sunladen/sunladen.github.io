@@ -74,16 +74,16 @@ export default class Chat {
 			args: { name: [], re: [] }
 		} );
 
-		api.connected = ( ws, name, session ) => {
+		api.client.connected = ( ws, name, session ) => {
 
 			localStorage.setItem( 'session', this.id.session = session );
 			this.dom.name.textContent = this.id.name || name;
 			this.known_names[ this.id.name || name ] = null;
-			api.send( this.ws, 'ident', this.id.name || name );
+			api.send( ws, 'ident', this.id.name || name );
 
 		};
 
-		api.ident = ( ws, name, err ) => {
+		api.client.ident = ( ws, name, err ) => {
 
 			localStorage.setItem( 'name', this.id.name = name );
 			this.dom.name.textContent = name;
@@ -92,32 +92,20 @@ export default class Chat {
 
 		};
 
-	    api.disconnected = ( ws, name ) => {
-
-			this.write( `@${name} disconnected` );
-
-		};
-
-	    api.welcome = ( name ) => {
+	    api.client.welcome = ( ws, name ) => {
 
 			this.known_names[ name ] = null;
 
+			console.log( `Welcome @${name}` );
+
 			! this.muted.hasOwnProperty( name ) && this.write( `Welcome @${name}` );
 
-		},
-
-	    api.error = ( message ) => {
-
-			this.write( message );
-
 		};
 
-
-		api.success = ( message ) => {
-
-			this.write( message );
-
-		};
+	    api.client.disconnected = ( ws, name ) => this.write( `@${name} disconnected` );
+	    api.client.error = ( ws, message ) => this.write( message );
+		api.client.success = ( ws, message ) => this.write( message );
+		api.client.say = ( ws, message, author ) => this.write( message, author );
 
 
 		this.dom = {};
@@ -125,11 +113,13 @@ export default class Chat {
 		this.dom.history = E( 'div', 'ws-chat-history', null, this.dom.chat );
 		this.dom.bar = E( 'div', 'ws-chat-bar', null, this.dom.chat );
 		this.dom.name = E( 'span', 'ws-chat-name', 'name', this.dom.bar );
+		this.dom.namedivider = E( 'span', 'ws-chat-divider', '', this.dom.bar );
 
 		this.dom.input = E( 'input', 'ws-chat-input', null, this.dom.bar );
 		this.dom.input.setAttribute( 'type', 'text' );
 		this.dom.input.addEventListener( 'focus', () => this.focus() );
 		this.dom.input.addEventListener( 'keydown', e => e.key === 'Tab' && e.preventDefault() );
+
 		this.dom.input.addEventListener( 'keyup', e => {
 
 			var key = e.key;
@@ -171,7 +161,6 @@ export default class Chat {
 
 			this.history.push( message );
 			while ( this.history.length > 30 ) this.history.shift();
-			console.log( JSON.stringify( this.history ) );
 		    localStorage.setItem( 'input_history', JSON.stringify( this.history ) );
 
 			this.history_index = this.history.length;
@@ -180,7 +169,7 @@ export default class Chat {
 			if ( message === '' ) return;
 
 			if ( ! message.startsWith( '/' ) )
-				return this.say( message );
+				return api.send( this.ws, 'say', message );
 
 			for ( var command in this.commands ) {
 
@@ -224,7 +213,7 @@ export default class Chat {
 		this.ws.binaryType = 'arraybuffer';
 		this.ws.onopen = () => {};
 
-		this.ws.onmessage = message => api.receive( this.ws, message );
+		this.ws.onmessage = message => api.receive( this.ws, message, api.client );
 		this.ws.onclose = () => this.ws = null;
 		this.ws.onerror = e => console.log( e ) || ( this.ws = null );
 
@@ -281,7 +270,7 @@ export default class Chat {
 		if ( author ) {
 
 			this.known_names[ author ] = null;
-			div.innerHTML = markup( 'name', author );
+			div.innerHTML = `${markup( 'name', author )}: `;
 
 		}
 
@@ -302,12 +291,6 @@ export default class Chat {
 
 	}
 
-
-	say( message, author ) {
-
-		author ? this.write( message, author ) : api.send( this.ws, 'say', message );
-
-	}
 
 
 	mute( name ) {
@@ -382,7 +365,7 @@ export default class Chat {
 
 			args = Array.from( ...args );
 			args[ 0 ] = command;
-			api.send( this.ws, args );
+			api.send( this.ws, ...args );
 
 		};
 
@@ -402,11 +385,10 @@ window.CHAT = {
 		var hover = E( 'div', 'ws-chat-mention-hover ws-chat-font', null, document.body );
 		hover.style.left = `calc(${mouse.x}px - 1em)`;
 		hover.style.top = `calc(${mouse.y}px - 1em)`;
-		hover.addEventListener( 'mouseleave', () => hover.remove() );
 
 		E( 'div', 'ws-chat-mention', name, hover );
 
-
+		mention_hovers.push( hover );
 
 	}
 
@@ -445,6 +427,14 @@ function mousetrack( e ) {
 
 	} );
 
+	mention_hovers.forEach( hover => {
+
+		var bcr = hover.getBoundingClientRect();
+		( x < bcr.left || x > bcr.right || y < bcr.top || y > bcr.bottom ) && hover.remove();
+
+
+	} );
+
 }
 
 
@@ -453,7 +443,7 @@ function markup( type, ...args ) {
 	switch ( type ) {
 
 		case 'name':
-			return `<span onmouseover="CHAT.mouseOverMention(this)" class="ws-chat-mention">${args[ 0 ]}</span>: `;
+			return `<span onmouseover="CHAT.mouseOverMention(this)" class="ws-chat-mention">${args[ 0 ]}</span>`;
 		default:
 			console.log( `Warning: Unregonised markup type '${type}'` );
 
@@ -463,6 +453,7 @@ function markup( type, ...args ) {
 
 
 const instances = [];
+const mention_hovers = [];
 const mouse = { x: 0, y: 0 };
 
 
