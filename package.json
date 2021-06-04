@@ -4,7 +4,7 @@
 	"description": "WebSocket chat server",
 	"main": "server.js",
 	"scripts": {
-		"start": "export $(cat .env | xargs) && node server.mjs",
+		"start": "export $(grep -v '^\s*#' .env | xargs) && node server.mjs",
 		"check": "ncu -u"
 	},
 	"author": "sunladen",
