@@ -11,7 +11,7 @@ class World {
 		this.scene.background = new THREE.Color( 'red' );
 
 		this.camera = new THREE.PerspectiveCamera( 75, null, 0.1, 1000 );
-		this.camera.position.set( 0, 0, 50 );
+		this.camera.position.set( 0, 0, 10 );
 		this.camera.lookAt( 0, 0, 0 );
 
 
@@ -20,6 +20,7 @@ class World {
 		this.renderer.outputEncoding = THREE.sRGBEncoding;
 		this.renderer.shadowMap.enabled = true;
 		this.renderer.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
+		this.renderer.setPixelRatio( window.devicePixelRatio );
 		this.renderer.setSize( window.innerWidth, window.innerHeight );
 
 		this.container = container;
@@ -63,8 +64,7 @@ class World {
 		this.scene.add( new THREE.CameraHelper( this.directionalLight.shadow.camera ) );
 
 		this.ground = new Ground( width, height );
-		this.scene.add( this.ground.mesh );
-
+		this.scene.add( this.ground );
 
 		this.render();
 
@@ -81,8 +81,6 @@ class World {
 
 	render() {
 
-		this.directionalLight.position.copy( this.camera.position );
-
 		this.renderer.render( this.scene, this.camera );
 
 		requestAnimationFrame( this.render.bind( this ) );
@@ -90,6 +88,44 @@ class World {
 	}
 
 }
+
+
+
+const cubeGeometry = new THREE.BoxGeometry( 1, 1, 1 );
+
+let txt = [];
+txt.push( 'abcdefghijklmnop' );
+txt.push( 'qrtsuvwxyzABCDEF' );
+txt.push( 'GHIJKLMNOPQRSTUV' );
+txt.push( 'WXYZ0123456789`~' );
+txt.push( "!@#$%^&*()_+=[]'" );
+txt.push( '{};:"<>/?░▚▼►▲◄' );
+
+const ctx = document.createElement( 'canvas' ).getContext( '2d' );
+ctx.canvas.width = 512;
+ctx.canvas.height = 512;
+ctx.fillStyle = '#fff';
+ctx.fillRect( 0, 0, ctx.canvas.width, ctx.canvas.height );
+
+const fontSize = 40;
+ctx.font = `${fontSize}pt monospace`;
+ctx.fillStyle = "#000000";
+ctx.textAlign = "left";
+ctx.textBaseline = "top";
+
+for ( let i = 0; i < txt.length; i ++ ) {
+
+	ctx.fillText( txt[ i ], 0, ( fontSize + 8 ) * i );
+
+}
+
+const texture = new THREE.Texture( ctx.canvas );
+texture.needsUpdate = true;
+
+const material = new THREE.MeshPhongMaterial( { map: texture } );
+material.color.convertSRGBToLinear();
+
+
 
 
 
@@ -113,38 +149,42 @@ class CanvasPlane {
 		this.geometry = new THREE.PlaneGeometry( width, height, widthSegments, heightSegments );
 		this.material = new THREE.MeshPhongMaterial( { map: this.texture } );
 		this.material.color.convertSRGBToLinear();
-		this.mesh = new THREE.Mesh( this.geometry, this.material );
-		this.mesh.castShadow = true;
-		this.mesh.receiveShadow = true;
+		this.object = new THREE.Mesh( this.geometry, this.material );
+		this.object.castShadow = true;
+		this.object.receiveShadow = true;
 
 	}
 
 }
 
 
-class Ground extends CanvasPlane {
+class Ground extends THREE.Object3D {
 
 	constructor( width, depth ) {
 
-		super( width, depth, width, depth );
+		super();
 
-		this.vertices = this.geometry.attributes.position;
+		var halfWidth = width * 0.5;
+		var halfDepth = depth * 0.5;
+		var heightVariance = 2;
 
-		const d = 1;
+		for ( var y = - halfDepth; y <= halfDepth; y ++ ) {
 
-		for ( var i = 0; i < this.vertices.count; i ++ ) {
+			for ( var x = - halfWidth; x <= halfWidth; x ++ ) {
 
-			var x = this.vertices.getX( i );
-			var y = this.vertices.getY( i );
-			var z = this.vertices.getZ( i );
+				var sprite = new THREE.Mesh( cubeGeometry, material );
+				sprite.castShadow = true;
+				sprite.receiveShadow = true;
 
-			z += - d * 0.5 + ( Math.random() >= 0.5 ? d : 0 );
+				var z = - heightVariance * 0.5 + ( Math.random() * heightVariance );
 
-			this.vertices.setXYZ( i, x, y, z );
+				sprite.position.set( x, y, z );
+
+				this.add( sprite );
+
+			}
 
 		}
-
-		this.geometry.verticesNeedUpdate = true;
 
 	}
 
