@@ -1,0 +1,132 @@
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
+input::-webkit-input-placeholder {
+    color:    white;
+    opacity:  1;
+}
+
+input:-moz-placeholder {
+    color:    white;
+    opacity:  1;
+}
+
+input::-moz-placeholder {
+    color:    white;
+    opacity:  1;
+}
+
+input.:-moz-placeholder {
+    color:    white;
+    opacity:  1;
+}
+
+.ws-chat-font {
+    font-family: 'Courier New', monospace;
+    font-size: 16pt;
+}
+
+.ws-chat {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    max-height: 100%;
+    min-width: 10em;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+    color: #aaa;
+    border-radius: 5px;
+}
+
+.ws-chat-history {
+    flex: 1;
+    word-wrap: break-word;
+    width: 100%;
+    height: 100%;
+    overflow-y: scroll;
+    padding-left: 0.5em;
+    padding-right: 17px;
+    box-sizing: content-box;
+}
+
+.ws-chat-bar {
+    display: flex;
+    width: 100%;
+    max-height: 1.5em;
+    min-height: 1.5em;
+    background: #333;
+}
+
+.ws-chat-name {
+    background: orange;
+    color: #333;
+    line-height: 1.5em;
+    padding-left: 0.5em;
+}
+.ws-chat-divider {
+	width: 0;
+	height: 0;
+	border-top: 0.8em solid transparent;
+	border-bottom: 0.8em solid transparent;
+	border-left: 0.5em solid orange;
+}
+.ws-chat-input {
+    flex: 2;
+    border: 0;
+    border-radius: 5px;
+    outline: none;
+    overflow-x: hidden;
+    font-family: inherit;
+    font-size: inherit;
+    color: white;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+    background: none;
+}
+
+.ws-chat-message {
+    min-height: 0;
+    border-radius: 5px;
+}
+
+.ws-chat-timestamp {
+    color: #aaa;
+    margin-right: 0.5em;
+}
+
+.ws-chat-system-message {
+    color: #50BAFE;
+}
+
+.ws-chat-error-message {
+    color: #f04944;
+}
+
+.ws-chat-success-message {
+    color: #8ef56e;
+}
+
+.ws-chat-mention-hover {
+    position: absolute;
+    background: rgb(40,40,40);
+    color: white;
+    border-radius: 5px;
+    min-height: 1.5em;
+    min-width: 5em;
+    padding: 5px;
+    cursor: pointer;
+}
+
+.ws-chat-mention-hover-name {
+    color: orange;
+}
+
+.ws-chat-mention {
+    color: orange;
+    cursor: pointer;
+}
+
