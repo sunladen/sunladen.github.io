@@ -1,10 +1,10 @@
 {
-	"name": "ws.chat.server",
+	"name": "sunladen",
 	"version": "0.1.0",
-	"description": "WebSocket chat server",
-	"main": "server.js",
+	"description": "WebSocket PBBG game",
+	"main": "private/server.js",
 	"scripts": {
-		"start": "export $(grep -v '^\\s*#' .env | xargs) && node server.mjs",
+		"start": "export $(grep -v '^\\s*#' .env | xargs) && cd private && node server.mjs",
 		"check": "ncu -u"
 	},
 	"author": "sunladen",
