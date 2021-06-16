@@ -1,6 +1,9 @@
 html, body {
     height: 100%;
     margin: 0;
+    overflow: hidden;
+    font-family: 'Courier New', monospace;
+    font-size: 32pt;
 }
 
 input::-webkit-input-placeholder {
@@ -21,11 +24,6 @@ input::-moz-placeholder {
 input.:-moz-placeholder {
     color:    white;
     opacity:  1;
-}
-
-.ws-chat-font {
-    font-family: 'Courier New', monospace;
-    font-size: 16pt;
 }
 
 .ws-chat {
@@ -130,3 +128,18 @@ input.:-moz-placeholder {
     cursor: pointer;
 }
 
+
+
+
+
+
+
+.entity {
+    border: 1px solid transparent;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.entity:hover {
+    border: 1px solid yellow;
+}
