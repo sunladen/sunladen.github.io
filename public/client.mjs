@@ -2,56 +2,81 @@ import Chat from './chat.mjs';
 
 const fontSize = 32;
 
-class World {
+class Layer {
 
-	constructor() {
+	constructor( columns ) {
 
-		this.entities = [];
+		this.columns = columns;
+		this.chr = [];
+
 		this.dom = document.createElement( 'div' );
-		document.body.append( this.dom );
-		this.dom.style.fontSize = `${fontSize}px`;
 		this.dom.style.position = 'absolute';
-		this.dom.style.left = `${window.innerWidth * 0.5}px`;
-		this.dom.style.top = `${window.innerHeight * 0.5}px`;
+		this.dom.style.fontSize = `${100 / columns}vw`;
+		this.dom.style.height = '100%';
+
+		document.body.append( this.dom );
+
+		var chr;
+
+		for ( var x = 0; x < columns; x ++ ) {
+
+			this.chr[ x ] = [];
+			chr = this.chr[ x ][ 0 ] = document.createElement( 'div' );
+			chr.style.display = 'inline-block';
+			chr.style.margin = '0';
+			chr.style.padding = '0';
+			chr.style.border = '0px solid grey';
+			chr.style.width = `${100 / columns}vw`;
+			chr.textContent = '·'; //'｜'; '▢'; '·';
+			this.dom.append( chr );
+
+		}
+
+		this.resize();
 
 		var self = this;
 
-		window.addEventListener( 'resize', () => self.refreshVisibility(), false );
+		window.addEventListener( 'resize', () => self.resize(), false );
 
 	}
 
-	add( entity, x = 0, y = 0 ) {
+	set( x, y, chr ) {
 
-		this.entities.push( entity );
-		this.dom.append( entity.dom );
-		entity.setXY( x, y );
-		entity.dom.style.display = this.outsideViewport( entity ) ? 'none' : 'block';
+		this.chr[ x ][ y ].textContent = chr;
 
 	}
 
-	outsideViewport( entity ) {
+	resize() {
 
-		var rect = entity.dom.getBoundingClientRect();
+		var chr = this.chr[ 0 ][ 0 ];
+		var divs = window.innerHeight / chr.offsetHeight;
 
-		return ( rect.top > window.innerHeight || rect.left > window.innerWidth || rect.bottom < 0 || rect.right < 0 );
+		this.rows = Math.ceil( divs );
 
-	}
+		this.dom.style.marginTop = `${( divs - this.rows ) * chr.offsetHeight}px`;
 
-	refreshVisibility() {
+		for ( var y = 1; y < this.rows; y ++ ) {
 
-		this.dom.style.left = `${window.innerWidth * 0.5}px`;
-		this.dom.style.top = `${window.innerHeight * 0.5}px`;
+			if ( this.chr[ 0 ][ y ] ) continue;
 
-		for ( var i = 0; i < this.entities.length; i ++ ) {
+			for ( var x = this.columns - 1; x >= 0; x -- ) {
 
-			var entity = this.entities[ i ];
-			entity.dom.style.display = this.outsideViewport( entity ) ? 'none' : 'block';
+				chr = this.chr[ x ][ y ] = document.createElement( 'div' );
+				chr.style.display = 'inline-block';
+				chr.style.border = '0px solid grey';
+				chr.style.width = `${100 / this.columns}vw`;
+				chr.textContent = '·'; //'｜'; '▢'; '·';
+				this.dom.insertBefore( chr, this.dom.firstChild );
+
+			}
 
 		}
 
 	}
 
 }
+
+
 
 class Entity {
 
@@ -87,24 +112,22 @@ class Player extends Entity {
 }
 
 
-const world = new World();
+//const layer0 = new Layer( 80 );
 
-for ( var y = - fontSize * 20; y <= fontSize * 20; y += fontSize ) {
+//for ( var y = 0; y <= 20; y ++ ) {
+//
+//	for ( var x = 0; x <= 80; x ++ ) {
+//
+//		layer0.set( x, y, '·' );
+//
+//	}
+//
+//}
 
-	for ( var x = - fontSize * 20; x <= fontSize * 20; x += fontSize ) {
-
-		var entity = new Entity( '⬛' );//🟫' );
-		world.add( entity, x, y );
-
-	}
-
-}
-
-var entity = new Player( 'You' );
-world.add( entity );
+//var entity = new Player( 'You' );
+//world.add( entity );
 
 var host = location.host.startsWith( 'localhost' ) ? location.host : 'scandalous-antique-mosquito.glitch.me';
-const chat = new Chat( `${location.protocol.replace( 'http', 'ws' )}//${host}`, document.body );
-chat.focus();
+window.chat = new Chat( `${location.protocol.replace( 'http', 'ws' )}//${host}`, document.body );
 
 

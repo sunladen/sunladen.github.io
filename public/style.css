@@ -3,7 +3,7 @@ html, body {
     margin: 0;
     overflow: hidden;
     font-family: 'Courier New', monospace;
-    font-size: 32pt;
+    font-size: calc(100 / 80)vw;
 }
 
 input::-webkit-input-placeholder {
@@ -63,7 +63,6 @@ input.:-moz-placeholder {
     background: orange;
     color: #333;
     line-height: 1.5em;
-    padding-left: 0.5em;
 }
 .ws-chat-divider {
 	width: 0;

@@ -109,7 +109,7 @@ const api = {
 	     * @param {WebSocket} ws
 	     * @param {string} name - Name client wishes to be identified as
 	     */
-		ident: ( ws, name ) => no_listener,
+		ident: ( ws, name, session ) => no_listener,
 
 
 		/**

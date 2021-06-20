@@ -23,7 +23,7 @@ const dbpath = `${datapath}/sqlite.db`;
 var wss;
 
 
-api.server.ident = ( ws, id ) => {
+api.server.ident = ( ws, id, session ) => {
 
 	if ( ! nameIsValid( ws, id, true ) ) return;
 
@@ -34,10 +34,22 @@ api.server.ident = ( ws, id ) => {
 	var welcome = ! ws_identified.hasOwnProperty( id );
 	var err;
 
-	if ( welcome && ! id.startsWith( 'Guest-' ) ) {
+	if ( welcome ) {
 
-		err = `Not logged in as '${id}'`;
-		id = ws.id;
+		if ( ! id.startsWith( 'Guest-' ) ) {
+
+			err = `Not logged in as '${id}'`;
+			id = ws.id;
+
+		}
+
+	} else {
+
+		if ( ws_sessions[ session ] !== id ) {
+
+			return api.send( ws, 'error', `'${id}' not available` );
+
+		}
 
 	}
 
@@ -77,7 +89,7 @@ api.server.register = async ( ws, name, password ) => {
 
 	if ( ! await nameIsValid( ws, name ) ) return;
 
-	await db.createAccount( name, password );
+	await db.Account.create( name, password );
 
 	api.send( ws, 'success', `Successfully registered. Login to continue as '${name}'.` );
 
@@ -87,29 +99,42 @@ api.server.register = async ( ws, name, password ) => {
 
 api.server.login = async ( ws, name, password ) => {
 
-	console.log( '1' );
-
 	if ( ws_identified.hasOwnProperty( name ) ) return api.send( ws, 'error', `Name '${name}' already logged in` );
 
-	console.log( '2' );
+	var account = await db.Account.getByName( name );
 
-	var account = await db.accountByName( name );
-
-	console.log( '3' );
 	if ( ! account ) return api.send( ws, 'error', 'Invalid username or password' );
 
-	console.log( '4' );
 	var hash = crypto.createHmac( 'sha512', account.salt ).update( password ).digest( 'hex' );
 
-	console.log( '5' );
 	if ( hash !== account.hash ) return api.send( ws, 'error', 'Invalid username or password' );
 
-	console.log( '6' );
+	account.lastlogin = ( new Date() ).toISOString();
+
+	db.Account.save( account );
+
 	if ( ws_connection.hasOwnProperty( ws.id ) ) delete ws_connection[ ws.id ];
 	if ( ws_identified.hasOwnProperty( ws.id ) ) delete ws_identified[ ws.id ];
 	if ( known_names.hasOwnProperty( ws.id ) ) delete known_names[ ws.id ];
 
-	console.log( 'here' );
+	var character = await db.Character.getByAccountName( name );
+
+	if ( ! character ) {
+
+		character = await db.Character.getByName( ws.id );
+
+		if ( character ) {
+
+			character.accountName = name;
+			db.Character.save( character );
+
+		} else {
+
+			character = await db.Character.create( name, name );
+
+		}
+
+	}
 
 	ws.id = name;
 
@@ -174,6 +199,8 @@ async function nameIsValid( ws, name, self_identity ) {
 
 	}
 
+	if ( self_identity ) return true;
+
 	for ( var i = 0; i < blacklisted_names.length; i ++ ) {
 
 		if ( name.toLowerCase().indexOf( blacklisted_names[ i ] ) > - 1 ) {
@@ -185,8 +212,6 @@ async function nameIsValid( ws, name, self_identity ) {
 
 	}
 
-	if ( self_identity ) return true;
-
 	if ( ws_identified.hasOwnProperty( name ) ) {
 
 		api.send( ws, 'error', `Name '${name}' not available` );
@@ -194,7 +219,7 @@ async function nameIsValid( ws, name, self_identity ) {
 
 	}
 
-	if ( await db.accountByName( name ) ) {
+	if ( await db.Account.getByName( name ) ) {
 
 	    api.send( ws, 'error', `Name '${name}' not available` );
 		return false;
@@ -313,6 +338,8 @@ if ( ! fs.existsSync( datapath ) ) fs.mkdirSync( datapath );
 
 			console.log( `${ws.id} reconnected` );
 
+			api.send( ws, 'reconnected', ws.id );
+
 		} else {
 
 	    	ws_connection[ ws.id ] = ws;
@@ -320,9 +347,10 @@ if ( ! fs.existsSync( datapath ) ) fs.mkdirSync( datapath );
 	    	console.log( `${ws.id} connected` );
 	    	ws_sessions[ ws.session_id ] = ws.id;
 
+			api.send( ws, 'connected', ws.id, ws.session_id );
+
 		}
 
-		api.send( ws, 'connected', ws.id, ws.session_id );
 
 	} );
 

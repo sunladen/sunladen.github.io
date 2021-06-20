@@ -7,6 +7,9 @@ export default class Chat {
 
 		var self = this;
 
+
+		this.api = api;
+
 		this.id = {
 			name: localStorage.getItem( 'name' ),
 			session: localStorage.getItem( 'session' )
@@ -83,12 +86,20 @@ export default class Chat {
 
 		};
 
+		api.client.reconnected = ( ws, name ) => {
+
+			localStorage.setItem( 'name', this.id.name = name );
+			this.dom.name.textContent = name;
+			this.known_names[ name ] = null;
+
+		};
+
 		api.client.ident = ( ws, name, err ) => {
 
 			localStorage.setItem( 'name', this.id.name = name );
 			this.dom.name.textContent = name;
 			this.known_names[ name ] = null;
-			err && this.error( err );
+			err && this.write( err, '-error' );
 
 		};
 
@@ -154,37 +165,7 @@ export default class Chat {
 			// All other keys (except for Enter) have no special trigger
 			if ( key !== 'Enter' ) return;
 
-			// Enter key up - figure out what the message is (i.e. a normal say, or a command, etc...)
-
-			// Cleanse XML/HTML markup from message
-			message = message.replace( /(<([^>]+)>)/ig, '' ).trim();
-
-			this.history.push( message );
-			while ( this.history.length > 30 ) this.history.shift();
-		    localStorage.setItem( 'input_history', JSON.stringify( this.history ) );
-
-			this.history_index = this.history.length;
-			this.dom.input.value = '';
-
-			if ( message === '' ) return;
-
-			if ( ! message.startsWith( '/' ) ) {
-
-				if ( message === 'help' ) this.write( 'You are saying "help" to other players. Did you mean "/help" for a list of commands?', '-system' );
-				return api.send( this.ws, 'say', message );
-
-			}
-
-			for ( var command in this.commands ) {
-
-				var cmd = this.commands[ command ];
-				if ( ! cmd.re_cmd.test( message ) ) continue;
-				if ( cmd.re_args.test( message ) ) return cmd.exec( cmd.re_args.exec( message ) );
-				return this.write( `usage: /${command} &lt;${cmd.args.name.join( '&gt; &lt;' )}&gt;`, '-system' );
-
-			}
-
-			this.write( `Command '${message}' not found`, '-system' );
+			this.command( message );
 
 		} );
 
@@ -252,6 +233,44 @@ export default class Chat {
 		this.dom.history.style.color = '#333';
 		this.dom.chat.style.background = null;
 		this.dom.input.removeAttribute( 'placeholder' );
+
+	}
+
+
+	/**
+	 *
+	 */
+	command( message ) {
+
+		// Cleanse XML/HTML markup from message
+		message = message.replace( /(<([^>]+)>)/ig, '' ).trim();
+
+		this.history.push( message );
+		while ( this.history.length > 30 ) this.history.shift();
+		    localStorage.setItem( 'input_history', JSON.stringify( this.history ) );
+
+		this.history_index = this.history.length;
+		this.dom.input.value = '';
+
+		if ( message === '' ) return;
+
+		if ( ! message.startsWith( '/' ) ) {
+
+			if ( message === 'help' ) this.write( 'You are saying "help" to other players. Did you mean "/help" for a list of commands?', '-system' );
+			return api.send( this.ws, 'say', message );
+
+		}
+
+		for ( var command in this.commands ) {
+
+			var cmd = this.commands[ command ];
+			if ( ! cmd.re_cmd.test( message ) ) continue;
+			if ( cmd.re_args.test( message ) ) return cmd.exec( cmd.re_args.exec( message ) );
+			return this.write( `usage: /${command} &lt;${cmd.args.name.join( '&gt; &lt;' )}&gt;`, '-system' );
+
+		}
+
+		this.write( `Command '${message}' not found`, '-system' );
 
 	}
 
