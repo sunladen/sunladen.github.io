@@ -16,12 +16,12 @@
 		"url": "https://github.com/sunladen/sunladen.git"
 	},
 	"dependencies": {
-		"sqlite3": "^5.0.2",
-		"ws": "^7.4.6"
+		"better-sqlite3": "^7.4.1",
+		"ws": "^7.5.0"
 	},
 	"devDependencies": {
-		"eslint": "^7.28.0",
+		"eslint": "^7.29.0",
 		"eslint-config-mdcs": "^5.0.0",
-		"npm-check-updates": "^11.6.0"
+		"npm-check-updates": "^11.7.1"
 	}
 }

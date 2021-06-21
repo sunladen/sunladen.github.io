@@ -16,9 +16,6 @@ const ws_loggedin = {};
 const blacklisted_names = [ 'admin', 'system', 'sunladen' ];
 const known_names = [];
 
-const datapath = '../.data';
-const dbpath = `${datapath}/sqlite.db`;
-
 
 var wss;
 
@@ -85,11 +82,11 @@ api.server.say = ( ws, message ) => {
 
 
 
-api.server.register = async ( ws, name, password ) => {
+api.server.register = ( ws, name, password ) => {
 
-	if ( ! await nameIsValid( ws, name ) ) return;
+	if ( ! nameIsValid( ws, name ) ) return;
 
-	await db.Account.create( name, password );
+	db.Account.create( name, password );
 
 	api.send( ws, 'success', `Successfully registered. Login to continue as '${name}'.` );
 
@@ -97,11 +94,11 @@ api.server.register = async ( ws, name, password ) => {
 
 
 
-api.server.login = async ( ws, name, password ) => {
+api.server.login = ( ws, name, password ) => {
 
 	if ( ws_identified.hasOwnProperty( name ) ) return api.send( ws, 'error', `Name '${name}' already logged in` );
 
-	var account = await db.Account.getByName( name );
+	var account = db.Account.byName.get( name );
 
 	if ( ! account ) return api.send( ws, 'error', 'Invalid username or password' );
 
@@ -111,26 +108,26 @@ api.server.login = async ( ws, name, password ) => {
 
 	account.lastlogin = ( new Date() ).toISOString();
 
-	db.Account.save( account );
+	db.Account.update.run( account );
 
 	if ( ws_connection.hasOwnProperty( ws.id ) ) delete ws_connection[ ws.id ];
 	if ( ws_identified.hasOwnProperty( ws.id ) ) delete ws_identified[ ws.id ];
 	if ( known_names.hasOwnProperty( ws.id ) ) delete known_names[ ws.id ];
 
-	var character = await db.Character.getByAccountName( name );
+	var character = db.Character.byAccountName.get( name );
 
 	if ( ! character ) {
 
-		character = await db.Character.getByName( ws.id );
+		character = db.Character.byName.get( ws.id );
 
 		if ( character ) {
 
 			character.accountName = name;
-			db.Character.save( character );
+			db.Character.update.run( character );
 
 		} else {
 
-			character = await db.Character.create( name, name );
+			character = db.Character.create( name, name );
 
 		}
 
@@ -150,7 +147,7 @@ api.server.login = async ( ws, name, password ) => {
 
 
 
-api.server.logout = async ( ws ) => {
+api.server.logout = ( ws ) => {
 
 	if ( ! ws_loggedin.hasOwnProperty( ws.id ) ) return api.send( ws, 'error', `Not logged in` );
 
@@ -183,7 +180,7 @@ const re_tags = /(<([^>]+)>)/ig;
 const re_name = /@([\w-]+)/ig;
 
 
-async function nameIsValid( ws, name, self_identity ) {
+function nameIsValid( ws, name, self_identity ) {
 
 	if ( name.length < 3 ) {
 
@@ -219,7 +216,7 @@ async function nameIsValid( ws, name, self_identity ) {
 
 	}
 
-	if ( await db.Account.getByName( name ) ) {
+	if ( db.Account.byName.get( name ) ) {
 
 	    api.send( ws, 'error', `Name '${name}' not available` );
 		return false;
@@ -231,15 +228,7 @@ async function nameIsValid( ws, name, self_identity ) {
 
 }
 
-
-
-// create .data directory if it doesn't exist
-if ( ! fs.existsSync( datapath ) ) fs.mkdirSync( datapath );
-
-
-( async () => {
-
-	await db.init( dbpath );
+( () => {
 
 	process.on( "SIGINT", () => {
 
@@ -297,9 +286,12 @@ if ( ! fs.existsSync( datapath ) ) fs.mkdirSync( datapath );
 
 	} );
 
+
 	wss = new WebSocket.Server( { server: httpserver } );
 
+
 	const re_session_id = /[?&]{1}session=(\w+)/;
+
 
 	wss.on( 'connection', ( ws, req ) => {
 
@@ -350,7 +342,6 @@ if ( ! fs.existsSync( datapath ) ) fs.mkdirSync( datapath );
 			api.send( ws, 'connected', ws.id, ws.session_id );
 
 		}
-
 
 	} );
 
@@ -403,6 +394,7 @@ if ( ! fs.existsSync( datapath ) ) fs.mkdirSync( datapath );
 		}
 
 	}, CLIENT_UPDATE_INTERVAL );
+
 
 } )();
 
