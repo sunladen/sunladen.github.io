@@ -1,0 +1,14 @@
+{
+    "name": "between2spaces.github.io",
+    "version": "0.1.0",
+    "private": true,
+    "description": "between2spaces github pages",
+    "licence": "ISC",
+    "author": "Between2Spaces",
+    "scripts": {
+        "start": "node devserver"
+    },
+    "devDependencies": {
+        "eslint-config-mdcs": "^4.2.3"
+    }
+}

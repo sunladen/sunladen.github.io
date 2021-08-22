@@ -1,10 +1,11 @@
 {
 	"name": "sunladen",
 	"version": "0.1.0",
-	"description": "WebSocket PBBG game",
-	"main": "private/server.js",
+	"description": "Multiplayer webbrowser game",
+	"main": "private/main.js",
+	"type": "module",
 	"scripts": {
-		"start": "export $(grep -v '^\\s*#' .env | xargs) && cd private && node server.mjs",
+		"start": "if [ ! -f .env ]; then printf 'ADMINUSER=admin\nADMINPASS=admin\n' > .env; fi && export $(grep -v '^\\s*#' .env | xargs) && cd private && node main.js",
 		"check": "ncu -u"
 	},
 	"author": "sunladen",
@@ -16,12 +17,12 @@
 		"url": "https://github.com/sunladen/sunladen.git"
 	},
 	"dependencies": {
-		"better-sqlite3": "^7.4.1",
-		"ws": "^7.5.0"
+		"better-sqlite3": "^7.4.3",
+		"ws": "^8.0.0"
 	},
 	"devDependencies": {
-		"eslint": "^7.29.0",
+		"eslint": "^7.32.0",
 		"eslint-config-mdcs": "^5.0.0",
-		"npm-check-updates": "^11.7.1"
+		"npm-check-updates": "^11.8.3"
 	}
 }
