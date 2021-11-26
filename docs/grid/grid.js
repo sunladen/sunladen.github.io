@@ -1,4 +1,5 @@
 const font = { name: "monospace", aspect: 0.6663 };
+const cells = [];
 
 var columns = 5;
 var rows;
@@ -7,29 +8,13 @@ font.widthVW = ( 100 / columns );
 font.sizeVW = font.widthVW * ( 1 + font.aspect );
 
 
+
 document.head.innerHTML += `<style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 	body { overflow: hidden; font-family: ${font.name}; }
     .cell { display: flex; float: left; align-items: center; position: relative; font-size: ${font.sizeVW}vw; background: white; line-height: ${font.widthVW}vw; text-align: center; justify-content: center; }
     .glyph { position: absolute; display: inline-block; z-index: 1; margin: auto; text-align: center; text-baseline: middle; width: ${font.sizeVW}vw; }
 </style>`;
-
-
-const grid = [];
-
-grid.cell = ( col, row ) => {
-
-	var a = grid[ col ];
-	if ( ! a ) a = grid[ col ] = [];
-	var b = a[ row ];
-	if ( ! b ) b = a[ row ] = [];
-	b.col = col;
-	b.row = row;
-	return b;
-
-};
-
-
 
 function element( tagName, params, parent = document.body, content ) {
 
@@ -72,17 +57,35 @@ function glyph( content = ' ', params ) {
 
 }
 
-const cursor = glyph( '웃', { style: { color: 'green' } } );
+function pos( glyph, col, row ) {
 
-grid.cell( 0, 0 ).push( cursor );
+	if ( col < 0 || col >= columns || row < 0 || row >= rows ) return;
+
+	const cell = cells[ ( row * columns ) + col ];
+
+	//glyph.style.left = `${cell.offsetLeft}px`;
+	//glyph.style.top = `${cell.offsetTop}px`;
+
+	cell.append( glyph );
+
+	glyph.col = col;
+	glyph.row = row;
+
+}
 
 function updateRows() {
 
 	rows = 1;
-
 	for ( var i = 0; i < rows * columns; i ++ ) {
 
-		if ( i >= cells.length ) cells.push( element( 'div', { class: 'cell' }, document.body ) ); //'•' ) );
+		if ( i >= cells.length ) {
+
+			cells.push( element( 'div', { class: 'cell' }, document.body ) );
+			const g = glyph( Math.random() < .5 ? '▢' : 'W', { style: { color: 'green' } } );
+			pos( g, 0, 0 );
+
+		}
+
 		if ( i === 0 ) rows = Math.ceil( window.innerHeight / cells[ 0 ].getBoundingClientRect().height );
 
 	}
@@ -90,9 +93,10 @@ function updateRows() {
 }
 
 updateRows();
-
 window.addEventListener( 'resize', updateRows );
 
+const cursor = glyph( '웃', { style: { color: 'green' } } );
+pos( cursor, 0, 0 );
 
 document.addEventListener( 'keydown', e => {
 
