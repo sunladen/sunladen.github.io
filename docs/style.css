@@ -1,0 +1,8 @@
+html, body {
+    height: 100%;
+    margin: 0;
+    font-family: 'Courier New', monospace;
+    font-size: calc(100 / 80)vw;
+    background: #2E3440;
+}
+
