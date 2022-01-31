@@ -12,14 +12,17 @@ var screenWidth = window.innerWidth;
 var screenHeight = window.innerHeight;
 var aspect = screenWidth / screenHeight;
 
+const worldSize = 128;
 const frustumSize = 600;
+const islandSphereRadiusSq = worldSize * worldSize * 3;
+const islandSphereRadius = Math.sqrt( islandSphereRadiusSq );
 
 const scene = new THREE.Scene();
 
 //
 
 var camera = new THREE.PerspectiveCamera( 90, 0.5 * aspect, 1, 1000 );
-camera.position.z = 250;
+camera.position.z = worldSize;
 
 var cameraPerspective = new THREE.PerspectiveCamera( 90, 0.5 * aspect, 0.1, 1000 );
 cameraPerspective.position.z = 250;
@@ -27,8 +30,8 @@ var cameraPerspectiveHelper = new THREE.CameraHelper( cameraPerspective );
 scene.add( cameraPerspectiveHelper );
 
 //
+
 var cameraOrtho = new THREE.OrthographicCamera( 0.5 * frustumSize * aspect / - 2, 0.5 * frustumSize * aspect / 2, frustumSize / 2, frustumSize / - 2, 0.1, 1000 );
-cameraOrtho.position.z = 250;
 var cameraOrthoHelper = new THREE.CameraHelper( cameraOrtho );
 scene.add( cameraOrthoHelper );
 
@@ -90,34 +93,28 @@ dirLight.shadow.mapSize.width = dirLight.shadow.mapSize.height = 1024 * 2;
 const noise = openSimplexNoise( Date.now() );
 
 
-const worldWidth = 256;
-const worldDepth = 256;
 const dirtOctaves = [
-	{ frequency: 0.04, amplitude: 7 },
-	{ frequency: 0.25, amplitude: 0.5 }
+	{ frequency: 0.03, amplitude: 6 },
+	{ frequency: 0.1, amplitude: 1.5 }
 ];
-const rockOctaves = [
-	{ frequency: 0.07, amplitude: 1 },
+// const rockOctaves = [
+	// { frequency: 0.07, amplitude: 1 },
 	//{ frequency: 0.6, amplitude: 0.5 },
 	// { frequency: 5, amplitude: .2 }
-];
+// ];
 
-var dirtGeometry = new THREE.PlaneGeometry( worldWidth, worldDepth, worldWidth, worldDepth );
+var dirtGeometry = new THREE.PlaneBufferGeometry( worldSize, worldSize, worldSize, worldSize );
 var dirtPositionAttribute = dirtGeometry.getAttribute( 'position' );
-var rockGeometry = new THREE.PlaneGeometry( worldWidth, worldDepth, worldWidth, worldDepth );
-var rockPositionAttribute = rockGeometry.getAttribute( 'position' );
+// var rockGeometry = new THREE.PlaneBufferGeometry( worldWidth, worldDepth, worldWidth, worldDepth );
+// var rockPositionAttribute = rockGeometry.getAttribute( 'position' );
 
 const vertex = new THREE.Vector3();
-
-const rxr = worldWidth * worldWidth;
 
 for ( let vertexIndex = 0; vertexIndex < dirtPositionAttribute.count; vertexIndex ++ ) {
 
 	vertex.fromBufferAttribute( dirtPositionAttribute, vertexIndex );
 
-	var base = Math.sqrt( rxr - vertex.x * vertex.x - vertex.y * vertex.y ) - worldWidth * 0.95;
-
-	var z = base;
+	var z = Math.sqrt( islandSphereRadiusSq - vertex.x * vertex.x - vertex.y * vertex.y ) - islandSphereRadius + 3;
 
 	for ( let o of dirtOctaves ) {
 
@@ -127,31 +124,29 @@ for ( let vertexIndex = 0; vertexIndex < dirtPositionAttribute.count; vertexInde
 
 	dirtPositionAttribute.array[ vertexIndex * 3 + 2 ] = z;
 
-	vertex.fromBufferAttribute( rockPositionAttribute, vertexIndex );
+	// vertex.fromBufferAttribute( rockPositionAttribute, vertexIndex );
 
-	z = base;
+	// z = base;
 
-	for ( let o of rockOctaves ) {
+	// for ( let o of rockOctaves ) {
 
-		z += noise.noise2D( ( vertex.x + 25 ) * o.frequency, ( vertex.y + 25 ) * o.frequency ) * o.amplitude;
+	// 	z += noise.noise2D( ( vertex.x + 25 ) * o.frequency, ( vertex.y + 25 ) * o.frequency ) * o.amplitude;
 
-	}
+	// }
 
-	rockPositionAttribute.array[ vertexIndex * 3 + 2 ] = z;
+	// rockPositionAttribute.array[ vertexIndex * 3 + 2 ] = z;
 
 }
 
 dirtGeometry.computeVertexNormals();
-rockGeometry.computeVertexNormals();
+// rockGeometry.computeVertexNormals();
 
 // const texture = new THREE.CanvasTexture( dirtTexture( worldWidth, worldDepth ) );
 // texture.wrapS = THREE.ClampToEdgeWrapping;
 // texture.wrapT = THREE.ClampToEdgeWrapping;
 
 
-var rockMaterial = new THREE.MeshStandardMaterial( { color: 0x444444 } );
-var rockMesh = new THREE.Mesh( rockGeometry, rockMaterial );
-scene.add( rockMesh );
+// //scene.add( rockMesh );
 
 
 
@@ -164,13 +159,16 @@ var dirtMaterial = new THREE.MeshStandardMaterial( {
 var dirtMesh = new THREE.Mesh( dirtGeometry, dirtMaterial );
 scene.add( dirtMesh );
 
-var geo = new THREE.EdgesGeometry( dirtMesh.geometry ); // or WireframeGeometry
+var geo = new THREE.WireframeGeometry( dirtMesh.geometry ); // or WireframeGeometry
 var mat = new THREE.LineBasicMaterial( { color: 0xffffff } );
-var wireframe = new THREE.LineSegments( geo, mat );
-dirtMesh.add( wireframe );
+var wireframe = new THREE.LineSegments( geo );
+//wireframe.material.depthTest = false;
+wireframe.material.opacity = 0.25;
+wireframe.material.transparent = true;
+scene.add( wireframe );
 
 
-var waterGeometry = new THREE.PlaneGeometry( worldWidth, worldDepth );
+var waterGeometry = new THREE.PlaneGeometry( worldSize, worldSize );
 var waterMaterial = new THREE.MeshStandardMaterial( { color: 'blue' } );
 var waterMesh = new THREE.Mesh( waterGeometry, waterMaterial );
 scene.add( waterMesh );
@@ -233,7 +231,7 @@ function render() {
 
 	if ( activeCamera === cameraPerspective ) {
 
-		cameraPerspective.far = cameraPerspective.position.length() + worldWidth * 0.5;
+		cameraPerspective.far = cameraPerspective.position.length() + worldSize * 0.5;
 		cameraPerspective.updateProjectionMatrix();
 
 		cameraPerspectiveHelper.update();
@@ -243,7 +241,7 @@ function render() {
 
 	} else {
 
-		cameraOrtho.far = cameraOrtho.position.length() + worldWidth * 0.5;
+		cameraOrtho.far = cameraOrtho.position.length() + worldSize * 0.5;
 		cameraOrtho.updateProjectionMatrix();
 
 		cameraOrthoHelper.update();
@@ -259,12 +257,12 @@ function render() {
 
 	activeHelper.visible = false;
 
-	renderer.setViewport( 0, 0, screenWidth / 2, screenHeight );
+	renderer.setViewport( 0, 0, screenWidth, screenHeight );
 	renderer.render( scene, activeCamera );
 
 	activeHelper.visible = true;
 
-	renderer.setViewport( screenWidth / 2, 0, screenWidth / 2, screenHeight );
+	renderer.setViewport( screenWidth / 2, screenHeight / 2, screenWidth / 2, screenHeight / 2 );
 	renderer.render( scene, camera );
 
 }
