@@ -1,3 +1,3 @@
 # sunladen.github.io
 
-[ascii](./docs/ascii)
+* [ascii](./docs/ascii)
