@@ -12,9 +12,14 @@
   </div>
 
   <script type="module">
-    const field = document.getElementById( "field" );
-    const fieldList = document.getElementById( "field-list" );
-    console.log( field );
+    const field = document.getElementById("field");
+    const fieldList = document.getElementById("field-list");
+
+    function update() {
+      console.log(field);
+      setTimeout(update, 1000);
+    }
+
   </script>
 </body>
 
