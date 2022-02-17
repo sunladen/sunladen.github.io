@@ -8,7 +8,11 @@
 
 <body>
   <div id="field">
-    <ol id="field-list"></ol>
+    <ol id="field-list">
+      <div class="item">
+        <img class="icon" src=https://fastcdn.mobalytics.gg/assets/lol/images/dd/game-items/1001.png?v1"/>
+      </div>
+    </ol>
   </div>
 
   <script type="module">
@@ -16,7 +20,6 @@
     const fieldList = document.getElementById("field-list");
 
     function update() {
-      console.log(field);
       setTimeout(update, 1000);
     }
 
