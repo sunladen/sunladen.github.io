@@ -8,22 +8,45 @@
 
 <body>
   <div id="field">
-    <ol id="field-list">
-      <div class="item">
-        <img class="icon" src=https://fastcdn.mobalytics.gg/assets/lol/images/dd/game-items/1001.png?v1"/>
-      </div>
-    </ol>
+    <ol id="field-list"></ol>
   </div>
 
   <script type="module">
-    const field = document.getElementById("field");
-    const fieldList = document.getElementById("field-list");
+    const field = {
+      div: document.getElementById("field"),
+      list: document.getElementById("field-list"),
+      add: item => {
+        list.append(item.dom);
+      }
+    };
 
     function update() {
       setTimeout(update, 1000);
     }
 
     setTimeout(update, 0);
+
+    const template = document.createElement("template");
+
+    class Item {
+      constructor(name) {
+        template.innerHTML = `
+        <div class="item">
+          ${name}
+        </div>`;
+        this.dom = template.firstChild;
+        template.innerHTML = '';
+      }
+    }
+
+    for (let i = 0; i < 5; i++) {
+      randomDrop();
+    }
+
+    function randomDrop() {
+      let item = new Item();
+      field.add( item );
+    }
   </script>
 </body>
 
