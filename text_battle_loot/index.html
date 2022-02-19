@@ -15,7 +15,7 @@
     const field = {
       dom: document.getElementById("field"),
       add: item => {
-        this.dom.append(item.dom);
+        field.dom.append(item.dom);
       }
     };
 
@@ -43,8 +43,8 @@
     }
 
     function randomDrop() {
-      let item = new Item();
-      field.add( item );
+      let item = new Item("boot");
+      field.add(item);
     }
   </script>
 </body>
