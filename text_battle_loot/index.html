@@ -13,10 +13,9 @@
 
   <script type="module">
     const field = {
-      div: document.getElementById("field"),
-      list: document.getElementById("field-list"),
+      dom: document.getElementById("field"),
       add: item => {
-        list.append(item.dom);
+        this.dom.append(item.dom);
       }
     };
 
