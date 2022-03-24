@@ -5,13 +5,13 @@
   <meta charset="UTF-8">
   <title>Text Battle Loot</title>
   <style>
-    .item { border: 1px solid black }
+    .item { border: 1px solid grey }
+    .item-type { border: 1px solid pink }
   </style>
 </head>
 
 <body>
   <div id="field">
-    <ol id="field-list"></ol>
   </div>
 
   <script type="module">
@@ -31,12 +31,18 @@
     const template = document.createElement("template");
 
     class Item {
-      constructor(name) {
+      constructor(type) {
+        this.type = type;
+        this.dmg = 0;
         template.innerHTML = `
-        <div class="item">
-          ${name}
+          <div class="item-type">
+            ${type}
+          </div>
+          <div class="item-stats">
+            <div class="item-damage-modifier"><label>DMG</label><span class="item-damage-modifier-value">${this.dmg}</span></div>
+          </div>
         </div>`;
-        this.dom = template.firstChild;
+        this.dom = template.content.firstElementChild;
         template.innerHTML = '';
       }
     }

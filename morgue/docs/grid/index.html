@@ -2,10 +2,15 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <title>Sunladen</title>
-        <link href="/style.css" rel="stylesheet" media="all">
+        <title>Grid</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+        </style>
     </head>
     <body>
-		<script type="module" src="grid.js"></script>
+      <script type="module">
+        import Cells from './cells.js';
+        let cells = new Cells( document.body );
+      </script>
     </body>
 </html>
