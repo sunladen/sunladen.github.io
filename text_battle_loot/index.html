@@ -4,58 +4,17 @@
 <head>
   <meta charset="UTF-8">
   <title>Text Battle Loot</title>
-  <style>
-    .item { border: 1px solid grey }
-    .item-type { border: 1px solid pink }
-  </style>
 </head>
 
 <body>
-  <div id="field">
-  </div>
+
+  <script type="module" src="text_battle_loot.js"></script>
 
   <script type="module">
-    const field = {
-      dom: document.getElementById("field"),
-      add: item => {
-        field.dom.append(item.dom);
-      }
-    };
-
-    function update() {
-      setTimeout(update, 1000);
-    }
-
-    setTimeout(update, 0);
-
-    const template = document.createElement("template");
-
-    class Item {
-      constructor(type) {
-        this.type = type;
-        this.dmg = 0;
-        template.innerHTML = `
-          <div class="item-type">
-            ${type}
-          </div>
-          <div class="item-stats">
-            <div class="item-damage-modifier"><label>DMG</label><span class="item-damage-modifier-value">${this.dmg}</span></div>
-          </div>
-        </div>`;
-        this.dom = template.content.firstElementChild;
-        template.innerHTML = '';
-      }
-    }
-
-    for (let i = 0; i < 5; i++) {
-      randomDrop();
-    }
-
-    function randomDrop() {
-      let item = new Item("boot");
-      field.add(item);
-    }
+	  import TextBattleLoot from './text_battle_loot.js';
+	  new TextBattleLoot( document.body );
   </script>
+
 </body>
 
 </html>
