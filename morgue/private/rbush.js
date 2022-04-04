@@ -1,5 +1,5 @@
 /**
- * From https://github.com/mourner/rbush/blob/master/index.js
+ * RBush v3.0.1 from https://github.com/mourner/rbush/blob/master/index.js
  * By Vladimir Agafonkin
  * Distributed under the MIT license https://github.com/mourner/rbush/blob/master/LICENSE
  */
