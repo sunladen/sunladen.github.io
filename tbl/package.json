@@ -1,0 +1,15 @@
+{
+	"name": "text-battle-loot",
+	"description": "An attempt at a PBBG",
+	"version": "0.0.1",
+	"dependencies": {
+		"ws": "^8.5.0"
+	},
+	"type": "module",
+	"scripts": {
+		"start": "if [ ! -f '.env' ]; then echo 'PORT=6500\n' > .env; fi; export $(sed -e '/^[ ]*#/d' .env | xargs) && node server/server.js"
+	},
+	"engines": {
+		"node": "14.x"
+	}
+}
