@@ -1,66 +1,11 @@
-class Content {
-
-	constructor( data ) {
-
-		this.parent = null;
-		this.data = data || {};
-		this.contents = {};
-
-	}
-
-	add( data, path ) {
-
-		let pathArray = path.trim().split( '/' );
-		let key = pathArray.shift();
-
-		if ( key === '' ) return this.root().add( data, pathArray.join( '/' ) );
-
-		if ( key === '..' && this.parent ) return this.parent.add( data, pathArray.join( '/' ) );
-
-		if ( key === '.' || key === '..' ) return this.add( data, pathArray.join( '/' ) );
-
-		console.log( key );
-
-		//for ( let index in pathArray ) {
-
-		//	let key = pathArray[ index ];
-
-		//	if ( key === '' ) parent = this.root();
-
-		//	console.log( key, parent );
-
-		//	if ( Object.keys( location ).indexOf( key ) < 0 ) {
-
-		//		location[ key ] = index < pathArray.length - 1 ? {} : item;
-
-		//	}
-
-		//	location = location[ key ];
-
-		//}
-
-		//console.log( this.contentHierarchy );
-
-	}
-
-	root() {
-
-		let root = this;
-
-		while ( root.parent !== null ) root = root.parent;
-
-		return root;
-
-	}
-
-}
+import Client from './client.js';
 
 
-export default class TextBattleLoot extends Content {
+export default class TextBattleLoot extends Client {
 
 	constructor( container ) {
 
-		super();
+		super( location.port ? 'ws://localhost:6500' : 'wss://bead-rural-poison.glitch.me/' );
 
 		this.container = container;
 		this.container.innerHTML += `
@@ -79,12 +24,21 @@ export default class TextBattleLoot extends Content {
 
 		this.focusDomElement = this.container.querySelector( '.tbl-focus' );
 
-		this.content = new Content();
+		this.focusNode = this;
+
+		this.changeFocus( '.' );
 
 		instances.push( this );
 
 	}
-	focus( path ) {
+
+	receive( message ) {
+
+		console.log( `i got ${message.type}` );
+
+	}
+
+	changeFocus( path ) {
 
 		this.focusDomElement.innerHTML = '';
 
@@ -127,6 +81,45 @@ function update() {
 
 setTimeout( update, 0 );
 
+
+class Node {
+
+	constructor( parent ) {
+
+		this.parent = parent;
+		this.contextNode = document.createElement( 'div' );
+		this.child = {};
+
+	}
+
+	set( path, value ) {
+
+		let split = path.trim().split( '/' );
+		let key = split.shift();
+
+		if ( key === '' ) return this.get( '/' ).set( split.join( '/' ), value );
+		if ( key === '..' && this.parent ) return this.parent.set( split.join( '/' ), value );
+		if ( key === '.' || key === '..' ) return this.set( split.join( '/' ), value );
+		if ( split.length === 0 ) return this.child[ key ] = value;
+		if ( ! this.child.hasOwnProperty( key ) ) this.child[ key ] = new Node();
+		return this.child[ key ].set( split.join( '/' ), value );
+
+	}
+
+	get( path ) {
+
+		let split = path.trim().split( '/' );
+		let key = split.shift();
+		let node = this;
+
+		if ( key === '' ) while ( node.parent !== null ) node = node.parent;
+		if ( split.length === 0 )
+
+			return node.get( split.join( '/' ) );
+
+	}
+
+}
 
 
 class ContentNode {
