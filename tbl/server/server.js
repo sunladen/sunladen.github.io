@@ -135,9 +135,18 @@ const contents = {
 	'camp': {
 		name: 'camp',
 		contents: {
-			'firepit': {
-				name: 'firepit',
+			'campfire': {
+				name: 'campfire',
 				contents: {
+					'kindling': {
+						name: 'kindling',
+						contents: {
+							'wood scrap': {
+								name: 'wood scrap',
+								weight: 1.5
+							}
+						}
+					},
 					'fire': {
 						name: 'fire',
 						contents: {
@@ -145,6 +154,7 @@ const contents = {
 								name: 'hatchet head',
 								contents: {
 									'metal': {
+										name: 'metal',
 										weight: 1.5
 									}
 								}

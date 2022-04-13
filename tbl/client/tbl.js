@@ -13,8 +13,10 @@ export default class TextBattleLoot extends Client {
 			<div class="tbl-grow">
 				<div class="tbl-outer"></div>
 				<div class="tbl-focus"></div>
+				<div class="tbl-view"></div>
 			</div>
 		</div>
+		<div class="tbl-offscreen"></div>
 		`;
 
 		let marginTop = getComputedStyle( this.container ).getPropertyValue( 'margin-top' );
@@ -22,7 +24,10 @@ export default class TextBattleLoot extends Client {
 
 		if ( this.container === document.body ) document.documentElement.style.height = '100%';
 
+		this.outerDomElement = this.container.querySelector( '.tbl-outer' );
 		this.focusDomElement = this.container.querySelector( '.tbl-focus' );
+		this.viewDomElement = this.container.querySelector( '.tbl-view' );
+		this.offscreen = this.container.querySelector( '.tbl-offscreen' );
 
 		this.focusNode = this;
 
@@ -34,7 +39,22 @@ export default class TextBattleLoot extends Client {
 
 	receive( message ) {
 
-		console.log( `i got ${message.type}` );
+		if ( message.type === 'contents' ) {
+
+			for ( let id in message.value ) {
+
+				let content = message.value[ id ];
+				let contentDiv = updateCreateContentDiv( id, content, this.offscreen );
+
+				//this.outerDomElement.append( contentDiv );
+
+			}
+
+		} else {
+
+			console.log( `received an unhandled message.type="${message.type}"` );
+
+		}
 
 	}
 
@@ -58,6 +78,8 @@ if ( ! document.getElementById( 'tbl-style' ) ) {
 	document.head.innerHTML += `<style id="tbl-style">
 .tbl-flex { display: flex; box-sizing: border-box; height: 100%; }
 .tbl-grow { flex-grow: 1; border: 5px solid red; }
+.tbl-outer .tbl-focusplate { display: none }
+.tbl-offscreen { display: none }
 	</style>
 	`;
 
@@ -82,112 +104,59 @@ function update() {
 setTimeout( update, 0 );
 
 
-class Node {
 
-	constructor( parent ) {
+function E( tagName, id, className, contents ) {
 
-		this.parent = parent;
-		this.contextNode = document.createElement( 'div' );
-		this.child = {};
+	let element = document.createElement( tagName );
+	if ( id ) element.id = id;
+	if ( className ) element.className = className;
+	if ( contents != undefined ) {
 
-	}
+		if ( contents.constructor !== Array ) contents = [ contents ];
 
-	set( path, value ) {
+		for ( var i = 0; i < contents.length; i ++ ) {
 
-		let split = path.trim().split( '/' );
-		let key = split.shift();
+			let content = contents[ i ];
+			if ( content == undefined ) continue;
+			content = ( content instanceof Element ) ? content : document.createTextNode( content );
+			element.appendChild( content );
 
-		if ( key === '' ) return this.get( '/' ).set( split.join( '/' ), value );
-		if ( key === '..' && this.parent ) return this.parent.set( split.join( '/' ), value );
-		if ( key === '.' || key === '..' ) return this.set( split.join( '/' ), value );
-		if ( split.length === 0 ) return this.child[ key ] = value;
-		if ( ! this.child.hasOwnProperty( key ) ) this.child[ key ] = new Node();
-		return this.child[ key ].set( split.join( '/' ), value );
+		}
 
 	}
 
-	get( path ) {
-
-		let split = path.trim().split( '/' );
-		let key = split.shift();
-		let node = this;
-
-		if ( key === '' ) while ( node.parent !== null ) node = node.parent;
-		if ( split.length === 0 )
-
-			return node.get( split.join( '/' ) );
-
-	}
+	return element;
 
 }
 
 
-class ContentNode {
+function node( xpath, context ) {
 
-	constructor( id ) {
-
-		this.id = id;
-		this.contents = [];
-		this.domElement = document.createElement( 'div' );
-		this.domElement.textContent = this.id;
-
-	}
-
-	append( contentNode ) {
-
-		contentNode.parent = this;
-		this.contents.push( contentNode );
-		this.domElement.append( contentNode.domElement );
-
-	}
+	return document.evaluate( xpath, context || document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;
 
 }
 
+function updateCreateContentDiv( id, content, offscreen ) {
 
+	let elementId = `${id}-dom`;
+	let contentDiv = document.getElementById( elementId );
 
-function createContentHierarchy( contents, parentNode ) {
+	if ( ! contentDiv ) {
 
-	if ( ! parentNode ) {
+		console.log( 'existing contentDiv not found' );
 
-		parentNode = new ContentNode( 'root' );
-		parentNode.type = 'root';
+		contentDiv = E( 'div', elementId, null, [
+			E( 'div', `${id}-outerplate`, 'tbl-outerplate', `outerplate: ${content.name}` ),
+			E( 'div', `${id}-focusplate`, 'tbl-focusplate', `focusplate: ${content.name}` )
+		] );
 
-	}
-
-	for ( let item of contents ) {
-
-		let node = new ContentNode( item.id );
-		node.type = item.type;
-		parentNode.append( node );
-
-		if ( item.hasOwnProperty( 'contents' ) ) createContentHierarchy( item.contents, node );
+		offscreen.append( contentDiv );
 
 	}
 
-	return parentNode;
+	//node( `.//div[@id="${id}-outerplate"]`, contentDiv ).textContent = `outerplate: ${content.name}`;
+	//node( `//div[@id="${id}-focusplate"]`, contentDiv ).textContent = `focusplate: ${content.name}`;
+
+	//return contentDiv;
 
 }
-
-const template = document.createElement( "template" );
-
-class Item {
-
-	constructor( type ) {
-
-		this.type = type;
-		this.dmg = 0;
-		template.innerHTML = `
-		  <div class="item-type">
-			${type}
-		  </div>
-		  <div class="item-stats">
-			<div class="item-damage-modifier"><label>DMG</label><span class="item-damage-modifier-value">${this.dmg}</span></div>
-		  </div>
-		</div>`;
-		this.dom = template.content.firstElementChild;
-		template.innerHTML = '';
-
-	}
-
-}
-
