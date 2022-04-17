@@ -33,6 +33,7 @@ wss.on( 'connection', ws => {
 
 			console.log( `client ${ws.id} connected` );
 			send( { type: 'identity', value: ws.id }, ws.id );
+			console.log( contents );
 			send( { type: 'contents', value: contents }, ws.id );
 			ws.last_heard = ( new Date() ).getTime();
 			ws.on( 'pong', () => {
@@ -132,30 +133,32 @@ function send( message, target = 'global' ) {
 
 
 const contents = {
-	'camp': {
-		name: 'camp',
-		contents: {
-			'campfire': {
-				name: 'campfire',
-				contents: {
-					'kindling': {
-						name: 'kindling',
-						contents: {
-							'wood scrap': {
-								name: 'wood scrap',
-								weight: 1.5
+	contents: {
+		'camp': {
+			name: 'camp',
+			contents: {
+				'campfire': {
+					name: 'campfire',
+					contents: {
+						'kindling': {
+							name: 'kindling',
+							contents: {
+								'wood scrap': {
+									name: 'wood scrap',
+									weight: 1.5
+								}
 							}
-						}
-					},
-					'fire': {
-						name: 'fire',
-						contents: {
-							'hatchet head': {
-								name: 'hatchet head',
-								contents: {
-									'metal': {
-										name: 'metal',
-										weight: 1.5
+						},
+						'fire': {
+							name: 'fire',
+							contents: {
+								'hatchet head': {
+									name: 'hatchet head',
+									contents: {
+										'metal': {
+											name: 'metal',
+											weight: 1.5
+										}
 									}
 								}
 							}
@@ -166,3 +169,5 @@ const contents = {
 		}
 	}
 };
+
+console.log( contents );

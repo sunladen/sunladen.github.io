@@ -29,9 +29,7 @@ export default class TextBattleLoot extends Client {
 		this.viewDomElement = this.container.querySelector( '.tbl-view' );
 		this.offscreen = this.container.querySelector( '.tbl-offscreen' );
 
-		this.focusNode = this;
-
-		this.changeFocus( '.' );
+		this.contents = {};
 
 		instances.push( this );
 
@@ -39,34 +37,21 @@ export default class TextBattleLoot extends Client {
 
 	receive( message ) {
 
-		if ( message.type === 'contents' ) {
+		if ( message.type === 'identity' ) {
 
-			for ( let id in message.value ) {
+		} else if ( message.type === 'contents' ) {
 
-				let content = message.value[ id ];
-				let contentDiv = updateCreateContentDiv( id, content, this.offscreen );
+			this.contents = message.value;
+			recursiveParentRefs( this.contents );
+			//let contentDiv = updateCreateContentDivs( id, contents, this.offscreen );
 
-				//this.outerDomElement.append( contentDiv );
-
-			}
+			//this.outerDomElement.append( contentDiv );
 
 		} else {
 
 			console.log( `received an unhandled message.type="${message.type}"` );
 
 		}
-
-	}
-
-	changeFocus( path ) {
-
-		this.focusDomElement.innerHTML = '';
-
-		//for ( let node of contentNode.contents ) {
-
-		//	this.focusDomElement.append( node.domElement );
-
-		//}
 
 	}
 
@@ -77,7 +62,10 @@ if ( ! document.getElementById( 'tbl-style' ) ) {
 
 	document.head.innerHTML += `<style id="tbl-style">
 .tbl-flex { display: flex; box-sizing: border-box; height: 100%; }
-.tbl-grow { flex-grow: 1; border: 5px solid red; }
+.tbl-grow { display: flex; flex-grow: 1; border: 5px solid red; }
+.tbl-outer { flex-grow: 1; border-radius: 5px; margin: 6px 3px 6px 6px; background: #555555; }
+.tbl-focus { flex-grow: 1; border-radius: 5px; margin: 6px 3px 6px 3px; background: #333333; }
+.tbl-view { flex-grow: 1; border-radius: 5px; margin: 6px 6px 6px 6px; background: #555555; }
 .tbl-outer .tbl-focusplate { display: none }
 .tbl-offscreen { display: none }
 	</style>
@@ -130,13 +118,22 @@ function E( tagName, id, className, contents ) {
 }
 
 
-function node( xpath, context ) {
+function query( xpath, context ) {
 
 	return document.evaluate( xpath, context || document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;
 
 }
 
-function updateCreateContentDiv( id, content, offscreen ) {
+
+function recursiveParentRefs( item, parent ) {
+
+	if ( parent ) item.parent = parent;
+
+	for ( let key in item.contents ) recursiveParentRefs( item.contents[ key ], item );
+
+}
+
+function updateCreateContentDivs( id, content, offscreen ) {
 
 	let elementId = `${id}-dom`;
 	let contentDiv = document.getElementById( elementId );
@@ -154,8 +151,8 @@ function updateCreateContentDiv( id, content, offscreen ) {
 
 	}
 
-	//node( `.//div[@id="${id}-outerplate"]`, contentDiv ).textContent = `outerplate: ${content.name}`;
-	//node( `//div[@id="${id}-focusplate"]`, contentDiv ).textContent = `focusplate: ${content.name}`;
+	//query( `.//div[@id="${id}-outerplate"]`, contentDiv ).textContent = `outerplate: ${content.name}`;
+	//query( `//div[@id="${id}-focusplate"]`, contentDiv ).textContent = `focusplate: ${content.name}`;
 
 	//return contentDiv;
 
