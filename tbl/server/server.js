@@ -1,173 +1,212 @@
 import { WebSocketServer } from 'ws';
 import crypto from 'crypto';
+import Semaphore from './semaphore.js';
 
+const CLIENT_PING_INTERVAL = 10000;
+const CLIENT_UPDATE_INTERVAL = 2000;
+
+const uuid = ( bytes = 16 ) => crypto.randomBytes( bytes ).toString( "hex" );
+const identified = {};
+const messages_lock = new Semaphore( 1 );
+
+let messages = {};
 
 const wss = new WebSocketServer( { port: process.env.PORT } );
 
-
 wss.on( 'connection', ws => {
 
-	ws.on( 'message', message => {
+  ws.on( 'message', message => {
 
-		try {
+    try {
 
-			message = JSON.parse( message );
+      console.log( 'received: %s', message = JSON.parse( message ) );
 
-		} catch ( e ) {
+      if ( 'identity' === message.type ) {
 
-			return;
+        identified.hasOwnProperty( ws.id ) && delete identified[ ws.id ];
 
-		}
+        let id = message.value;
 
-		console.log( 'received: %s', message );
+        ws.id = id ?? `client-${uuid()}`;
 
-		if ( message.type === 'identity' ) {
+        identified[ ws.id ] = ws;
 
-			identified.hasOwnProperty( ws.id ) && delete identified[ ws.id ];
+        console.log( 'client %s connected', ws.id );
 
-			var id = message.value;
+        send( { type: 'identity', value: ws.id }, ws.id );
+        send( { type: 'contents', value: contents }, ws.id );
 
-			ws.id = id ?? `client-${uuid()}`;
+        ws.last_heard = ( new Date() ).getTime();
 
-			identified[ ws.id ] = ws;
+        ws.on( 'pong', () => {
 
-			console.log( `client ${ws.id} connected` );
-			send( { type: 'identity', value: ws.id }, ws.id );
-			console.log( contents );
-			send( { type: 'contents', value: contents }, ws.id );
-			ws.last_heard = ( new Date() ).getTime();
-			ws.on( 'pong', () => {
+          identified.hasOwnProperty( ws.id ) && ( identified[ ws.id ].last_heard = ( new Date() ).getTime() );
 
-				identified.hasOwnProperty( ws.id ) && ( identified[ ws.id ].last_heard = ( new Date() ).getTime() );
+        } );
 
-			} );
+      }
 
-		}
 
-	} );
+    } catch ( e ) {
+
+      console.error( e );
+
+    }
+
+  } );
 
 } );
 
 
-const uuid = ( bytes = 16 ) => crypto.randomBytes( bytes ).toString( "hex" );
+
+/**
+ * Buffers a message to send to a client or all clients.
+ */
+async function send( message, target = 'global' ) {
+
+  await messages_lock.acquire();
+
+  try {
+
+    ( messages.hasOwnProperty( target ) ? messages[ target ] : messages[ target ] = [] ).push( message );
+
+  } finally {
+
+    messages_lock.release();
+
+  }
+
+}
 
 
-const identified = {};
-const CLIENT_PING_INTERVAL = 10000;
-const CLIENT_UPDATE_INTERVAL = 2000;
 
 
-var messages = {};
+/**
+ * Send buffered messages to clients.
+ */
+setInterval( async () => {
 
+  try {
 
-setInterval( () => {
+    let _messages;
 
-	var expired = ( new Date() ).getTime() - ( CLIENT_PING_INTERVAL * 2 );
+    await messages_lock.acquire();
 
-	for ( const id in identified ) {
+    try {
 
-		var ws = identified[ id ];
+      _messages = Object.assign( {}, messages );
 
-		if ( ws.last_heard >= expired ) {
+      messages = {};
 
-			ws.ping();
-			continue;
+    } finally {
 
-		}
+      messages_lock.release();
 
-		disconnect( id );
+    }
 
-	}
+    const _global = _messages.global || [];
+    const _global_stringified = JSON.stringify( _global );
 
-}, CLIENT_PING_INTERVAL );
+    for ( const id in identified ) {
 
+      let ws = identified[ id ];
 
-setInterval( () => {
+      if ( _messages.hasOwnProperty( id ) ) {
 
-	const _messages = Object.assign( {}, messages );
+        ws.send( JSON.stringify( _messages[ id ].concat( _global ) ) );
 
-	messages = {};
+      } else if ( _global.length ) {
 
-	const _global = _messages.global || [];
-	const _global_stringified = JSON.stringify( _global );
+        ws.send( _global_stringified );
 
-	for ( const id in identified ) {
+      }
 
-		var ws = identified[ id ];
+    }
 
-		if ( _messages.hasOwnProperty( id ) ) {
+  } catch ( e ) {
 
-			ws.send( JSON.stringify( _messages[ id ].concat( _global ) ) );
+    console.error( e );
 
-		} else if ( _global.length ) {
-
-			ws.send( _global_stringified );
-
-		}
-
-	}
+  }
 
 }, CLIENT_UPDATE_INTERVAL );
 
 
 
-function disconnect( id ) {
 
-	if ( ! identified.hasOwnProperty( id ) ) return;
+/**
+ * Disconnect clients that haven't responded to a ping.
+ */
+setInterval( () => {
 
-	const ws = identified[ id ];
-	delete identified[ id ];
-	console.log( `client "${id}" disconnected` );
-	send( { type: 'remove', value: id } );
-	ws.terminate();
+  try {
 
-}
+    var expired = ( new Date() ).getTime() - ( CLIENT_PING_INTERVAL * 2 );
 
+    for ( const id in identified ) {
 
-function send( message, target = 'global' ) {
+      var ws = identified[ id ];
 
-	( messages.hasOwnProperty( target ) ? messages[ target ] : messages[ target ] = [] ).push( message );
+      if ( ws.last_heard >= expired ) {
 
-}
+        ws.ping();
+        continue;
+
+      }
+
+      delete identified[ id ];
+      console.log( `client "${id}" disconnected` );
+      send( { type: 'remove', value: id } );
+      ws.terminate();
+
+    }
+
+  } catch ( e ) {
+
+    console.error( e );
+
+  }
+
+}, CLIENT_PING_INTERVAL );
+
 
 
 
 const contents = {
-	contents: {
-		'camp': {
-			name: 'camp',
-			contents: {
-				'campfire': {
-					name: 'campfire',
-					contents: {
-						'kindling': {
-							name: 'kindling',
-							contents: {
-								'wood scrap': {
-									name: 'wood scrap',
-									weight: 1.5
-								}
-							}
-						},
-						'fire': {
-							name: 'fire',
-							contents: {
-								'hatchet head': {
-									name: 'hatchet head',
-									contents: {
-										'metal': {
-											name: 'metal',
-											weight: 1.5
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
+  contents: {
+    'camp': {
+      name: 'camp',
+      contents: {
+        'campfire': {
+          name: 'campfire',
+          contents: {
+            'kindling': {
+              name: 'kindling',
+              contents: {
+                'wood scrap': {
+                  name: 'wood scrap',
+                  weight: 1.5
+                }
+              }
+            },
+            'fire': {
+              name: 'fire',
+              contents: {
+                'hatchet head': {
+                  name: 'hatchet head',
+                  contents: {
+                    'metal': {
+                      name: 'metal',
+                      weight: 1.5
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 };
 
-console.log( contents );
