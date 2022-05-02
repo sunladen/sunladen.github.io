@@ -10,6 +10,9 @@ const messages_lock = new Semaphore( 1 );
 const identifiedById = {};
 const identifiedBySecret = {};
 
+// other clients information to send on connection
+const clientsInfo = {}
+
 let messages = {};
 
 const wss = new WebSocketServer( { port: process.env.PORT } );
@@ -17,26 +20,28 @@ const wss = new WebSocketServer( { port: process.env.PORT } );
 // on ws connection
 wss.on( 'connection', ( ws, req ) => {
 
-  // is client trying to identify itself via the connection URL id querystring?
+  let suppress_connection_broadcast = false;
+
   if ( RE_CONNECTION_SECRET.test( req.url ) ) {
 
-    // assign the client its requested id
+    // connection URL ?secret= provided
     ws.secret = RE_CONNECTION_SECRET.exec( req.url )[ 1 ];
 
-    // if client is already identified (re-connect)
     if ( identifiedBySecret.hasOwnProperty( ws.secret ) ) {
 
-      // copy id to new ws
+      // copy id and last_heard from existing connection that shares same secret
       ws.id = identifiedBySecret[ ws.secret ].id;
-
-      // copy previous known last_heard to new ws
       ws.last_heard = identifiedBySecret[ ws.secret ].last_heard;
+
+      suppress_connection_broadcast = true;
 
     }
 
-  } else {
+  }
 
-    // assign a unique id for the new client
+  if ( ! ws.hasOwnProperty( 'id' ) ) {
+
+    // assign a unique id for the client
     while ( ! ws.hasOwnProperty( 'id' ) || identifiedById.hasOwnProperty( ws.id ) ) ws.id = uuid();
 
     // assign a unique secret for the new client
@@ -44,26 +49,30 @@ wss.on( 'connection', ( ws, req ) => {
 
   }
 
-  // add client to identified by id map
+  // map id and secret to client
   identifiedById[ ws.id ] = ws;
-
-  // add client to identified by secret map
   identifiedBySecret[ ws.secret ] = ws;
+
+  ws.last_heard = Date.now()
+
+  console.log( '-> connection %s, { id: "%s", secret: "%s" }', req.url, ws.id, ws.secret );
 
   // update clients last_heard when pong received
   ws.on( 'pong', () => {
 
-    identifiedById.hasOwnProperty( ws.id ) && ( identifiedById[ ws.id ].last_heard = ( new Date() ).getTime() );
+    identifiedById.hasOwnProperty( ws.id ) && ( identifiedById[ ws.id ].last_heard = Date.now() );
 
   } );
 
-  console.log( 'connection %s, client id = %s', req.url, ws.id );
+  // tell client its connection info
+  send( 'connectioninfo', { id: ws.id, secret: ws.secret, clients: clientsInfo }, ws.id );
 
-  // send new clients their identity and initial state
-  if ( ! ws.last_heard ) {
+  clientsInfo[ ws.id ] = {};
 
-    send( { type: 'identity', value: { id: ws.id, secret: ws.secret } }, ws.id );
-    send( { type: 'contents', value: contents }, ws.id );
+  if ( ! suppress_connection_broadcast ) {
+
+    // tell other clients about new client
+    send( 'connected', null, 'global', ws.id );
 
   }
 
@@ -71,12 +80,8 @@ wss.on( 'connection', ( ws, req ) => {
 
     try {
 
-      console.log( 'received: %s', message = JSON.parse( message ) );
-
-      if ( 'identity' === message.type ) {
-
-      }
-
+      console.log( '-> %s', message );
+      message = JSON.parse( message );
 
     } catch ( e ) {
 
@@ -104,13 +109,13 @@ function uuid( bytes = 16 ) {
 /**
  * Buffers a message to send to a client or all clients.
  */
-async function send( message, target = 'global' ) {
+async function send( type, value, target = 'global', from = 'server' ) {
 
   await messages_lock.acquire();
 
   try {
 
-    ( messages.hasOwnProperty( target ) ? messages[ target ] : messages[ target ] = [] ).push( message );
+    ( messages.hasOwnProperty( target ) ? messages[ target ] : messages[ target ] = [] ).push( { from: from, type: type, value: value } );
 
   } finally {
 
@@ -136,8 +141,7 @@ setInterval( async () => {
 
     try {
 
-      _messages = Object.assign( {}, messages );
-
+      _messages = messages;
       messages = {};
 
     } finally {
@@ -155,11 +159,14 @@ setInterval( async () => {
 
       if ( _messages.hasOwnProperty( id ) ) {
 
-        ws.send( JSON.stringify( _messages[ id ].concat( _global ) ) );
+        let _message_stringified = JSON.stringify( _messages[ id ].concat( _global ) );
+        ws.send( _message_stringified );
+        console.log( '<- %s', _message_stringified );
 
       } else if ( _global.length ) {
 
         ws.send( _global_stringified );
+        console.log( '<- %s', _global_stringified );
 
       }
 
@@ -183,7 +190,7 @@ setInterval( () => {
 
   try {
 
-    var expired = ( new Date() ).getTime() - ( CLIENT_PING_INTERVAL * 2 );
+    var expired = Date.now() - ( CLIENT_PING_INTERVAL * 2 );
 
     for ( const id in identifiedById ) {
 
@@ -196,10 +203,11 @@ setInterval( () => {
 
       }
 
+      delete clientsInfo[ id ];
       delete identifiedById[ id ];
       delete identifiedBySecret[ ws.secret ];
-      console.log( `client "${id}" disconnected` );
-      send( { type: 'remove', value: id } );
+
+      send( 'disconnected', 'global', id );
       ws.terminate();
 
     }
@@ -211,45 +219,3 @@ setInterval( () => {
   }
 
 }, CLIENT_PING_INTERVAL );
-
-
-
-
-const contents = {
-  contents: {
-    'camp': {
-      name: 'camp',
-      contents: {
-        'campfire': {
-          name: 'campfire',
-          contents: {
-            'kindling': {
-              name: 'kindling',
-              contents: {
-                'wood scrap': {
-                  name: 'wood scrap',
-                  weight: 1.5
-                }
-              }
-            },
-            'fire': {
-              name: 'fire',
-              contents: {
-                'hatchet head': {
-                  name: 'hatchet head',
-                  contents: {
-                    'metal': {
-                      name: 'metal',
-                      weight: 1.5
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-};
-
