@@ -42,7 +42,7 @@ export default class Client {
         var type = message.type || 'Unknown';
         let receiveFuncName = `receive${message.type.charAt(0).toUpperCase() + message.type.slice(1)}`;
 
-        if ( this.hasOwnProperty( receiveFuncName ) ) this.receiveFuncName
+        if ( this.hasOwnProperty( receiveFuncName ) ) this.receiveFuncName (
 
 
 

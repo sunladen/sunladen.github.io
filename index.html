@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <title>sunladen.github.io</title>
 </head>
-
 <body>
-  <h1>sunladen.github.io</h1>
-  <hr/>
+  <script type="module">
+		import drawdown from '/drawdown/drawdown.js';
+		fetch('./README.md')
+		.then(response => response.text())
+		.then(text => document.body.innerHTML = drawdown(text));
+  </script>
 </body>
-
 </html>

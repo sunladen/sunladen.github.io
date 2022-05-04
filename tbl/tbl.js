@@ -1,6 +1,5 @@
 import Client from './client.js';
 
-
 export default class TextBattleLoot extends Client {
 
   constructor( container ) {
