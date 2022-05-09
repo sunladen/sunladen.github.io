@@ -3,8 +3,9 @@ export default class Client {
   constructor( url ) {
 
     this.url = new URL( url );
-    this.params = new URLSearchParams(url.search);
+    this.params = new URLSearchParams( url.search );
     this.identity = JSON.parse( localStorage.getItem( "client.identity" ) ?? "{}" );
+    this.knownClients = {};
 
     if ( this.identity.secret ) this.params.set( "secret", this.identity.secret );
 
@@ -39,16 +40,11 @@ export default class Client {
 
       for ( var message of messages ) {
 
-        var type = message.type || 'Unknown';
-        let receiveFuncName = `receive${message.type.charAt(0).toUpperCase() + message.type.slice(1)}`;
+        let receiveFuncName = `receive${message.type.charAt( 0 ).toUpperCase() + message.type.slice( 1 )}`;
 
-        if ( this.hasOwnProperty( receiveFuncName ) ) this.receiveFuncName (
+        if ( receiveFuncName in this ) return this[ receiveFuncName ]( message );
 
-
-
-        if ( "connectionInfo" === type ) localStorage.setItem( "client.identity", this.identity = JSON.stringify( message.value ) );
-
-        this.receive( message );
+        console.log( `no listener for "${receiveFuncName}"` );
 
       }
 
@@ -56,7 +52,13 @@ export default class Client {
 
   }
 
-  receive( message ) { }
+  receiveConnectionInfo( message ) {
+
+  	localStorage.setItem( 'client.identity', this.identity = JSON.stringify( message.value.identity ) );
+
+    this.knownClients = message.value.clients;
+
+  }
 
   send( message ) {
 

@@ -11,7 +11,7 @@ const identifiedById = {};
 const identifiedBySecret = {};
 
 // other clients information to send on connection
-const clientsInfo = {}
+const clientsInfo = {};
 
 let messages = {};
 
@@ -53,7 +53,7 @@ wss.on( 'connection', ( ws, req ) => {
   identifiedById[ ws.id ] = ws;
   identifiedBySecret[ ws.secret ] = ws;
 
-  ws.last_heard = Date.now()
+  ws.last_heard = Date.now();
 
   console.log( '-> connection %s, { id: "%s", secret: "%s" }', req.url, ws.id, ws.secret );
 
@@ -65,7 +65,7 @@ wss.on( 'connection', ( ws, req ) => {
   } );
 
   // tell client its connection info
-  send( 'connectioninfo', { id: ws.id, secret: ws.secret, clients: clientsInfo }, ws.id );
+  send( 'connectionInfo', { identity: { id: ws.id, secret: ws.secret }, clients: clientsInfo }, ws.id );
 
   clientsInfo[ ws.id ] = {};
 
@@ -219,3 +219,4 @@ setInterval( () => {
   }
 
 }, CLIENT_PING_INTERVAL );
+
