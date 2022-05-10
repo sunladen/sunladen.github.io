@@ -42,6 +42,8 @@ export default class Client {
 
         let receiveFuncName = `receive${message.type.charAt( 0 ).toUpperCase() + message.type.slice( 1 )}`;
 
+
+
         if ( receiveFuncName in this ) return this[ receiveFuncName ]( message );
 
         console.log( `no listener for "${receiveFuncName}"` );
