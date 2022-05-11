@@ -5,6 +5,7 @@ export default class Client {
     this.url = new URL( url );
     this.params = new URLSearchParams( url.search );
     this.identity = JSON.parse( localStorage.getItem( "client.identity" ) ?? "{}" );
+    this.outbound = [];
     this.knownClients = {};
 
     if ( this.identity.secret ) this.params.set( "secret", this.identity.secret );
@@ -40,9 +41,7 @@ export default class Client {
 
       for ( var message of messages ) {
 
-        let receiveFuncName = `receive${message.type.charAt( 0 ).toUpperCase() + message.type.slice( 1 )}`;
-
-
+        const receiveFuncName = `receive${message.type}`;
 
         if ( receiveFuncName in this ) return this[ receiveFuncName ]( message );
 
@@ -65,6 +64,18 @@ export default class Client {
   send( message ) {
 
     this.socket.send( JSON.stringify( message ) );
+
+  }
+  /**
+	 * Send a message (buffered).
+	 *
+	 * @param type
+	 * @param value
+	 * @param to
+	 */
+  send( type, value, to = 'global' ) {
+
+    this.outbound.push( { type: type, value: value, to: to } );
 
   }
 
