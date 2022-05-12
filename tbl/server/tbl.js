@@ -8,6 +8,26 @@ export default class TextBattleLootServer extends Server {
 
   }
 
+  connected( ws, id ) {
+
+    console.log( `client ${id} connected` );
+
+  }
+
+
+  disconnected( id ) {
+
+    console.log( `client ${id} disconnected` );
+
+  }
+
+
+  update() {
+
+    console.log( 'update' );
+
+  }
+
 }
 
 new TextBattleLootServer();

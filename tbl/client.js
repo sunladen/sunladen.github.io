@@ -4,9 +4,20 @@ export default class Client {
 
     this.url = new URL( url );
     this.params = new URLSearchParams( url.search );
-    this.identity = JSON.parse( localStorage.getItem( "client.identity" ) ?? "{}" );
+
+    try {
+
+      this.identity = JSON.parse( localStorage.getItem( "client.identity" ) );
+
+    } catch {
+
+      this.identity = {};
+
+    }
+
     this.outbound = [];
-    this.knownClients = {};
+    this.updateIntervalMS = 1000;
+    this.clients = {};
 
     if ( this.identity.secret ) this.params.set( "secret", this.identity.secret );
 
@@ -51,21 +62,23 @@ export default class Client {
 
     } );
 
+    // Send buffered messages to server at a set interval
+    setInterval( () => {
+
+      if ( ! this.outbound.length ) return;
+
+      const _outbound = this.outbound;
+		  this.outbound = [];
+
+      const _messages_string = JSON.stringify( _outbound );
+
+    	this.socket.send( _messages_string );
+
+    }, this.updateIntervalMS );
+
   }
 
-  receiveConnectionInfo( message ) {
 
-  	localStorage.setItem( 'client.identity', this.identity = JSON.stringify( message.value.identity ) );
-
-    this.knownClients = message.value.clients;
-
-  }
-
-  send( message ) {
-
-    this.socket.send( JSON.stringify( message ) );
-
-  }
   /**
 	 * Send a message (buffered).
 	 *
@@ -79,4 +92,49 @@ export default class Client {
 
   }
 
+
+  /**
+	 * Called on receipt of ConnectionInfo.
+	 * @param {json} message {
+	 *     from: 'server',
+	 *     type: 'ConnectionInfo',
+	 *     value: {
+	 *         identity: {
+	 *             id: {string},
+	 *             secret: {string}
+	 *         },
+	 *         state: {
+	 *             clients: {
+	 *                 {string} <id>: {...},
+	 *                 ...
+	 *             }
+	 *         }
+	 *     }
+	 * }
+	 */
+  receiveConnectionInfo( message ) {
+
+  	localStorage.setItem( 'client.identity', this.identity = JSON.stringify( message.value.identity ) );
+
+    this.clients = message.value.state.clients;
+
+  }
+
+
+  /**
+	 * Called on receipt of ClientConnected.
+	 * @param {json} message {
+	 *     from: {string} <id>,
+	 *     type: 'ClientConnected',
+	 *     value: null
+	 * }
+	 */
+  receiveClientConnected( message ) {
+
+    this.clients[ message.from ] = message.value;
+
+  }
+
+
 }
+

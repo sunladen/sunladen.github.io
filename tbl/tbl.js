@@ -1,5 +1,6 @@
 import Client from './client.js';
 
+
 export default class TextBattleLoot extends Client {
 
   constructor( container ) {
@@ -34,25 +35,24 @@ export default class TextBattleLoot extends Client {
 
   }
 
-  receive( message ) {
 
-    if ( message.type === 'identity' ) {
+  receiveConnectionInfo( message ) {
 
-    } else if ( message.type === 'contents' ) {
+    super.receiveConnectionInfo( message );
 
-      this.contents = message.value;
-      recursiveParentRefs( this.contents );
-      //let contentDiv = updateCreateContentDivs( id, contents, this.offscreen );
-
-      //this.outerDomElement.append( contentDiv );
-
-    } else {
-
-      console.log( `received an unhandled message.type="${message.type}"` );
-
-    }
+    console.log( this.clients );
 
   }
+
+
+  receiveClientConnected( message ) {
+
+    super.receiveClientConnected( message );
+
+    console.log( this.clients );
+
+  }
+
 
 }
 
