@@ -1,9 +1,9 @@
 
 function animate( time ) {
 
-	requestAnimationFrame( animate )
+    requestAnimationFrame( animate );
 
-	_scene.update()
+    _scene.update();
 
 }
 
@@ -11,11 +11,11 @@ function animate( time ) {
 
 function scene( newscene ) {
 
-	_scene.destroy()
-	
-	_scene = newscene
+    _scene.destroy();
 
-	_scene.init()
+    _scene = newscene;
+
+    _scene.init();
 
 }
 
@@ -23,113 +23,113 @@ function scene( newscene ) {
 
 function data( name, value ) {
 
-	if ( typeof value !== "undefined" ) {
+    if ( typeof value !== "undefined" ) {
 
-		data.values[ name ] = value
+        data.values[ name ] = value;
 
-	}
+    }
 
-	return data.values.hasOwnProperty( name ) ? data.values[ name ] : null
+    return data.values.hasOwnProperty( name ) ? data.values[ name ] : null;
 
-};
+}
 
 
-data.values = {}
+data.values = {};
 
 
 
 
 function listen( object, event, fn, delay ) {
 
-	let router
+    let router;
 
-	if ( delay ) {
+    if ( delay ) {
 
-		( function ( timeout ) {
+        ( function ( timeout ) {
 
-			router = object => {
+            router = object => {
 
-				timeout || ( fn( object ), timeout = setTimeout( () => {
+                timeout || ( fn( object ), timeout = setTimeout( () => {
 
-					timeout = null
+                    timeout = null;
 
-				}, delay ) )
+                }, delay ) );
 
-			}
+            };
 
-		} )()
+        } )();
 
-	} else {
+    } else {
 
-		router = object => {
+        router = object => {
 
-			fn( object )
+            fn( object );
 
-		}
+        };
 
-	}
+    }
 
-	if ( object === window || object === document || object instanceof HTMLElement ) {
+    if ( object === window || object === document || object instanceof HTMLElement ) {
 
-		object.addEventListener( event, router )
+        object.addEventListener( event, router );
 
-	} else {
+    } else {
 
-		if ( ! listen.uuids.hasOwnProperty( event ) ) {
+        if ( ! listen.uuids.hasOwnProperty( event ) ) {
 
-			listen.uuids[ event ] = {}
+            listen.uuids[ event ] = {};
 
-		}
+        }
 
-		if ( ! object.hasOwnProperty( "uuid" ) ) {
+        if ( ! object.hasOwnProperty( "uuid" ) ) {
 
-			object.uuid = _Math.generateUUID()
+            object.uuid = _Math.generateUUID();
 
-		}
+        }
 
-		if ( ! listen.uuids[ event ].hasOwnProperty( object.uuid ) ) {
+        if ( ! listen.uuids[ event ].hasOwnProperty( object.uuid ) ) {
 
-			listen.uuids[ event ][ object.uuid ] = []
+            listen.uuids[ event ][ object.uuid ] = [];
 
-		}
+        }
 
-		listen.uuids[ event ][ object.uuid ].push( router )
+        listen.uuids[ event ][ object.uuid ].push( router );
 
-	}
+    }
 
 }
 
 
-listen.uuids = {}
+listen.uuids = {};
 
 
 function announce( object, event ) {
 
-	if ( object === window || object === document || object instanceof HTMLElement ) {
+    if ( object === window || object === document || object instanceof HTMLElement ) {
 
-		object.dispatchEvent( new Event( event ) )
+        object.dispatchEvent( new Event( event ) );
 
-	} else {
+    } else {
 
-		if ( listen.uuids.hasOwnProperty( event ) && listen.uuids[ event ].hasOwnProperty( object.uuid ) ) {
+        if ( listen.uuids.hasOwnProperty( event ) && listen.uuids[ event ].hasOwnProperty( object.uuid ) ) {
 
-			for ( let index = 0; index < listen.uuids[ event ][ object.uuid ].length; index ++ ) {
+            for ( let index = 0; index < listen.uuids[ event ][ object.uuid ].length; index ++ ) {
 
-				listen.uuids[ event ][ object.uuid ][ index ]( object )
+                listen.uuids[ event ][ object.uuid ][ index ]( object );
 
-			}
+            }
 
-		}
+        }
 
-	}
+    }
 
 }
 
 
-let _scene = { update: () => {}, destroy: () => {} }
+let _scene = { update: () => {}, destroy: () => {} };
 
 
-animate( 0 )
+animate( 0 );
 
 
-export { scene, data, listen, announce }
+export { scene, data, listen, announce };

@@ -2,31 +2,33 @@ import Server from './server.js';
 
 export default class TextBattleLootServer extends Server {
 
-  constructor() {
+    constructor() {
 
-    super( process.env.PORT );
+        super( process.env.PORT );
 
-  }
+        this.state.world = {};
 
-  connected( ws, id ) {
-
-    console.log( `client ${id} connected` );
-
-  }
+    }
 
 
-  disconnected( id ) {
+    connected( ws, id ) {
 
-    console.log( `client ${id} disconnected` );
+        console.log( `client ${id} connected` );
 
-  }
+    }
 
 
-  update() {
+    disconnected( id ) {
 
-    console.log( 'update' );
+        console.log( `client ${id} disconnected` );
 
-  }
+    }
+
+
+    update() {
+
+
+    }
 
 }
 

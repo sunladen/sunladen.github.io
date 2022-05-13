@@ -4,249 +4,249 @@ import crypto from 'crypto';
 
 export default class Server {
 
-  constructor( port, uuid = ( bytes = 16 ) => crypto.randomBytes( bytes ).toString( "hex" ) ) {
+    constructor( port, uuid = ( bytes = 16 ) => crypto.randomBytes( bytes ).toString( "hex" ) ) {
 
-    this.pingIntervalMS = 10000;
-    this.updateIntervalMS = 2000;
-    this.connectionSecretRE = /[?&]{1}secret=(\w+)/;
+        this.pingIntervalMS = 10000;
+        this.updateIntervalMS = 2000;
+        this.connectionSecretRE = /[?&]{1}secret=(\w+)/;
 
-    this.clientsById = {};
-    this.clientsBySecret = {};
+        this.clientsById = {};
+        this.clientsBySecret = {};
 
-    this.inbound = [];
-    this.outbound = {};
+        this.inbound = [];
+        this.outbound = {};
 
-    this.state = {
-      clients: {},
-    };
+        this.state = {
+            clients: {},
+        };
 
-    this.wss = new WebSocketServer( { port: port } );
+        this.wss = new WebSocketServer( { port: port } );
 
-    this.wss.on( 'connection', ( ws, req ) => {
+        this.wss.on( 'connection', ( ws, req ) => {
 
-  		let suppress = false;
+            let suppress = false;
 
-  		if ( this.connectionSecretRE.test( req.url ) ) {
+            if ( this.connectionSecretRE.test( req.url ) ) {
 
-    		ws.secret = this.connectionSecretRE.exec( req.url )[ 1 ];
+                ws.secret = this.connectionSecretRE.exec( req.url )[ 1 ];
 
-    		if ( ws.secret in this.clientsBySecret ) {
+                if ( ws.secret in this.clientsBySecret ) {
 
-		      // copy id and last_heard from existing connection that shares same secret
-          const prevWS = this.clientsBySecret[ ws.secret ];
-      		ws.id = prevWS.id;
-      		ws.last_heard = prevWS.last_heard;
+                    // copy id and last_heard from existing connection that shares same secret
+                    const prevWS = this.clientsBySecret[ ws.secret ];
+                    ws.id = prevWS.id;
+                    ws.last_heard = prevWS.last_heard;
 
-      		suppress = true;
+                    suppress = true;
 
-    		}
+                }
 
-  		}
+            }
 
-  		if ( ! ( 'id' in ws ) ) {
+            if ( ! ( 'id' in ws ) ) {
 
-		    // assign a unique id for the client
-    		while ( ! ( 'id' in ws ) || ws.id in this.clientsById ) ws.id = uuid();
+                // assign a unique id for the client
+                while ( ! ( 'id' in ws ) || ws.id in this.clientsById ) ws.id = uuid();
 
-    		// assign a unique secret for the new client
-    		while ( ! ( 'secret' in ws ) || ws.secret in this.clientsBySecret ) ws.secret = uuid();
+                // assign a unique secret for the new client
+                while ( ! ( 'secret' in ws ) || ws.secret in this.clientsBySecret ) ws.secret = uuid();
 
-  		}
+            }
 
-  		// reference client by id and secret
-		  this.clientsById[ ws.id ] = ws;
-  		this.clientsBySecret[ ws.secret ] = ws;
+            // reference client by id and secret
+            this.clientsById[ ws.id ] = ws;
+            this.clientsBySecret[ ws.secret ] = ws;
 
-  		ws.last_heard = Date.now();
+            ws.last_heard = Date.now();
 
-  		console.log( '-> connection %s, { id: "%s", secret: "%s" }', req.url, ws.id, ws.secret );
+            console.log( '-> connection %s, { id: "%s", secret: "%s" }', req.url, ws.id, ws.secret );
 
-  		// update clients last_heard when pong received
-  		ws.on( 'pong', () => ws.id in this.clientsById && ( this.clientsById[ ws.id ].last_heard = Date.now() ) );
+            // update clients last_heard when pong received
+            ws.on( 'pong', () => ws.id in this.clientsById && ( this.clientsById[ ws.id ].last_heard = Date.now() ) );
 
-  		// tell client its connection info
-  		this.send( 'ConnectionInfo', { identity: { id: ws.id, secret: ws.secret }, state: this.state }, ws.id );
+            // tell client its connection info
+            this.send( 'ConnectionInfo', { identity: { id: ws.id, secret: ws.secret }, state: this.state }, ws.id );
 
-  		this.state.clients[ ws.id ] = {};
+            this.state.clients[ ws.id ] = {};
 
-    	// announce new client connection
-		  if ( ! suppress ) {
+            // announce new client connection
+            if ( ! suppress ) {
 
-        this.send( 'ClientConnected', null, 'global', ws.id );
+                this.send( 'ClientConnected', null, 'global', ws.id );
 
-      	this.connected( ws, ws.id );
+                this.connected( ws, ws.id );
 
-      }
+            }
 
-		  ws.on( 'message', data => {
+            ws.on( 'message', data => {
 
-		    try {
+                try {
 
-		      console.log( '-> %s', data );
-		      const messages = JSON.parse( data );
-          this.inbound.push( messages );
+                    console.log( '-> %s', data );
+                    const messages = JSON.parse( data );
+                    this.inbound.push( messages );
 
-		    } catch ( e ) {
+                } catch ( e ) {
 
-		      console.error( e );
+                    console.error( e );
 
-		    }
+                }
 
-		  } );
+            } );
 
-    } );
+        } );
 
-    // Send buffered messages to clients at a set interval
-    setInterval( () => {
+        // Send buffered messages to clients at a set interval
+        setInterval( () => {
 
-		  try {
+            try {
 
-        const _inbound = this.inbound;
-		    this.inbound = [];
+                const _inbound = this.inbound;
+                this.inbound = [];
 
-		    for ( const message of _inbound ) {
+                for ( const message of _inbound ) {
 
-		      const receiveFuncName = `receive${message.type}`;
-		      if ( receiveFuncName in this ) this[ receiveFuncName ]( message );
-          else console.log( `no listener for "${receiveFuncName}"` );
+                    const receiveFuncName = `receive${message.type}`;
+                    if ( receiveFuncName in this ) this[ receiveFuncName ]( message );
+                    else console.log( `no listener for "${receiveFuncName}"` );
 
-		    }
+                }
 
-        this.update();
+                this.update();
 
-		    const _outbound = this.outbound;
-		    this.outbound = {};
+                const _outbound = this.outbound;
+                this.outbound = {};
 
-		    const _global = _outbound.global || [];
-        const sent = {};
+                const _global = _outbound.global || [];
+                const sent = {};
 
-        //console.log( this.clientsById );
+                //console.log( this.clientsById );
 
-		    for ( const id in _outbound ) {
+                for ( const id in _outbound ) {
 
-          if ( ! ( id in this.clientsById ) ) continue;
+                    if ( ! ( id in this.clientsById ) ) continue;
 
-		      const ws = this.clientsById[ id ];
+                    const ws = this.clientsById[ id ];
 
-		      if ( _global.length ) _outbound[ id ].concat( _global );
+                    if ( _global.length ) _outbound[ id ].concat( _global );
 
-		      const _message_string = JSON.stringify( _outbound[ id ].concat( _global ) );
-		      ws.send( _message_string );
-		      console.log( '<- %s', _message_string );
+                    const _message_string = JSON.stringify( _outbound[ id ].concat( _global ) );
+                    ws.send( _message_string );
+                    console.log( '<- %s', _message_string );
 
-          sent[ id ] = null;
+                    sent[ id ] = null;
 
-        }
+                }
 
-        if ( _global.length ) {
+                if ( _global.length ) {
 
-          const _message_string = JSON.stringify( _global );
+                    const _message_string = JSON.stringify( _global );
 
-          for ( const id in this.clientsById ) {
+                    for ( const id in this.clientsById ) {
 
-            if ( id in sent ) continue;
+                        if ( id in sent ) continue;
 
-		      	const ws = this.clientsById[ id ];
-            ws.send( _message_string );
-		      	console.log( '<- %s', _message_string );
+                        const ws = this.clientsById[ id ];
+                        ws.send( _message_string );
+                        console.log( '<- %s', _message_string );
 
-          }
+                    }
 
-        }
+                }
 
-      } catch ( e ) {
+            } catch ( e ) {
 
-		    console.error( e );
+                console.error( e );
 
-		  }
+            }
 
-    }, this.updateIntervalMS );
+        }, this.updateIntervalMS );
 
 
-    // Disconnect clients that haven't responded for awhile
-    setInterval( () => {
+        // Disconnect clients that haven't responded for awhile
+        setInterval( () => {
 
-		  try {
+            try {
 
-		    const expired = Date.now() - this.pingIntervalMS * 2;
+                const expired = Date.now() - this.pingIntervalMS * 2;
 
-		    for ( const id in this.clientsById ) {
+                for ( const id in this.clientsById ) {
 
-		      const ws = this.clientsById[ id ];
+                    const ws = this.clientsById[ id ];
 
-		      if ( ws.last_heard < expired ) {
+                    if ( ws.last_heard < expired ) {
 
-		      	delete this.state.clients[ id ];
-		      	delete this.clientsById[ id ];
-		      	delete this.clientsBySecret[ ws.secret ];
+                        delete this.state.clients[ id ];
+                        delete this.clientsById[ id ];
+                        delete this.clientsBySecret[ ws.secret ];
 
-		      	this.send( 'disconnected', 'global', id );
+                        this.send( 'ClientDisconnected', null, 'global', id );
 
-		      	ws.terminate();
+                        ws.terminate();
 
-            this.disconnected( id );
+                        this.disconnected( id );
 
-		        continue;
+                        continue;
 
-		      }
+                    }
 
-          ws.ping();
+                    ws.ping();
 
-		    }
+                }
 
-		  } catch ( e ) {
+            } catch ( e ) {
 
-		    console.error( e );
+                console.error( e );
 
-		  }
+            }
 
-    }, this.pingIntervalMS );
+        }, this.pingIntervalMS );
 
-  }
+    }
 
 
 
-  /**
-	 * Send a message (buffered).
-	 *
-	 * @param type
-	 * @param value
-	 * @param target
-	 * @param from
-	 */
-  send( type, value, target = 'global', from = 'server' ) {
+    /**
+     * Send a message (buffered).
+     *
+     * @param type
+     * @param value
+     * @param target
+     * @param from
+     */
+    send( type, value, target = 'global', from = 'server' ) {
 
-    ( target in this.outbound ? this.outbound[ target ] : this.outbound[ target ] = [] ).push( { from: from, type: type, value: value } );
+        ( target in this.outbound ? this.outbound[ target ] : this.outbound[ target ] = [] ).push( { from: from, type: type, value: value } );
 
-  }
+    }
 
 
 
-  /**
-	 * Called on client connection.
-	 * @param ws
-	 * @param id
-	 */
-  connected( ws, id ) {
-  }
+    /**
+     * Called on client connection.
+     * @param ws
+     * @param id
+     */
+    connected( ws, id ) {
+    }
 
 
-  /**
-	 * Called on client disconnection.
-	 * @param id
-	 */
-  disconnected( id ) {
-  }
+    /**
+     * Called on client disconnection.
+     * @param id
+     */
+    disconnected( id ) {
+    }
 
 
 
-  /**
-	 * Update server state.
-	 * Called after receiving inbound messages and before sending outbound messages.
-	 * Interval frequency is defined by this.updateIntervalMS [default=2000]
-	 */
-  update() {
-  }
+    /**
+     * Update server state.
+     * Called after receiving inbound messages and before sending outbound messages.
+     * Interval frequency is defined by this.updateIntervalMS [default=2000]
+     */
+    update() {
+    }
 
 }
 

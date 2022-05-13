@@ -1591,531 +1591,531 @@ process.umask = function() { return 0; };
 /*! https://mths.be/punycode v1.3.2 by @mathias */
 ;(function(root) {
 
-	/** Detect free variables */
-	var freeExports = typeof exports == 'object' && exports &&
-		!exports.nodeType && exports;
-	var freeModule = typeof module == 'object' && module &&
-		!module.nodeType && module;
-	var freeGlobal = typeof global == 'object' && global;
-	if (
-		freeGlobal.global === freeGlobal ||
-		freeGlobal.window === freeGlobal ||
-		freeGlobal.self === freeGlobal
-	) {
-		root = freeGlobal;
-	}
+    /** Detect free variables */
+    var freeExports = typeof exports == 'object' && exports &&
+        !exports.nodeType && exports;
+    var freeModule = typeof module == 'object' && module &&
+        !module.nodeType && module;
+    var freeGlobal = typeof global == 'object' && global;
+    if (
+        freeGlobal.global === freeGlobal ||
+        freeGlobal.window === freeGlobal ||
+        freeGlobal.self === freeGlobal
+    ) {
+        root = freeGlobal;
+    }
 
-	/**
-	 * The `punycode` object.
-	 * @name punycode
-	 * @type Object
-	 */
-	var punycode,
+    /**
+     * The `punycode` object.
+     * @name punycode
+     * @type Object
+     */
+    var punycode,
 
-	/** Highest positive signed 32-bit float value */
-	maxInt = 2147483647, // aka. 0x7FFFFFFF or 2^31-1
+    /** Highest positive signed 32-bit float value */
+    maxInt = 2147483647, // aka. 0x7FFFFFFF or 2^31-1
 
-	/** Bootstring parameters */
-	base = 36,
-	tMin = 1,
-	tMax = 26,
-	skew = 38,
-	damp = 700,
-	initialBias = 72,
-	initialN = 128, // 0x80
-	delimiter = '-', // '\x2D'
+    /** Bootstring parameters */
+    base = 36,
+    tMin = 1,
+    tMax = 26,
+    skew = 38,
+    damp = 700,
+    initialBias = 72,
+    initialN = 128, // 0x80
+    delimiter = '-', // '\x2D'
 
-	/** Regular expressions */
-	regexPunycode = /^xn--/,
-	regexNonASCII = /[^\x20-\x7E]/, // unprintable ASCII chars + non-ASCII chars
-	regexSeparators = /[\x2E\u3002\uFF0E\uFF61]/g, // RFC 3490 separators
+    /** Regular expressions */
+    regexPunycode = /^xn--/,
+    regexNonASCII = /[^\x20-\x7E]/, // unprintable ASCII chars + non-ASCII chars
+    regexSeparators = /[\x2E\u3002\uFF0E\uFF61]/g, // RFC 3490 separators
 
-	/** Error messages */
-	errors = {
-		'overflow': 'Overflow: input needs wider integers to process',
-		'not-basic': 'Illegal input >= 0x80 (not a basic code point)',
-		'invalid-input': 'Invalid input'
-	},
+    /** Error messages */
+    errors = {
+        'overflow': 'Overflow: input needs wider integers to process',
+        'not-basic': 'Illegal input >= 0x80 (not a basic code point)',
+        'invalid-input': 'Invalid input'
+    },
 
-	/** Convenience shortcuts */
-	baseMinusTMin = base - tMin,
-	floor = Math.floor,
-	stringFromCharCode = String.fromCharCode,
+    /** Convenience shortcuts */
+    baseMinusTMin = base - tMin,
+    floor = Math.floor,
+    stringFromCharCode = String.fromCharCode,
 
-	/** Temporary variable */
-	key;
+    /** Temporary variable */
+    key;
 
-	/*--------------------------------------------------------------------------*/
+    /*--------------------------------------------------------------------------*/
 
-	/**
-	 * A generic error utility function.
-	 * @private
-	 * @param {String} type The error type.
-	 * @returns {Error} Throws a `RangeError` with the applicable error message.
-	 */
-	function error(type) {
-		throw RangeError(errors[type]);
-	}
+    /**
+     * A generic error utility function.
+     * @private
+     * @param {String} type The error type.
+     * @returns {Error} Throws a `RangeError` with the applicable error message.
+     */
+    function error(type) {
+        throw RangeError(errors[type]);
+    }
 
-	/**
-	 * A generic `Array#map` utility function.
-	 * @private
-	 * @param {Array} array The array to iterate over.
-	 * @param {Function} callback The function that gets called for every array
-	 * item.
-	 * @returns {Array} A new array of values returned by the callback function.
-	 */
-	function map(array, fn) {
-		var length = array.length;
-		var result = [];
-		while (length--) {
-			result[length] = fn(array[length]);
-		}
-		return result;
-	}
+    /**
+     * A generic `Array#map` utility function.
+     * @private
+     * @param {Array} array The array to iterate over.
+     * @param {Function} callback The function that gets called for every array
+     * item.
+     * @returns {Array} A new array of values returned by the callback function.
+     */
+    function map(array, fn) {
+        var length = array.length;
+        var result = [];
+        while (length--) {
+            result[length] = fn(array[length]);
+        }
+        return result;
+    }
 
-	/**
-	 * A simple `Array#map`-like wrapper to work with domain name strings or email
-	 * addresses.
-	 * @private
-	 * @param {String} domain The domain name or email address.
-	 * @param {Function} callback The function that gets called for every
-	 * character.
-	 * @returns {Array} A new string of characters returned by the callback
-	 * function.
-	 */
-	function mapDomain(string, fn) {
-		var parts = string.split('@');
-		var result = '';
-		if (parts.length > 1) {
-			// In email addresses, only the domain name should be punycoded. Leave
-			// the local part (i.e. everything up to `@`) intact.
-			result = parts[0] + '@';
-			string = parts[1];
-		}
-		// Avoid `split(regex)` for IE8 compatibility. See #17.
-		string = string.replace(regexSeparators, '\x2E');
-		var labels = string.split('.');
-		var encoded = map(labels, fn).join('.');
-		return result + encoded;
-	}
+    /**
+     * A simple `Array#map`-like wrapper to work with domain name strings or email
+     * addresses.
+     * @private
+     * @param {String} domain The domain name or email address.
+     * @param {Function} callback The function that gets called for every
+     * character.
+     * @returns {Array} A new string of characters returned by the callback
+     * function.
+     */
+    function mapDomain(string, fn) {
+        var parts = string.split('@');
+        var result = '';
+        if (parts.length > 1) {
+            // In email addresses, only the domain name should be punycoded. Leave
+            // the local part (i.e. everything up to `@`) intact.
+            result = parts[0] + '@';
+            string = parts[1];
+        }
+        // Avoid `split(regex)` for IE8 compatibility. See #17.
+        string = string.replace(regexSeparators, '\x2E');
+        var labels = string.split('.');
+        var encoded = map(labels, fn).join('.');
+        return result + encoded;
+    }
 
-	/**
-	 * Creates an array containing the numeric code points of each Unicode
-	 * character in the string. While JavaScript uses UCS-2 internally,
-	 * this function will convert a pair of surrogate halves (each of which
-	 * UCS-2 exposes as separate characters) into a single code point,
-	 * matching UTF-16.
-	 * @see `punycode.ucs2.encode`
-	 * @see <https://mathiasbynens.be/notes/javascript-encoding>
-	 * @memberOf punycode.ucs2
-	 * @name decode
-	 * @param {String} string The Unicode input string (UCS-2).
-	 * @returns {Array} The new array of code points.
-	 */
-	function ucs2decode(string) {
-		var output = [],
-		    counter = 0,
-		    length = string.length,
-		    value,
-		    extra;
-		while (counter < length) {
-			value = string.charCodeAt(counter++);
-			if (value >= 0xD800 && value <= 0xDBFF && counter < length) {
-				// high surrogate, and there is a next character
-				extra = string.charCodeAt(counter++);
-				if ((extra & 0xFC00) == 0xDC00) { // low surrogate
-					output.push(((value & 0x3FF) << 10) + (extra & 0x3FF) + 0x10000);
-				} else {
-					// unmatched surrogate; only append this code unit, in case the next
-					// code unit is the high surrogate of a surrogate pair
-					output.push(value);
-					counter--;
-				}
-			} else {
-				output.push(value);
-			}
-		}
-		return output;
-	}
+    /**
+     * Creates an array containing the numeric code points of each Unicode
+     * character in the string. While JavaScript uses UCS-2 internally,
+     * this function will convert a pair of surrogate halves (each of which
+     * UCS-2 exposes as separate characters) into a single code point,
+     * matching UTF-16.
+     * @see `punycode.ucs2.encode`
+     * @see <https://mathiasbynens.be/notes/javascript-encoding>
+     * @memberOf punycode.ucs2
+     * @name decode
+     * @param {String} string The Unicode input string (UCS-2).
+     * @returns {Array} The new array of code points.
+     */
+    function ucs2decode(string) {
+        var output = [],
+            counter = 0,
+            length = string.length,
+            value,
+            extra;
+        while (counter < length) {
+            value = string.charCodeAt(counter++);
+            if (value >= 0xD800 && value <= 0xDBFF && counter < length) {
+                // high surrogate, and there is a next character
+                extra = string.charCodeAt(counter++);
+                if ((extra & 0xFC00) == 0xDC00) { // low surrogate
+                    output.push(((value & 0x3FF) << 10) + (extra & 0x3FF) + 0x10000);
+                } else {
+                    // unmatched surrogate; only append this code unit, in case the next
+                    // code unit is the high surrogate of a surrogate pair
+                    output.push(value);
+                    counter--;
+                }
+            } else {
+                output.push(value);
+            }
+        }
+        return output;
+    }
 
-	/**
-	 * Creates a string based on an array of numeric code points.
-	 * @see `punycode.ucs2.decode`
-	 * @memberOf punycode.ucs2
-	 * @name encode
-	 * @param {Array} codePoints The array of numeric code points.
-	 * @returns {String} The new Unicode string (UCS-2).
-	 */
-	function ucs2encode(array) {
-		return map(array, function(value) {
-			var output = '';
-			if (value > 0xFFFF) {
-				value -= 0x10000;
-				output += stringFromCharCode(value >>> 10 & 0x3FF | 0xD800);
-				value = 0xDC00 | value & 0x3FF;
-			}
-			output += stringFromCharCode(value);
-			return output;
-		}).join('');
-	}
+    /**
+     * Creates a string based on an array of numeric code points.
+     * @see `punycode.ucs2.decode`
+     * @memberOf punycode.ucs2
+     * @name encode
+     * @param {Array} codePoints The array of numeric code points.
+     * @returns {String} The new Unicode string (UCS-2).
+     */
+    function ucs2encode(array) {
+        return map(array, function(value) {
+            var output = '';
+            if (value > 0xFFFF) {
+                value -= 0x10000;
+                output += stringFromCharCode(value >>> 10 & 0x3FF | 0xD800);
+                value = 0xDC00 | value & 0x3FF;
+            }
+            output += stringFromCharCode(value);
+            return output;
+        }).join('');
+    }
 
-	/**
-	 * Converts a basic code point into a digit/integer.
-	 * @see `digitToBasic()`
-	 * @private
-	 * @param {Number} codePoint The basic numeric code point value.
-	 * @returns {Number} The numeric value of a basic code point (for use in
-	 * representing integers) in the range `0` to `base - 1`, or `base` if
-	 * the code point does not represent a value.
-	 */
-	function basicToDigit(codePoint) {
-		if (codePoint - 48 < 10) {
-			return codePoint - 22;
-		}
-		if (codePoint - 65 < 26) {
-			return codePoint - 65;
-		}
-		if (codePoint - 97 < 26) {
-			return codePoint - 97;
-		}
-		return base;
-	}
+    /**
+     * Converts a basic code point into a digit/integer.
+     * @see `digitToBasic()`
+     * @private
+     * @param {Number} codePoint The basic numeric code point value.
+     * @returns {Number} The numeric value of a basic code point (for use in
+     * representing integers) in the range `0` to `base - 1`, or `base` if
+     * the code point does not represent a value.
+     */
+    function basicToDigit(codePoint) {
+        if (codePoint - 48 < 10) {
+            return codePoint - 22;
+        }
+        if (codePoint - 65 < 26) {
+            return codePoint - 65;
+        }
+        if (codePoint - 97 < 26) {
+            return codePoint - 97;
+        }
+        return base;
+    }
 
-	/**
-	 * Converts a digit/integer into a basic code point.
-	 * @see `basicToDigit()`
-	 * @private
-	 * @param {Number} digit The numeric value of a basic code point.
-	 * @returns {Number} The basic code point whose value (when used for
-	 * representing integers) is `digit`, which needs to be in the range
-	 * `0` to `base - 1`. If `flag` is non-zero, the uppercase form is
-	 * used; else, the lowercase form is used. The behavior is undefined
-	 * if `flag` is non-zero and `digit` has no uppercase form.
-	 */
-	function digitToBasic(digit, flag) {
-		//  0..25 map to ASCII a..z or A..Z
-		// 26..35 map to ASCII 0..9
-		return digit + 22 + 75 * (digit < 26) - ((flag != 0) << 5);
-	}
+    /**
+     * Converts a digit/integer into a basic code point.
+     * @see `basicToDigit()`
+     * @private
+     * @param {Number} digit The numeric value of a basic code point.
+     * @returns {Number} The basic code point whose value (when used for
+     * representing integers) is `digit`, which needs to be in the range
+     * `0` to `base - 1`. If `flag` is non-zero, the uppercase form is
+     * used; else, the lowercase form is used. The behavior is undefined
+     * if `flag` is non-zero and `digit` has no uppercase form.
+     */
+    function digitToBasic(digit, flag) {
+        //  0..25 map to ASCII a..z or A..Z
+        // 26..35 map to ASCII 0..9
+        return digit + 22 + 75 * (digit < 26) - ((flag != 0) << 5);
+    }
 
-	/**
-	 * Bias adaptation function as per section 3.4 of RFC 3492.
-	 * http://tools.ietf.org/html/rfc3492#section-3.4
-	 * @private
-	 */
-	function adapt(delta, numPoints, firstTime) {
-		var k = 0;
-		delta = firstTime ? floor(delta / damp) : delta >> 1;
-		delta += floor(delta / numPoints);
-		for (/* no initialization */; delta > baseMinusTMin * tMax >> 1; k += base) {
-			delta = floor(delta / baseMinusTMin);
-		}
-		return floor(k + (baseMinusTMin + 1) * delta / (delta + skew));
-	}
+    /**
+     * Bias adaptation function as per section 3.4 of RFC 3492.
+     * http://tools.ietf.org/html/rfc3492#section-3.4
+     * @private
+     */
+    function adapt(delta, numPoints, firstTime) {
+        var k = 0;
+        delta = firstTime ? floor(delta / damp) : delta >> 1;
+        delta += floor(delta / numPoints);
+        for (/* no initialization */; delta > baseMinusTMin * tMax >> 1; k += base) {
+            delta = floor(delta / baseMinusTMin);
+        }
+        return floor(k + (baseMinusTMin + 1) * delta / (delta + skew));
+    }
 
-	/**
-	 * Converts a Punycode string of ASCII-only symbols to a string of Unicode
-	 * symbols.
-	 * @memberOf punycode
-	 * @param {String} input The Punycode string of ASCII-only symbols.
-	 * @returns {String} The resulting string of Unicode symbols.
-	 */
-	function decode(input) {
-		// Don't use UCS-2
-		var output = [],
-		    inputLength = input.length,
-		    out,
-		    i = 0,
-		    n = initialN,
-		    bias = initialBias,
-		    basic,
-		    j,
-		    index,
-		    oldi,
-		    w,
-		    k,
-		    digit,
-		    t,
-		    /** Cached calculation results */
-		    baseMinusT;
+    /**
+     * Converts a Punycode string of ASCII-only symbols to a string of Unicode
+     * symbols.
+     * @memberOf punycode
+     * @param {String} input The Punycode string of ASCII-only symbols.
+     * @returns {String} The resulting string of Unicode symbols.
+     */
+    function decode(input) {
+        // Don't use UCS-2
+        var output = [],
+            inputLength = input.length,
+            out,
+            i = 0,
+            n = initialN,
+            bias = initialBias,
+            basic,
+            j,
+            index,
+            oldi,
+            w,
+            k,
+            digit,
+            t,
+            /** Cached calculation results */
+            baseMinusT;
 
-		// Handle the basic code points: let `basic` be the number of input code
-		// points before the last delimiter, or `0` if there is none, then copy
-		// the first basic code points to the output.
+        // Handle the basic code points: let `basic` be the number of input code
+        // points before the last delimiter, or `0` if there is none, then copy
+        // the first basic code points to the output.
 
-		basic = input.lastIndexOf(delimiter);
-		if (basic < 0) {
-			basic = 0;
-		}
+        basic = input.lastIndexOf(delimiter);
+        if (basic < 0) {
+            basic = 0;
+        }
 
-		for (j = 0; j < basic; ++j) {
-			// if it's not a basic code point
-			if (input.charCodeAt(j) >= 0x80) {
-				error('not-basic');
-			}
-			output.push(input.charCodeAt(j));
-		}
+        for (j = 0; j < basic; ++j) {
+            // if it's not a basic code point
+            if (input.charCodeAt(j) >= 0x80) {
+                error('not-basic');
+            }
+            output.push(input.charCodeAt(j));
+        }
 
-		// Main decoding loop: start just after the last delimiter if any basic code
-		// points were copied; start at the beginning otherwise.
+        // Main decoding loop: start just after the last delimiter if any basic code
+        // points were copied; start at the beginning otherwise.
 
-		for (index = basic > 0 ? basic + 1 : 0; index < inputLength; /* no final expression */) {
+        for (index = basic > 0 ? basic + 1 : 0; index < inputLength; /* no final expression */) {
 
-			// `index` is the index of the next character to be consumed.
-			// Decode a generalized variable-length integer into `delta`,
-			// which gets added to `i`. The overflow checking is easier
-			// if we increase `i` as we go, then subtract off its starting
-			// value at the end to obtain `delta`.
-			for (oldi = i, w = 1, k = base; /* no condition */; k += base) {
+            // `index` is the index of the next character to be consumed.
+            // Decode a generalized variable-length integer into `delta`,
+            // which gets added to `i`. The overflow checking is easier
+            // if we increase `i` as we go, then subtract off its starting
+            // value at the end to obtain `delta`.
+            for (oldi = i, w = 1, k = base; /* no condition */; k += base) {
 
-				if (index >= inputLength) {
-					error('invalid-input');
-				}
+                if (index >= inputLength) {
+                    error('invalid-input');
+                }
 
-				digit = basicToDigit(input.charCodeAt(index++));
+                digit = basicToDigit(input.charCodeAt(index++));
 
-				if (digit >= base || digit > floor((maxInt - i) / w)) {
-					error('overflow');
-				}
+                if (digit >= base || digit > floor((maxInt - i) / w)) {
+                    error('overflow');
+                }
 
-				i += digit * w;
-				t = k <= bias ? tMin : (k >= bias + tMax ? tMax : k - bias);
+                i += digit * w;
+                t = k <= bias ? tMin : (k >= bias + tMax ? tMax : k - bias);
 
-				if (digit < t) {
-					break;
-				}
+                if (digit < t) {
+                    break;
+                }
 
-				baseMinusT = base - t;
-				if (w > floor(maxInt / baseMinusT)) {
-					error('overflow');
-				}
+                baseMinusT = base - t;
+                if (w > floor(maxInt / baseMinusT)) {
+                    error('overflow');
+                }
 
-				w *= baseMinusT;
+                w *= baseMinusT;
 
-			}
+            }
 
-			out = output.length + 1;
-			bias = adapt(i - oldi, out, oldi == 0);
+            out = output.length + 1;
+            bias = adapt(i - oldi, out, oldi == 0);
 
-			// `i` was supposed to wrap around from `out` to `0`,
-			// incrementing `n` each time, so we'll fix that now:
-			if (floor(i / out) > maxInt - n) {
-				error('overflow');
-			}
+            // `i` was supposed to wrap around from `out` to `0`,
+            // incrementing `n` each time, so we'll fix that now:
+            if (floor(i / out) > maxInt - n) {
+                error('overflow');
+            }
 
-			n += floor(i / out);
-			i %= out;
+            n += floor(i / out);
+            i %= out;
 
-			// Insert `n` at position `i` of the output
-			output.splice(i++, 0, n);
+            // Insert `n` at position `i` of the output
+            output.splice(i++, 0, n);
 
-		}
+        }
 
-		return ucs2encode(output);
-	}
+        return ucs2encode(output);
+    }
 
-	/**
-	 * Converts a string of Unicode symbols (e.g. a domain name label) to a
-	 * Punycode string of ASCII-only symbols.
-	 * @memberOf punycode
-	 * @param {String} input The string of Unicode symbols.
-	 * @returns {String} The resulting Punycode string of ASCII-only symbols.
-	 */
-	function encode(input) {
-		var n,
-		    delta,
-		    handledCPCount,
-		    basicLength,
-		    bias,
-		    j,
-		    m,
-		    q,
-		    k,
-		    t,
-		    currentValue,
-		    output = [],
-		    /** `inputLength` will hold the number of code points in `input`. */
-		    inputLength,
-		    /** Cached calculation results */
-		    handledCPCountPlusOne,
-		    baseMinusT,
-		    qMinusT;
+    /**
+     * Converts a string of Unicode symbols (e.g. a domain name label) to a
+     * Punycode string of ASCII-only symbols.
+     * @memberOf punycode
+     * @param {String} input The string of Unicode symbols.
+     * @returns {String} The resulting Punycode string of ASCII-only symbols.
+     */
+    function encode(input) {
+        var n,
+            delta,
+            handledCPCount,
+            basicLength,
+            bias,
+            j,
+            m,
+            q,
+            k,
+            t,
+            currentValue,
+            output = [],
+            /** `inputLength` will hold the number of code points in `input`. */
+            inputLength,
+            /** Cached calculation results */
+            handledCPCountPlusOne,
+            baseMinusT,
+            qMinusT;
 
-		// Convert the input in UCS-2 to Unicode
-		input = ucs2decode(input);
+        // Convert the input in UCS-2 to Unicode
+        input = ucs2decode(input);
 
-		// Cache the length
-		inputLength = input.length;
+        // Cache the length
+        inputLength = input.length;
 
-		// Initialize the state
-		n = initialN;
-		delta = 0;
-		bias = initialBias;
+        // Initialize the state
+        n = initialN;
+        delta = 0;
+        bias = initialBias;
 
-		// Handle the basic code points
-		for (j = 0; j < inputLength; ++j) {
-			currentValue = input[j];
-			if (currentValue < 0x80) {
-				output.push(stringFromCharCode(currentValue));
-			}
-		}
+        // Handle the basic code points
+        for (j = 0; j < inputLength; ++j) {
+            currentValue = input[j];
+            if (currentValue < 0x80) {
+                output.push(stringFromCharCode(currentValue));
+            }
+        }
 
-		handledCPCount = basicLength = output.length;
+        handledCPCount = basicLength = output.length;
 
-		// `handledCPCount` is the number of code points that have been handled;
-		// `basicLength` is the number of basic code points.
+        // `handledCPCount` is the number of code points that have been handled;
+        // `basicLength` is the number of basic code points.
 
-		// Finish the basic string - if it is not empty - with a delimiter
-		if (basicLength) {
-			output.push(delimiter);
-		}
+        // Finish the basic string - if it is not empty - with a delimiter
+        if (basicLength) {
+            output.push(delimiter);
+        }
 
-		// Main encoding loop:
-		while (handledCPCount < inputLength) {
+        // Main encoding loop:
+        while (handledCPCount < inputLength) {
 
-			// All non-basic code points < n have been handled already. Find the next
-			// larger one:
-			for (m = maxInt, j = 0; j < inputLength; ++j) {
-				currentValue = input[j];
-				if (currentValue >= n && currentValue < m) {
-					m = currentValue;
-				}
-			}
+            // All non-basic code points < n have been handled already. Find the next
+            // larger one:
+            for (m = maxInt, j = 0; j < inputLength; ++j) {
+                currentValue = input[j];
+                if (currentValue >= n && currentValue < m) {
+                    m = currentValue;
+                }
+            }
 
-			// Increase `delta` enough to advance the decoder's <n,i> state to <m,0>,
-			// but guard against overflow
-			handledCPCountPlusOne = handledCPCount + 1;
-			if (m - n > floor((maxInt - delta) / handledCPCountPlusOne)) {
-				error('overflow');
-			}
+            // Increase `delta` enough to advance the decoder's <n,i> state to <m,0>,
+            // but guard against overflow
+            handledCPCountPlusOne = handledCPCount + 1;
+            if (m - n > floor((maxInt - delta) / handledCPCountPlusOne)) {
+                error('overflow');
+            }
 
-			delta += (m - n) * handledCPCountPlusOne;
-			n = m;
+            delta += (m - n) * handledCPCountPlusOne;
+            n = m;
 
-			for (j = 0; j < inputLength; ++j) {
-				currentValue = input[j];
+            for (j = 0; j < inputLength; ++j) {
+                currentValue = input[j];
 
-				if (currentValue < n && ++delta > maxInt) {
-					error('overflow');
-				}
+                if (currentValue < n && ++delta > maxInt) {
+                    error('overflow');
+                }
 
-				if (currentValue == n) {
-					// Represent delta as a generalized variable-length integer
-					for (q = delta, k = base; /* no condition */; k += base) {
-						t = k <= bias ? tMin : (k >= bias + tMax ? tMax : k - bias);
-						if (q < t) {
-							break;
-						}
-						qMinusT = q - t;
-						baseMinusT = base - t;
-						output.push(
-							stringFromCharCode(digitToBasic(t + qMinusT % baseMinusT, 0))
-						);
-						q = floor(qMinusT / baseMinusT);
-					}
+                if (currentValue == n) {
+                    // Represent delta as a generalized variable-length integer
+                    for (q = delta, k = base; /* no condition */; k += base) {
+                        t = k <= bias ? tMin : (k >= bias + tMax ? tMax : k - bias);
+                        if (q < t) {
+                            break;
+                        }
+                        qMinusT = q - t;
+                        baseMinusT = base - t;
+                        output.push(
+                            stringFromCharCode(digitToBasic(t + qMinusT % baseMinusT, 0))
+                        );
+                        q = floor(qMinusT / baseMinusT);
+                    }
 
-					output.push(stringFromCharCode(digitToBasic(q, 0)));
-					bias = adapt(delta, handledCPCountPlusOne, handledCPCount == basicLength);
-					delta = 0;
-					++handledCPCount;
-				}
-			}
+                    output.push(stringFromCharCode(digitToBasic(q, 0)));
+                    bias = adapt(delta, handledCPCountPlusOne, handledCPCount == basicLength);
+                    delta = 0;
+                    ++handledCPCount;
+                }
+            }
 
-			++delta;
-			++n;
+            ++delta;
+            ++n;
 
-		}
-		return output.join('');
-	}
+        }
+        return output.join('');
+    }
 
-	/**
-	 * Converts a Punycode string representing a domain name or an email address
-	 * to Unicode. Only the Punycoded parts of the input will be converted, i.e.
-	 * it doesn't matter if you call it on a string that has already been
-	 * converted to Unicode.
-	 * @memberOf punycode
-	 * @param {String} input The Punycoded domain name or email address to
-	 * convert to Unicode.
-	 * @returns {String} The Unicode representation of the given Punycode
-	 * string.
-	 */
-	function toUnicode(input) {
-		return mapDomain(input, function(string) {
-			return regexPunycode.test(string)
-				? decode(string.slice(4).toLowerCase())
-				: string;
-		});
-	}
+    /**
+     * Converts a Punycode string representing a domain name or an email address
+     * to Unicode. Only the Punycoded parts of the input will be converted, i.e.
+     * it doesn't matter if you call it on a string that has already been
+     * converted to Unicode.
+     * @memberOf punycode
+     * @param {String} input The Punycoded domain name or email address to
+     * convert to Unicode.
+     * @returns {String} The Unicode representation of the given Punycode
+     * string.
+     */
+    function toUnicode(input) {
+        return mapDomain(input, function(string) {
+            return regexPunycode.test(string)
+                ? decode(string.slice(4).toLowerCase())
+                : string;
+        });
+    }
 
-	/**
-	 * Converts a Unicode string representing a domain name or an email address to
-	 * Punycode. Only the non-ASCII parts of the domain name will be converted,
-	 * i.e. it doesn't matter if you call it with a domain that's already in
-	 * ASCII.
-	 * @memberOf punycode
-	 * @param {String} input The domain name or email address to convert, as a
-	 * Unicode string.
-	 * @returns {String} The Punycode representation of the given domain name or
-	 * email address.
-	 */
-	function toASCII(input) {
-		return mapDomain(input, function(string) {
-			return regexNonASCII.test(string)
-				? 'xn--' + encode(string)
-				: string;
-		});
-	}
+    /**
+     * Converts a Unicode string representing a domain name or an email address to
+     * Punycode. Only the non-ASCII parts of the domain name will be converted,
+     * i.e. it doesn't matter if you call it with a domain that's already in
+     * ASCII.
+     * @memberOf punycode
+     * @param {String} input The domain name or email address to convert, as a
+     * Unicode string.
+     * @returns {String} The Punycode representation of the given domain name or
+     * email address.
+     */
+    function toASCII(input) {
+        return mapDomain(input, function(string) {
+            return regexNonASCII.test(string)
+                ? 'xn--' + encode(string)
+                : string;
+        });
+    }
 
-	/*--------------------------------------------------------------------------*/
+    /*--------------------------------------------------------------------------*/
 
-	/** Define the public API */
-	punycode = {
-		/**
-		 * A string representing the current Punycode.js version number.
-		 * @memberOf punycode
-		 * @type String
-		 */
-		'version': '1.3.2',
-		/**
-		 * An object of methods to convert from JavaScript's internal character
-		 * representation (UCS-2) to Unicode code points, and back.
-		 * @see <https://mathiasbynens.be/notes/javascript-encoding>
-		 * @memberOf punycode
-		 * @type Object
-		 */
-		'ucs2': {
-			'decode': ucs2decode,
-			'encode': ucs2encode
-		},
-		'decode': decode,
-		'encode': encode,
-		'toASCII': toASCII,
-		'toUnicode': toUnicode
-	};
+    /** Define the public API */
+    punycode = {
+        /**
+         * A string representing the current Punycode.js version number.
+         * @memberOf punycode
+         * @type String
+         */
+        'version': '1.3.2',
+        /**
+         * An object of methods to convert from JavaScript's internal character
+         * representation (UCS-2) to Unicode code points, and back.
+         * @see <https://mathiasbynens.be/notes/javascript-encoding>
+         * @memberOf punycode
+         * @type Object
+         */
+        'ucs2': {
+            'decode': ucs2decode,
+            'encode': ucs2encode
+        },
+        'decode': decode,
+        'encode': encode,
+        'toASCII': toASCII,
+        'toUnicode': toUnicode
+    };
 
-	/** Expose `punycode` */
-	// Some AMD build optimizers, like r.js, check for specific condition patterns
-	// like the following:
-	if (
-		typeof define == 'function' &&
-		typeof define.amd == 'object' &&
-		define.amd
-	) {
-		define('punycode', function() {
-			return punycode;
-		});
-	} else if (freeExports && freeModule) {
-		if (module.exports == freeExports) { // in Node.js or RingoJS v0.8.0+
-			freeModule.exports = punycode;
-		} else { // in Narwhal or RingoJS v0.7.0-
-			for (key in punycode) {
-				punycode.hasOwnProperty(key) && (freeExports[key] = punycode[key]);
-			}
-		}
-	} else { // in Rhino or a web browser
-		root.punycode = punycode;
-	}
+    /** Expose `punycode` */
+    // Some AMD build optimizers, like r.js, check for specific condition patterns
+    // like the following:
+    if (
+        typeof define == 'function' &&
+        typeof define.amd == 'object' &&
+        define.amd
+    ) {
+        define('punycode', function() {
+            return punycode;
+        });
+    } else if (freeExports && freeModule) {
+        if (module.exports == freeExports) { // in Node.js or RingoJS v0.8.0+
+            freeModule.exports = punycode;
+        } else { // in Narwhal or RingoJS v0.7.0-
+            for (key in punycode) {
+                punycode.hasOwnProperty(key) && (freeExports[key] = punycode[key]);
+            }
+        }
+    } else { // in Rhino or a web browser
+        root.punycode = punycode;
+    }
 
 }(this));
 
@@ -2355,7 +2355,7 @@ var protocolPattern = /^([a-z0-9.+-]+:)/i,
 
     // RFC 2396: characters reserved for delimiting URLs.
     // We actually just auto-escape these.
-    delims = ['<', '>', '"', '`', ' ', '\r', '\n', '\t'],
+    delims = ['<', '>', '"', '`', ' ', '\r', '\n', '    '],
 
     // RFC 2396: characters not allowed for various reasons.
     unwise = ['{', '}', '|', '\\', '^', '`'].concat(delims),
@@ -3864,38 +3864,38 @@ var hasOwnProperty = Object.prototype.hasOwnProperty;
 var propIsEnumerable = Object.prototype.propertyIsEnumerable;
 
 function toObject(val) {
-	if (val === null || val === undefined) {
-		throw new TypeError('Object.assign cannot be called with null or undefined');
-	}
+    if (val === null || val === undefined) {
+        throw new TypeError('Object.assign cannot be called with null or undefined');
+    }
 
-	return Object(val);
+    return Object(val);
 }
 
 module.exports = Object.assign || function (target, source) {
-	var from;
-	var to = toObject(target);
-	var symbols;
+    var from;
+    var to = toObject(target);
+    var symbols;
 
-	for (var s = 1; s < arguments.length; s++) {
-		from = Object(arguments[s]);
+    for (var s = 1; s < arguments.length; s++) {
+        from = Object(arguments[s]);
 
-		for (var key in from) {
-			if (hasOwnProperty.call(from, key)) {
-				to[key] = from[key];
-			}
-		}
+        for (var key in from) {
+            if (hasOwnProperty.call(from, key)) {
+                to[key] = from[key];
+            }
+        }
 
-		if (Object.getOwnPropertySymbols) {
-			symbols = Object.getOwnPropertySymbols(from);
-			for (var i = 0; i < symbols.length; i++) {
-				if (propIsEnumerable.call(from, symbols[i])) {
-					to[symbols[i]] = from[symbols[i]];
-				}
-			}
-		}
-	}
+        if (Object.getOwnPropertySymbols) {
+            symbols = Object.getOwnPropertySymbols(from);
+            for (var i = 0; i < symbols.length; i++) {
+                if (propIsEnumerable.call(from, symbols[i])) {
+                    to[symbols[i]] = from[symbols[i]];
+                }
+            }
+        }
+    }
 
-	return to;
+    return to;
 };
 
 },{}],12:[function(require,module,exports){
@@ -3993,9 +3993,9 @@ Object.assign(
  */
 function AccessibilityManager(renderer)
 {
-	// first we create a div that will sit over the pixi element. This is where the div overlays will go.
+    // first we create a div that will sit over the pixi element. This is where the div overlays will go.
     var div = document.createElement('div');
-    
+
     div.style.width = 100 + 'px';
     div.style.height = 100 + 'px';
     div.style.position = 'absolute';
@@ -4003,70 +4003,70 @@ function AccessibilityManager(renderer)
     div.style.left = 0;
    //
     div.style.zIndex = 2;
-   	
-   	/**
-   	 * This is the dom element that will sit over the pixi element. This is where the div overlays will go.
-   	 * 
-   	 * @type {HTMLElement}
-   	 * @private
-   	 */
-   	this.div = div;
 
-   	/**
-   	 * A simple pool for storing divs.
-   	 * 
-   	 * @type {Array}
-   	 * @private
-   	 */
- 	this.pool = [];
+       /**
+        * This is the dom element that will sit over the pixi element. This is where the div overlays will go.
+        *
+        * @type {HTMLElement}
+        * @private
+        */
+       this.div = div;
 
- 	/**
- 	 * This is a tick used to check if an object is no longer being rendered.
- 	 * 
- 	 * @type {Number}
- 	 * @private
- 	 */
-   	this.renderId = 0;
+       /**
+        * A simple pool for storing divs.
+        *
+        * @type {Array}
+        * @private
+        */
+     this.pool = [];
 
-   	/**
-   	 * Setting this to true will visually show the divs
-   	 * 
-   	 * @type {Boolean}
-   	 */
-   	this.debug = false;
+     /**
+      * This is a tick used to check if an object is no longer being rendered.
+      *
+      * @type {Number}
+      * @private
+      */
+       this.renderId = 0;
 
-  	/**
+       /**
+        * Setting this to true will visually show the divs
+        *
+        * @type {Boolean}
+        */
+       this.debug = false;
+
+      /**
      * The renderer this accessibility manager works for.
      *
      * @member {PIXI.SystemRenderer}
      */
-   	this.renderer = renderer;
+       this.renderer = renderer;
 
-   	/**
+       /**
      * The array of currently active accessible items.
      *
      * @member {Array}
      * @private
      */
-   	this.children = [];
-   	
-   	/**
+       this.children = [];
+
+       /**
      * pre bind the functions..
      */
-   	this._onKeyDown = this._onKeyDown.bind(this);
-   	this._onMouseMove = this._onMouseMove.bind(this);
-   	
-   	/**
+       this._onKeyDown = this._onKeyDown.bind(this);
+       this._onMouseMove = this._onMouseMove.bind(this);
+
+       /**
      * stores the state of the manager. If there are no accessible objects or the mouse is moving the will be false.
      *
      * @member {Array}
      * @private
      */
-   	this.isActive = false;
+       this.isActive = false;
 
 
-   	// let listen for tab.. once pressed we can fire up and show the accessibility layer
-   	window.addEventListener('keydown', this._onKeyDown, false);
+       // let listen for tab.. once pressed we can fire up and show the accessibility layer
+       window.addEventListener('keydown', this._onKeyDown, false);
 }
 
 
@@ -4079,19 +4079,19 @@ module.exports = AccessibilityManager;
  */
 AccessibilityManager.prototype.activate = function()
 {
-	if(this.isActive)
-	{
-		return;
-	}
+    if(this.isActive)
+    {
+        return;
+    }
 
-	this.isActive = true;
+    this.isActive = true;
 
-	window.document.addEventListener('mousemove', this._onMouseMove, true);
-	window.removeEventListener('keydown', this._onKeyDown, false);
+    window.document.addEventListener('mousemove', this._onMouseMove, true);
+    window.removeEventListener('keydown', this._onKeyDown, false);
 
-	this.renderer.on('postrender', this.update, this);
+    this.renderer.on('postrender', this.update, this);
 
-	this.renderer.view.parentNode.appendChild(this.div);	
+    this.renderer.view.parentNode.appendChild(this.div);
 };
 
 /**
@@ -4100,19 +4100,19 @@ AccessibilityManager.prototype.activate = function()
  */
 AccessibilityManager.prototype.deactivate = function()
 {
-	if(!this.isActive)
-	{
-		return;
-	}
+    if(!this.isActive)
+    {
+        return;
+    }
 
-	this.isActive = false;
+    this.isActive = false;
 
-	window.document.removeEventListener('mousemove', this._onMouseMove);
-	window.addEventListener('keydown', this._onKeyDown, false);
+    window.document.removeEventListener('mousemove', this._onMouseMove);
+    window.addEventListener('keydown', this._onKeyDown, false);
 
-	this.renderer.off('postrender', this.update);
+    this.renderer.off('postrender', this.update);
 
-	this.div.parentNode.removeChild(this.div);
+    this.div.parentNode.removeChild(this.div);
 
 };
 
@@ -4123,27 +4123,27 @@ AccessibilityManager.prototype.deactivate = function()
  */
 AccessibilityManager.prototype.updateAccessibleObjects = function(displayObject)
 {
-	if(!displayObject.visible)
-	{
-		return;
-	}
+    if(!displayObject.visible)
+    {
+        return;
+    }
 
-	if(displayObject.accessible && displayObject.interactive)
-	{
-		if(!displayObject._accessibleActive)
-		{
-			this.addChild(displayObject);
-		}
-	   	
-	   	displayObject.renderId = this.renderId;
-	}
+    if(displayObject.accessible && displayObject.interactive)
+    {
+        if(!displayObject._accessibleActive)
+        {
+            this.addChild(displayObject);
+        }
 
-	var children = displayObject.children;
+           displayObject.renderId = this.renderId;
+    }
 
-	for (var i = children.length - 1; i >= 0; i--) {
-		
-		this.updateAccessibleObjects(children[i]);
-	}
+    var children = displayObject.children;
+
+    for (var i = children.length - 1; i >= 0; i--) {
+
+        this.updateAccessibleObjects(children[i]);
+    }
 };
 
 
@@ -4154,74 +4154,74 @@ AccessibilityManager.prototype.updateAccessibleObjects = function(displayObject)
 AccessibilityManager.prototype.update = function()
 {
 
-	// update children...
-	this.updateAccessibleObjects(this.renderer._lastObjectRendered);
+    // update children...
+    this.updateAccessibleObjects(this.renderer._lastObjectRendered);
 
-	var rect = this.renderer.view.getBoundingClientRect();
-	var sx = rect.width  / this.renderer.width;
-	var sy = rect.height / this.renderer.height;
+    var rect = this.renderer.view.getBoundingClientRect();
+    var sx = rect.width  / this.renderer.width;
+    var sy = rect.height / this.renderer.height;
 
-	var div = this.div;
+    var div = this.div;
 
-	div.style.left = rect.left + 'px';
-	div.style.top = rect.top + 'px';
-	div.style.width = this.renderer.width + 'px';
-	div.style.height = this.renderer.height + 'px';
+    div.style.left = rect.left + 'px';
+    div.style.top = rect.top + 'px';
+    div.style.width = this.renderer.width + 'px';
+    div.style.height = this.renderer.height + 'px';
 
-	for (var i = 0; i < this.children.length; i++)
-	{
+    for (var i = 0; i < this.children.length; i++)
+    {
 
-		var child = this.children[i];
+        var child = this.children[i];
 
-		if(child.renderId !== this.renderId)
-		{
-			child._accessibleActive = false;
+        if(child.renderId !== this.renderId)
+        {
+            child._accessibleActive = false;
 
             core.utils.removeItems(this.children, i, 1);
-			this.div.removeChild( child._accessibleDiv );
-			this.pool.push(child._accessibleDiv);
-			child._accessibleDiv = null;
+            this.div.removeChild( child._accessibleDiv );
+            this.pool.push(child._accessibleDiv);
+            child._accessibleDiv = null;
 
-			i--;
+            i--;
 
-			if(this.children.length === 0)
-			{
-				this.deactivate();
-			}
-		}
-		else
-		{
-			// map div to display..
-			div = child._accessibleDiv;
-			var hitArea = child.hitArea;
-			var wt = child.worldTransform;
+            if(this.children.length === 0)
+            {
+                this.deactivate();
+            }
+        }
+        else
+        {
+            // map div to display..
+            div = child._accessibleDiv;
+            var hitArea = child.hitArea;
+            var wt = child.worldTransform;
 
-			if(child.hitArea)
-			{
-				div.style.left = ((wt.tx + (hitArea.x * wt.a)) * sx) + 'px';
-				div.style.top =  ((wt.ty + (hitArea.y * wt.d)) * sy) +  'px';
+            if(child.hitArea)
+            {
+                div.style.left = ((wt.tx + (hitArea.x * wt.a)) * sx) + 'px';
+                div.style.top =  ((wt.ty + (hitArea.y * wt.d)) * sy) +  'px';
 
-				div.style.width = (hitArea.width * wt.a * sx) + 'px';
-				div.style.height = (hitArea.height * wt.d * sy) + 'px';
-			
-			}
-			else
-			{
-				hitArea = child.getBounds();
+                div.style.width = (hitArea.width * wt.a * sx) + 'px';
+                div.style.height = (hitArea.height * wt.d * sy) + 'px';
 
-				this.capHitArea(hitArea);
+            }
+            else
+            {
+                hitArea = child.getBounds();
 
-				div.style.left = (hitArea.x * sx) + 'px';
-				div.style.top =  (hitArea.y * sy) +  'px';
+                this.capHitArea(hitArea);
 
-				div.style.width = (hitArea.width * sx) + 'px';
-				div.style.height = (hitArea.height * sy) + 'px';
-			}		
-		}
-	}
+                div.style.left = (hitArea.x * sx) + 'px';
+                div.style.top =  (hitArea.y * sy) +  'px';
 
-	// increment the render id..
-	this.renderId++;
+                div.style.width = (hitArea.width * sx) + 'px';
+                div.style.height = (hitArea.height * sy) + 'px';
+            }
+        }
+    }
+
+    // increment the render id..
+    this.renderId++;
 };
 
 AccessibilityManager.prototype.capHitArea = function (hitArea)
@@ -4256,42 +4256,42 @@ AccessibilityManager.prototype.capHitArea = function (hitArea)
  */
 AccessibilityManager.prototype.addChild = function(displayObject)
 {
-//	this.activate();
-	
-	var div = this.pool.pop();
+//    this.activate();
 
-	if(!div)
-	{
-		div = document.createElement('button'); 
+    var div = this.pool.pop();
 
-	    div.style.width = 100 + 'px';
-	    div.style.height = 100 + 'px';
-	    div.style.backgroundColor = this.debug ? 'rgba(255,0,0,0.5)' : 'transparent';
-	    div.style.position = 'absolute';
-	    div.style.zIndex = 2;
-	    div.style.borderStyle = 'none';
+    if(!div)
+    {
+        div = document.createElement('button');
 
-	    
-	    div.addEventListener('click', this._onClick.bind(this));
-	    div.addEventListener('focus', this._onFocus.bind(this));
-	    div.addEventListener('focusout', this._onFocusOut.bind(this));
-	}
-	   	
+        div.style.width = 100 + 'px';
+        div.style.height = 100 + 'px';
+        div.style.backgroundColor = this.debug ? 'rgba(255,0,0,0.5)' : 'transparent';
+        div.style.position = 'absolute';
+        div.style.zIndex = 2;
+        div.style.borderStyle = 'none';
 
 
-
-	div.title = displayObject.accessibleTitle || 'displayObject ' + this.tabIndex;
-
-	//
-	
-	displayObject._accessibleActive = true;
-	displayObject._accessibleDiv = div;
-	div.displayObject = displayObject;
+        div.addEventListener('click', this._onClick.bind(this));
+        div.addEventListener('focus', this._onFocus.bind(this));
+        div.addEventListener('focusout', this._onFocusOut.bind(this));
+    }
 
 
-	this.children.push(displayObject);
-	this.div.appendChild( displayObject._accessibleDiv );
-	displayObject._accessibleDiv.tabIndex = displayObject.tabIndex;
+
+
+    div.title = displayObject.accessibleTitle || 'displayObject ' + this.tabIndex;
+
+    //
+
+    displayObject._accessibleActive = true;
+    displayObject._accessibleDiv = div;
+    div.displayObject = displayObject;
+
+
+    this.children.push(displayObject);
+    this.div.appendChild( displayObject._accessibleDiv );
+    displayObject._accessibleDiv.tabIndex = displayObject.tabIndex;
 };
 
 
@@ -4301,8 +4301,8 @@ AccessibilityManager.prototype.addChild = function(displayObject)
  */
 AccessibilityManager.prototype._onClick = function(e)
 {
-	var interactionManager = this.renderer.plugins.interaction;
-	interactionManager.dispatchEvent(e.target.displayObject, 'click', interactionManager.eventData);
+    var interactionManager = this.renderer.plugins.interaction;
+    interactionManager.dispatchEvent(e.target.displayObject, 'click', interactionManager.eventData);
 };
 
 /**
@@ -4311,8 +4311,8 @@ AccessibilityManager.prototype._onClick = function(e)
  */
 AccessibilityManager.prototype._onFocus = function(e)
 {
-	var interactionManager = this.renderer.plugins.interaction;
-	interactionManager.dispatchEvent(e.target.displayObject, 'mouseover', interactionManager.eventData);
+    var interactionManager = this.renderer.plugins.interaction;
+    interactionManager.dispatchEvent(e.target.displayObject, 'mouseover', interactionManager.eventData);
 };
 
 /**
@@ -4321,8 +4321,8 @@ AccessibilityManager.prototype._onFocus = function(e)
  */
 AccessibilityManager.prototype._onFocusOut = function(e)
 {
-	var interactionManager = this.renderer.plugins.interaction;
-	interactionManager.dispatchEvent(e.target.displayObject, 'mouseout', interactionManager.eventData);
+    var interactionManager = this.renderer.plugins.interaction;
+    interactionManager.dispatchEvent(e.target.displayObject, 'mouseout', interactionManager.eventData);
 };
 
 /**
@@ -4332,12 +4332,12 @@ AccessibilityManager.prototype._onFocusOut = function(e)
  */
 AccessibilityManager.prototype._onKeyDown = function(e)
 {
-	if(e.keyCode !== 9)
-	{
-		return;
-	}
+    if(e.keyCode !== 9)
+    {
+        return;
+    }
 
-	this.activate();
+    this.activate();
 };
 
 /**
@@ -4347,7 +4347,7 @@ AccessibilityManager.prototype._onKeyDown = function(e)
  */
 AccessibilityManager.prototype._onMouseMove = function()
 {
-	this.deactivate();
+    this.deactivate();
 };
 
 
@@ -4355,22 +4355,22 @@ AccessibilityManager.prototype._onMouseMove = function()
  * Destroys the accessibility manager
  *
  */
-AccessibilityManager.prototype.destroy = function () 
+AccessibilityManager.prototype.destroy = function ()
 {
-	this.div = null;
+    this.div = null;
 
-	for (var i = 0; i < this.children.length; i++)
-	{
-		this.children[i].div = null;
-	}
+    for (var i = 0; i < this.children.length; i++)
+    {
+        this.children[i].div = null;
+    }
 
-	
-	window.document.removeEventListener('mousemove', this._onMouseMove);
-	window.removeEventListener('keydown', this._onKeyDown);
-		
-	this.pool = null;
-	this.children = null;
-	this.renderer = null;
+
+    window.document.removeEventListener('mousemove', this._onMouseMove);
+    window.removeEventListener('keydown', this._onKeyDown);
+
+    this.pool = null;
+    this.children = null;
+    this.renderer = null;
 
 };
 
@@ -4394,7 +4394,7 @@ core.CanvasRenderer.registerPlugin('accessibility', AccessibilityManager);
  *      );
  */
 var accessibleTarget = {
-    
+
     /**
      * @todo Needs docs.
      */
@@ -4769,13 +4769,13 @@ Container.prototype.onChildrenChange = function () {};
 
 /**
  * Adds a child to the container.
- * 
+ *
  * You can also add multple items like so: myContainer.addChild(thinkOne, thingTwo, thingThree)
  * @param child {PIXI.DisplayObject} The DisplayObject to add to the container
  * @return {PIXI.DisplayObject} The child that was added.
  */
 Container.prototype.addChild = function (child)
-{ 
+{
     var argumentsLength = arguments.length;
 
     // if there is only one argument we can bypass looping through the them
@@ -4787,7 +4787,7 @@ Container.prototype.addChild = function (child)
         {
             this.addChild( arguments[i] );
         }
-    }     
+    }
     else
     {
         // if the child has a parent then lets remove it as Pixi objects can only exist in one place
@@ -4797,7 +4797,7 @@ Container.prototype.addChild = function (child)
         }
 
         child.parent = this;
-        
+
         this.children.push(child);
 
         // TODO - lets either do all callbacks or all events.. not both!
@@ -4939,9 +4939,9 @@ Container.prototype.removeChild = function (child)
         {
             this.removeChild( arguments[i] );
         }
-    }     
+    }
     else
-    {   
+    {
         var index = this.children.indexOf(child);
 
         if (index === -1)
@@ -8161,7 +8161,7 @@ WebGLGraphicsData.prototype.destroy = function () {
 
     this.gl.deleteBuffer(this.buffer);
     this.gl.deleteBuffer(this.indexBuffer);
-    
+
     this.gl = null;
 
     this.buffer = null;
@@ -12990,9 +12990,9 @@ FilterManager.prototype.resize = function ( width, height )
 FilterManager.prototype.destroy = function ()
 {
     this.quad.destroy();
-    
+
     WebGLManager.prototype.destroy.call(this);
-    
+
     this.filterStack = null;
     this.offsetY = 0;
 
@@ -13662,7 +13662,7 @@ module.exports = WebGLManager;
  */
 WebGLManager.prototype.onContextChange = function ()
 {
-	// do some codes init!
+    // do some codes init!
 };
 
 /**
@@ -14680,7 +14680,7 @@ Quad.prototype.upload = function()
 Quad.prototype.destroy = function()
 {
     var gl = this.gl;
-    
+
      gl.deleteBuffer(this.vertexBuffer);
      gl.deleteBuffer(this.indexBuffer);
 };
@@ -15019,7 +15019,7 @@ RenderTarget.prototype.destroy = function ()
  */
 function StencilMaskStack()
 {
-	/**
+    /**
      * The actual stack
      *
      * @member {any[]}
@@ -15313,7 +15313,7 @@ Sprite.prototype.getBounds = function (matrix)
         else
         {
         */
-       
+
         var x1 = a * w1 + c * h1 + tx;
         var y1 = d * h1 + b * w1 + ty;
 
@@ -15468,7 +15468,7 @@ Sprite.prototype._renderCanvas = function (renderer)
 
             dx = (texture.trim) ? texture.trim.y - this.anchor.y * texture.trim.height : this.anchor.y * -texture._frame.height;
             dy = (texture.trim) ? texture.trim.x - this.anchor.x * texture.trim.width : this.anchor.x * -texture._frame.width;
-       
+
             dx += width;
 
             wt.tx = dy * wt.a + dx * wt.c + wt.tx;
@@ -24052,16 +24052,16 @@ InteractionManager.prototype.processInteractive = function (point, displayObject
     }
 
     // Took a little while to rework this function correctly! But now it is done and nice and optimised. ^_^
-    // 
+    //
     // This function will now loop through all objects and then only hit test the objects it HAS to, not all of them. MUCH faster..
     // An object will be hit test if the following is true:
-    // 
+    //
     // 1: It is interactive.
     // 2: It belongs to a parent that is interactive AND one of the parents children have not already been hit.
-    // 
+    //
     // As another little optimisation once an interactive object has been hit we can carry on through the scenegraph, but we know that there will be no more hits! So we can avoid extra hit tests
     // A final optimisation is that an object is not hit test directly if a child has already been hit.
-    
+
     var hit = false,
         interactiveParent = interactive = displayObject.interactive || interactive;
 
@@ -24074,9 +24074,9 @@ InteractionManager.prototype.processInteractive = function (point, displayObject
     // ** FREE TIP **! If an object is not interacttive or has no buttons in it (such as a game scene!) set interactiveChildren to false for that displayObject.
     // This will allow pixi to completly ignore and bypass checking the displayObjects children.
     if(displayObject.interactiveChildren)
-    {       
+    {
         var children = displayObject.children;
-        
+
         for (var i = children.length-1; i >= 0; i--)
         {
             // time to get recursive.. if this function will return if somthing is hit..
@@ -24086,8 +24086,8 @@ InteractionManager.prototype.processInteractive = function (point, displayObject
 
                 // we no longer need to hit test any more objects in this container as we we now know the parent has been hit
                 interactiveParent = false;
-                
-                // If the child is interactive , that means that the object hit was actually interactive and not just the child of an interactive object. 
+
+                // If the child is interactive , that means that the object hit was actually interactive and not just the child of an interactive object.
                 // This means we no longer need to hit test anything else. We still need to run through all objects, but we don't need to perform any hit tests.
                 if(children[i].interactive)
                 {
@@ -24103,7 +24103,7 @@ InteractionManager.prototype.processInteractive = function (point, displayObject
         // if we are hit testing (as in we have no hit any objects yet)
         // We also don't need to worry about hit testing if once of the displayObjects children has already been hit!
         if(hitTest && !hit)
-        {  
+        {
             if(displayObject.hitArea)
             {
                 displayObject.worldTransform.applyInverse(point,  this._tempPoint);
@@ -24117,12 +24117,12 @@ InteractionManager.prototype.processInteractive = function (point, displayObject
 
         if(displayObject.interactive)
         {
-            func(displayObject, hit); 
+            func(displayObject, hit);
         }
     }
 
     return hit;
-  
+
 };
 
 
@@ -24159,7 +24159,7 @@ InteractionManager.prototype.onMouseDown = function (event)
 InteractionManager.prototype.processMouseDown = function ( displayObject, hit )
 {
     var e = this.mouse.originalEvent;
-    
+
     var isRightButton = e.button === 2 || e.which === 3;
 
     if(hit)
@@ -25810,7 +25810,7 @@ function MeshRenderer(renderer)
      *
      * @member {Uint16Array}
      */
-    
+
     this.indices = new Uint16Array(15000);
 
     //TODO this could be a single buffer shared amongst all renderers as we reuse this set up in most renderers
@@ -25992,7 +25992,7 @@ MeshRenderer.prototype.flush = function ()
  */
 MeshRenderer.prototype.start = function ()
 {
-    
+
 
     this.currentShader = null;
 };
@@ -27004,13 +27004,13 @@ if (!global.cancelAnimationFrame) {
         };
         return q;
     };
-    
+
     async.priorityQueue = function (worker, concurrency) {
-        
+
         function _compareTasks(a, b){
           return a.priority - b.priority;
         };
-        
+
         function _binarySearch(sequence, item, compare) {
           var beg = -1,
               end = sequence.length - 1;
@@ -27024,7 +27024,7 @@ if (!global.cancelAnimationFrame) {
           }
           return beg;
         }
-        
+
         function _insert(q, data, priority, callback) {
           if (!q.started){
             q.started = true;
@@ -27046,7 +27046,7 @@ if (!global.cancelAnimationFrame) {
                   priority: priority,
                   callback: typeof callback === 'function' ? callback : null
               };
-              
+
               q.tasks.splice(_binarySearch(q.tasks, item, _compareTasks) + 1, 0, item);
 
               if (q.saturated && q.tasks.length === q.concurrency) {
@@ -27055,15 +27055,15 @@ if (!global.cancelAnimationFrame) {
               async.setImmediate(q.process);
           });
         }
-        
+
         // Start with a normal queue
         var q = async.queue(worker, concurrency);
-        
+
         // Override push to accept second parameter representing priority
         q.push = function (data, priority, callback) {
           _insert(q, data, priority, callback);
         };
-        
+
         // Remove unshift function
         delete q.unshift;
 
@@ -27985,7 +27985,7 @@ Loader.prototype._onLoad = function (resource) {
             this.progress = 100;
             this._onComplete();
         }
-        
+
         if (resource.error) {
             this.emit('error', resource.error, this, resource);
         }
@@ -27993,7 +27993,7 @@ Loader.prototype._onLoad = function (resource) {
             this.emit('load', this, resource);
         }
     });
-    
+
 
 
     // remove this resource from the async queue
@@ -28916,7 +28916,7 @@ module.exports = function () {
                cache[this.url] = this.data;
             });
         }
-        
+
         next();
     };
 };

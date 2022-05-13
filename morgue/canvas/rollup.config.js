@@ -1,6 +1,6 @@
 export default {
     entry: 'main.js',
-    indent: '\t',
+    indent: '    ',
     sourceMap: 'inline',
     dest: 'bundle.js',
     format: 'iife'

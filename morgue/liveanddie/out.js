@@ -6,175 +6,175 @@
    */
   if (typeof window !== 'undefined') {
 
-      
+
       window.store = function (key) {
-      
+
           return key ? store[key] = store[key] || {} : undefined
-      
+
       };
-      
+
       window.val = function (key) {
-      
+
           return key ? vars[key] = vars[key] || {} : undefined
-      
+
       };
-      
+
       window.delay = function (delay, fn) {
-      
+
           (typeof delay === 'number') ? setTimeout(fn, delay) : delay();
-      
+
       };
-      
+
       window.once = function (key, fn) {
-      
+
           if (!key || my.onceKeys.hasOwnProperty(key)) return
           my.onceKeys[key] = null;
           fn();
-      
+
       };
-      
+
       window.repeat = function (key, ms, fn) {
-     
+
           if (typeof fn !== 'function') return
-      
+
           typeof ms !== 'number' && (ms = 1000);
-      
+
           my.repeats[key] = {ms: ms, timestamp: global.timestamp + ms, fn: fn};
-      
+
       };
-      
+
       window.stop = function (key) {
-    
+
           typeof key !== 'undefined' && my.repeats.hasOwnProperty(key) && (delete my.repeats[key]);
-      
+
       };
-      
+
       window.listen = function (object, type, delay, fn) {
-      
+
           (function(t) {
-      
+
               object.addEventListener(type, function (event) {
-      
+
                   if (!t) {
-      
+
                       fn(event);
                       t = setTimeout(function () {
-      
+
                           t = null;
-      
+
                       }, delay);
-      
+
                   }
-      
+
               }, false);
-      
+
           }());
-      
+
       };
-      
-      
+
+
       const STORE = 'store';
-      
+
       var store = JSON.parse(localStorage.getItem(STORE) || '{}');
       var vars = window.vars = window.vars || {};
-      
+
       var global = val('global');
       var my = val('continuous');
-      
+
       my.repeats = my.repeats || {};
       my.onceKeys = my.onceKeys || {};
       my.loads = my.loads || 0;
       ++my.loads;
 
-      
+
       once('continuous', function () {
-      
+
           window.addEventListener('beforeunload', function () {
-      
+
               localStorage.setItem(STORE, JSON.stringify(store));
-      
+
           }, false);
-      
+
       });
-   
+
 
       var rAF = function (timestamp) {
-      
+
           my.rAFId = requestAnimationFrame(rAF);
-      
+
           global.timestamp = timestamp;
-      
+
           for (var key in my.repeats) {
 
               var repeat = my.repeats[key];
 
               if (repeat.timestamp < timestamp) {
-      
+
                   repeat.fn();
                   repeat.timestamp = timestamp + repeat.ms;
-      
+
               }
-      
+
           }
-      
+
       };
-     
+
 
       if (my.rAFId) {
-      
+
           cancelAnimationFrame(my.rAFId);
           console.log('continuous reload #' + (my.loads - 1));
-      
+
       }
-      
-      
+
+
       rAF(performance.now());
 
-      
+
       if (location.hostname === 'localhost') {
-      
+
           (function() {
 
               repeat('continuous', 1000, function () {
-      
+
                   const http = new XMLHttpRequest();
-      
+
                   http.open('GET', '/continuous', true);
-      
+
                   http.addEventListener('load', function () {
-      
+
                       if (!JSON.parse(http.responseText).update) return
                       var scripts = document.getElementsByTagName('script');
-      
+
                       for (var i = 0; i < scripts.length; i++) {
-      
+
                           var script = scripts[i];
-      
+
                           if (!script.getAttribute('continuous')) continue
                           var update = document.createElement('script');
-      
+
                           update.setAttribute('continuous', my.loads);
                           update.src = script.src;
                           var parent = script.parentNode;
-      
+
                           parent.removeChild(script);
                           parent.appendChild(update);
-      
+
                       }
-      
+
                   });
-      
-      
+
+
                   http.send();
-      
+
               });
-      
+
           }());
-      
+
       }
-      
-     
-      
+
+
+
   } else {
 
 
@@ -182,103 +182,103 @@
       var cp = require('child_process');
       var watch = require('node-watch');
       var http = require('http');
-  	var fs = require('fs');
-  	var path = require('path');
+      var fs = require('fs');
+      var path = require('path');
 
-      
+
       var PORT = 8080;
       var update = {};
-      
-      
+
+
       function build() {
-      
+
           cp.exec('npm run rollup', function(err, stdout, stderr) {
-      
+
               err && console.log(err);
               stderr && console.log(stderr);
-      
+
               if (!err && !stderr) {
-      
+
                   console.log('> rollup successful');
                   update = {update: true};
-      
+
                   cp.exec('npm run closure', function(err, stdout, stderr) {
-      
+
                       err && console.log(err);
                       stderr && console.log(stderr);
                       !err && console.log('> closure successful');
-      
+
                   });
-      
+
               }
-      
+
           });
-      
+
       }
-      
+
       watch('src', function(filename) {
           if (!/\.js$/.test(filename)) return
           build();
       });
-  	
+
 
       http.createServer(function (request, response) {
-  		
-  		if (request.url === '/continuous') {
-  			
-  			response.writeHead(200, { 'Content-Type': 'application/json' });
-  			response.end(JSON.stringify(update), 'utf-8');
-  			update = {};
-  			return
 
-  		}
-  		
-  		var filepath = request.url === '' ? './index.html' : request.url[request.url.length-1] === '/' ? '.' + request.url + 'index.html' : '.' + request.url;
-  		var extname = path.extname(filepath);
-  		var contentType = 'text/html';
-  		
-  		switch (extname) {
-  		case '.js':
-  			contentType = 'text/javascript';
-  			break
-  		case '.css':
-  			contentType = 'text/css';
-  			break
-  		case '.json':
-  			contentType = 'application/json';
-  			break
-  		case '.png':
-  			contentType = 'image/png';
-  			break    
-  		case '.jpg':
-  			contentType = 'image/jpg';
-  			break
-  		}
+          if (request.url === '/continuous') {
 
-  		fs.readFile(filepath, function(error, content) {
-  			if (error) {
-  				if(error.code == 'ENOENT') {
-  					fs.readFile('./404.html', function(error, content) {
-  						response.writeHead(200, { 'Content-Type': contentType });
-  						response.end(content, 'utf-8');
-  					});
-  				} else {
-  					response.writeHead(500);
-  					response.end('Sorry, check with the site admin for error: '+error.code+' ..\n');
-  					response.end();
-  				}
-  			} else {
-  				response.writeHead(200, { 'Content-Type': contentType });
-  				response.end(content, 'utf-8');
-  			}
-  		});
+              response.writeHead(200, { 'Content-Type': 'application/json' });
+              response.end(JSON.stringify(update), 'utf-8');
+              update = {};
+              return
 
-  	}).listen(PORT);
-  	
-  	console.log('> listening @ http://localhost:' + PORT);
-  	
+          }
+
+          var filepath = request.url === '' ? './index.html' : request.url[request.url.length-1] === '/' ? '.' + request.url + 'index.html' : '.' + request.url;
+          var extname = path.extname(filepath);
+          var contentType = 'text/html';
+
+          switch (extname) {
+          case '.js':
+              contentType = 'text/javascript';
+              break
+          case '.css':
+              contentType = 'text/css';
+              break
+          case '.json':
+              contentType = 'application/json';
+              break
+          case '.png':
+              contentType = 'image/png';
+              break
+          case '.jpg':
+              contentType = 'image/jpg';
+              break
+          }
+
+          fs.readFile(filepath, function(error, content) {
+              if (error) {
+                  if(error.code == 'ENOENT') {
+                      fs.readFile('./404.html', function(error, content) {
+                          response.writeHead(200, { 'Content-Type': contentType });
+                          response.end(content, 'utf-8');
+                      });
+                  } else {
+                      response.writeHead(500);
+                      response.end('Sorry, check with the site admin for error: '+error.code+' ..\n');
+                      response.end();
+                  }
+              } else {
+                  response.writeHead(200, { 'Content-Type': contentType });
+                  response.end(content, 'utf-8');
+              }
+          });
+
+      }).listen(PORT);
+
+      console.log('> listening @ http://localhost:' + PORT);
+
       build();
-   
+
   }
 
   let at_work = false;
@@ -327,7 +327,7 @@
     return {x: (v && v.x) ? v.x : 0, y: (v && v.y) ? v.y : 0, z: (v && v.z) ? v.z : 0}
   };
 
-   
+
   /**
    * Returns the zero vector <0, 0, 0>
    * @return {vec3}
@@ -568,7 +568,7 @@
     }
   };
 
-   
+
   /**
    * Return the zero rectangle {min: {0, 0, 0}, max: {0, 0, 0}}
    * @return {rect3}
@@ -678,7 +678,7 @@
    * @param {vec3} position
    * @param {number} opacity
    * @param {number} tint
-   */ 
+   */
   display.sprite = (ent, position, opacity, tint) => {
 
     let sprite;
@@ -694,7 +694,7 @@
       } else {
         sprite = PIXI['Sprite']['fromImage'](ent.image);
         sprite.anchor.x = 0.5;
-        sprite.anchor.y = 0.5; 
+        sprite.anchor.y = 0.5;
       }
       spritesUsed.push(sprite);
       ++my$1.nextSprite[ent.image];
@@ -832,7 +832,7 @@
   effect.destroy = (eft) => {
     if (!my$2.effects.hasOwnProperty(eft.id)) return
     delete my$2.effects[eft.id];
-    my$2.destroys[eft.type](eft); 
+    my$2.destroys[eft.type](eft);
     let index = eft.entity.effects.indexOf(eft);
     if (index > -1) eft.entity.effects.splice(index, 1);
     eft.destroyed = true;
@@ -865,7 +865,7 @@
       ent.size = vec3.fromString(fromString[2]);
       ent.baseMovementSpeed = parseFloat(fromString[3]);
     }
-   
+
     if (!my$3.creates.hasOwnProperty(ent.type)) {
       console.warn(ent.type + ' is not a known type of entity');
       return
@@ -880,7 +880,7 @@
       // the {cell} this ent is anchored to
       cell: /**{cell}*/ent.cell,
 
-      // offset is the position of the entities relative to its cells centre 
+      // offset is the position of the entities relative to its cells centre
       // distances greater than 0.5 will move the ent to the appropriate neighbour
       offset: /**{vec3}*/vec3(ent.offset),
 
@@ -897,7 +897,7 @@
       collide: /**{vec3=}*/ent.collide ? vec3(ent.collide) : null,
 
       collisionArea: /**{cell[]}*/[],
-   
+
       image: /**{string}*/'/data/sprite/' + ent.type + '.png',
 
       baseMovementSpeed: /**{number}*/ent.baseMovementSpeed || 0,
@@ -918,8 +918,8 @@
 
     // add new entity to map
     my$3.entities[ent.id] = ent;
-   
-    // add entity to cells 
+
+    // add entity to cells
     if (ent.cell && !cells.addEntity(ent.cell.owner, ent, ent.cell)) {
       console.warn(ent.type + ' was not added to cell due to collision');
     }
@@ -1004,7 +1004,7 @@
     }
 
     delete my$3.entities[ent.id];
-    my$3.destroys[ent.type](ent); 
+    my$3.destroys[ent.type](ent);
     cells.removeEntity(ent);
     ent.destroyed = true;
 
@@ -1022,7 +1022,7 @@
   };
 
 
-   
+
   let my$3 = val('ent');
 
   my$3.entities = my$3.entities || {};
@@ -1036,7 +1036,7 @@
    * @param {cells=} clls {
    *            size: {vec3} [default {x: 1000, y: 1000, z: 0}],
    *            regionSize: {number} [default 32],
-   *          } 
+   *          }
    * @return {cells}
    */
   let cells = (clls) => {
@@ -1158,10 +1158,10 @@
 
     // don't continue if entity would collide
     if (ent.collide && cells.collides(ent, collisionArea)) return
-     
+
     // update entities offset
     ent.offset = offset;
-   
+
     // add entity to cell
     cll.entities.push(ent);
     ent.cell = cll;
@@ -1170,14 +1170,14 @@
     ent.collisionArea = collisionArea;
     for (let i in collisionArea) collisionArea[i].collision = ent;
 
-    // re-region cell and similar neighbours 
+    // re-region cell and similar neighbours
     region.reRegion(cll.region);
 
     return ent
 
   };
 
-   
+
   /**
    * Removes an {entity} from its {cells} if attached.
    * @param {entity} ent
@@ -1202,8 +1202,8 @@
     ent.cell = null;
     let index = cll.entities.indexOf(ent);
     if (index > -1) cll.entities.splice(index, 1);
-    
-    // re-region cell and similar neighbours 
+
+    // re-region cell and similar neighbours
     region.reRegion(cll.region);
 
     let exitCleared = {};
@@ -1215,7 +1215,7 @@
       if (cll.regionExitSouth && cll.south.region) exitCleared[cll.south.region.id] = cll.south.region;
       if (cll.regionExitWest && cll.west.region) exitCleared[cll.west.region.id] = cll.west.region;
     }
-   
+
     for (let id in exitCleared) {
       region.reRegion(exitCleared[id]);
     }
@@ -1229,11 +1229,11 @@
    * @param {entity} ent
    * @param {vec3} offsetDelta
    */
-  cells.moveEntity = (ent, offsetDelta) => {  
-    
+  cells.moveEntity = (ent, offsetDelta) => {
+
     // create a new offset from the addition of the entities offset and the delta
     let offset = vec3.addVectors(ent.offset, offsetDelta);
-    
+
     // find what cell the entity would be in after offset normalisation
     let cll = cells.findCellFromNormalisedOffset(ent.cell, offset);
 
@@ -1253,10 +1253,10 @@
 
     // remove entity from its current cell
     cells.removeEntity(ent);
-    
+
     // update entities offset
     ent.offset = offset;
-   
+
     // add entity to new cell
     cll.entities.push(ent);
     ent.cell = cll;
@@ -1267,7 +1267,7 @@
       collisionArea[i].collision = ent;
     }
 
-    // re-region cell and similar neighbours 
+    // re-region cell and similar neighbours
     region.reRegion(cll.region);
 
   };
@@ -1308,7 +1308,7 @@
     }
 
     return null
-     
+
   };
 
 
@@ -1341,7 +1341,7 @@
 
     while (area.y--) {
       let x = area.x;
-      while (x--) { 
+      while (x--) {
         collisionArea.push(cll);
         if (cll.east) cll = cll.east;
       }
@@ -1377,7 +1377,7 @@
     }
 
     if (!ent.collide) return true
-    
+
     let line = cells.raytrace(a, b);
 
     for (let cll in line) {
@@ -1425,7 +1425,7 @@
     }
 
     return line
-    
+
   };
 
 
@@ -1520,12 +1520,12 @@
    * @param {region} rgn
    */
   region.reRegion = (rgn) => {
-    
+
     let dict = {};
     let list = [rgn.id];
 
     dict[rgn.id] = null;
-    
+
     while (list.length) {
 
       rgn = rgn.owner.regions[list.pop()];
@@ -1583,9 +1583,9 @@
 
       // flood fill unregioned cells into this region that share the same region type until there are none left
       while (unregionedCells.length) {
-     
+
         let cll = unregionedCells.pop();
-   
+
         // skip cells that already have a region
         if (cll.region) continue
 
@@ -1599,7 +1599,7 @@
         if (cll.east && !cll.east.region && cells.canShareSameRegion(cll, cll.east)) unregionedCells.push(cll.east);
         if (cll.south && !cll.south.region && cells.canShareSameRegion(cll, cll.south)) unregionedCells.push(cll.south);
         if (cll.west && !cll.west.region && cells.canShareSameRegion(cll, cll.west)) unregionedCells.push(cll.west);
-    
+
       }
 
       // flag region as dirty
@@ -1609,7 +1609,7 @@
 
     // update dirty regions
     region.updateDirty(clls);
-   
+
   };
 
 
@@ -1648,7 +1648,7 @@
         if (cll.regionBoundary) {
 
           // update exits; both outbound and inbound
-          
+
           let neighbour = cll.north;
           if (neighbour && neighbour.region.id !== rgn.id && cells.isOpen(neighbour)) {
             cll.regionExitNorth = true;
@@ -1789,7 +1789,7 @@
 
   /* : green
    * : bbb
-   * 
+   *
    */
   let ui = {};
 
@@ -1817,7 +1817,7 @@
 
     let scroll = my$5.messagesScroll.style;
     scroll.overflowY = 'scroll';
-   
+
     let td;
 
     ui.E(my$5.messagesBody, 'tr', [
@@ -1846,12 +1846,12 @@
    * @param {string} message
    */
   ui.terminal.say = (message) => {
-    
+
     ui.terminal.print('> ' + message);
-    
+
   };
 
-   
+
   /**
    * Focuses the terminal.
    */
@@ -1908,7 +1908,7 @@
    */
   ui.cell = (cll) => {
 
-    let info = ''; 
+    let info = '';
 
     if (cll.collision) {
       let ent = cll.collision;
@@ -1932,7 +1932,7 @@
     let width = rect3.width(view);
     let height = rect3.height(view);
     let centre = rect3.centre(view);
-     
+
     my$5.view.innerText = '(' + centre.x + ',' + centre.y + ') ' + width + 'x' + height;
 
   };
@@ -2022,7 +2022,7 @@
   my$5.terminalEl.style.width = my$5.terminal_width;
   my$5.terminalEl.style.zIndex = '999';
   my$5.terminalEl.style.padding = '5px';
-   
+
   my$5.messagesScroll.style.overflowY = 'hidden';
   my$5.messagesScroll.style.minHeight = '1.6em';
   my$5.messagesScroll.style.maxHeight = '20em';
@@ -2038,7 +2038,7 @@
   my$5.sayEl.style.lineHeight = '0.9em';
   my$5.sayEl.style.paddingLeft = '2px';
 
-   
+
   my$5.cellEl = my$5.cellEl || ui.E(document.body, 'div');
 
   my$5.cellEl.style.background = my$5.messages_bg_unfocused;
@@ -2069,7 +2069,7 @@
   once('ui', () => {
 
     // once off event listener registration
-    
+
     my$5.sayEl.addEventListener('mouseenter', ui.terminal.focus, false);
     my$5.terminalEl.addEventListener('mouseleave', ui.terminal.blur, false);
 
@@ -2090,7 +2090,7 @@
         my$5.sayEl.value = '';
         ui.terminal.blur();
       }
-    }, false);  
+    }, false);
 
   });
 
@@ -2440,12 +2440,12 @@
 
   }, (ent, toString) => {
     // on entity toString
-    
+
     return toString
 
   }, (ent) => {
-    // on entity update 
-   
+    // on entity update
+
   }, (ent) => {
     // on entity destroy
 
@@ -2453,9 +2453,9 @@
 
 
   var blankcell = (ent) => {
-    // create helper 
-    
-    ent = ent || {}; 
+    // create helper
+
+    ent = ent || {};
     ent.type = TYPE;
     return entity(ent)
 
@@ -2465,7 +2465,7 @@
 
   entity.type(TYPE$1, (ent, fromString) => {
     // on entity create
-    
+
     ent.anchor.x = 0.01;
     ent.anchor.y = -0.45;
 
@@ -2477,12 +2477,12 @@
 
   }, (ent, toString) => {
     // on entity toString
-    
+
     return toString
 
   }, (ent) => {
-    // on entity update 
-   
+    // on entity update
+
   }, (ent) => {
     // on entity destroy
 
@@ -2490,9 +2490,9 @@
 
 
   var grass = (ent) => {
-    // create helper 
-    
-    ent = ent || {}; 
+    // create helper
+
+    ent = ent || {};
     ent.type = TYPE$1;
     return entity(ent)
 
@@ -2502,7 +2502,7 @@
 
   entity.type(TYPE$2, (ent, fromString) => {
     // on entity create
-    
+
     ent.anchor.x = 0.1;
     ent.anchor.y = -0.32;
     ent.collide = vec3({x: 0.7, y: 0.2});
@@ -2518,13 +2518,13 @@
 
       ent.movementSpeed = ent.baseMovementSpeed = 2;
 
-    } 
+    }
 
     return ent
 
   }, (ent, toString) => {
     // on entity toString
-    
+
     return [
       toString,
       ent.name
@@ -2532,8 +2532,8 @@
 
 
   }, (ent) => {
-    // on entity update 
-   
+    // on entity update
+
   }, (ent) => {
     // on entity destroy
 
@@ -2541,9 +2541,9 @@
 
 
   var person = (ent) => {
-    // create helper 
-    
-    ent = ent || {}; 
+    // create helper
+
+    ent = ent || {};
     ent.type = TYPE$2;
     ent.name = ent.name || 'unnamed';
     return entity(ent)
@@ -2624,7 +2624,7 @@
       if (score >= parent.score) break
 
       // otherwise, swap the parent with the current item and continue
-      heap.items[parentN] = item; 
+      heap.items[parentN] = item;
       heap.items[i] = parent;
       i = parentN;
     }
@@ -2844,7 +2844,7 @@
     let traveled = s * eft.entity.movementSpeed;
 
     if (traveled < length) {
-      vec3.multiplyScalar(offsetDelta, traveled / length); 
+      vec3.multiplyScalar(offsetDelta, traveled / length);
     } else {
       eft.extras.path.splice(0, 1);
     }
@@ -2858,8 +2858,8 @@
     }
 
   }, (eft) => {
-    // on effect destroyed  
-    
+    // on effect destroyed
+
   });
 
 
@@ -2867,9 +2867,9 @@
 
 
   var movefindpath = (eft) => {
-    // create helper 
-    
-    eft = eft || {}; 
+    // create helper
+
+    eft = eft || {};
     eft.type = TYPE$3;
     eft.extras = eft.extras || {};
     eft.extras['destination'] = eft['destination'];
@@ -3110,7 +3110,7 @@
                       }
 
                   }*/
-  				
+
                   for (let ent in cll.entities) {
 
                       ent = cll.entities[ent];

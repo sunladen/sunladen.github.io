@@ -8,8 +8,8 @@ function glsl() {
 
             var transformedCode = 'export default ' + JSON.stringify(
                 code
-                    .replace( /[ \t]*\/\/.*\n/g, '' ) // remove //
-                    .replace( /[ \t]*\/\*[\s\S]*?\*\//g, '' ) // remove /* */
+                    .replace( /[     ]*\/\/.*\n/g, '' ) // remove //
+                    .replace( /[     ]*\/\*[\s\S]*?\*\//g, '' ) // remove /* */
                     .replace( /\n{2,}/g, '\n' ) // # \n+ to \n
             ) + ';';
             return {
@@ -25,7 +25,7 @@ function glsl() {
 
 export default {
     entry: 'src/main.js',
-    indent: '\t',
+    indent: '    ',
     sourceMap: 'inline',
     plugins: [
         glsl()

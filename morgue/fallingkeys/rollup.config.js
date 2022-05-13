@@ -1,6 +1,6 @@
 export default {
     input: 'src/main.js',
-    indent: '\t',
+    indent: '    ',
     sourcemap: 'inline',
     output: {
         file: 'bundle.js',

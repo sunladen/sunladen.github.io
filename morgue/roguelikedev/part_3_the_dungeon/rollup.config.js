@@ -1,6 +1,6 @@
 export default {
     entry: 'src/main.js',
-    indent: '\t',
+    indent: '    ',
     sourceMap: 'inline',
     dest: 'roguelike.js',
     format: 'iife'

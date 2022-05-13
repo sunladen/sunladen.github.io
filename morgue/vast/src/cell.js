@@ -1,43 +1,43 @@
 
 function Cell( x, y ) {
 
-	let cell = {
-		x: x,
-		y: y,
-		div: document.createElement( "div" )
-	}
+    let cell = {
+        x: x,
+        y: y,
+        div: document.createElement( "div" )
+    };
 
-	cell.div.style.backgroundColor = "#eee"
-	cell.div.style.border = "1px solid #ddd"
-	document.body.appendChild( cell.div )
+    cell.div.style.backgroundColor = "#eee";
+    cell.div.style.border = "1px solid #ddd";
+    document.body.appendChild( cell.div );
 
-	return cell
+    return cell;
 
 }
 
 function copy( cell ) {
-    
+
     let _cell = {
         x: cell.x,
         y: cell.y,
         div: cell.div
-    }
-    
-    return _cell
+    };
+
+    return _cell;
 
 }
 
 function generation( cell, generationInfo ) {
 
-    let _cell = copy( cell )
+    let _cell = copy( cell );
 
-    let shade = parseInt( ( generationInfo.iteration / 1000.0 ) * 255 )
+    let shade = parseInt( ( generationInfo.iteration / 1000.0 ) * 255 );
 
-    _cell.div.style.backgroundColor = "rgb( " + shade + ", " + shade + ", " + shade + " )"
+    _cell.div.style.backgroundColor = "rgb( " + shade + ", " + shade + ", " + shade + " )";
 
-    return _cell
+    return _cell;
 
 }
 
 
-export { Cell, generation }
+export { Cell, generation };

@@ -6,8 +6,8 @@ import * as Landscape from './landscape.js';
 const landscapeGeometry = Landscape.generateIslandGeometry( worldSize );
 
 var dirtMaterial = new THREE.MeshStandardMaterial( {
-	color: 'brown',
-	polygonOffset: true
+    color: 'brown',
+    polygonOffset: true
 } );
 
 var dirtMesh = new THREE.Mesh( landscapeGeometry, dirtMaterial );
@@ -29,87 +29,87 @@ scene.add( waterMesh );
 
 // function dirtTexture( width, height ) {
 
-// 	const canvas = document.createElement( 'canvas' );
-// 	canvas.width = width;
-// 	canvas.height = height;
+//     const canvas = document.createElement( 'canvas' );
+//     canvas.width = width;
+//     canvas.height = height;
 
-// 	const context = canvas.getContext( '2d' );
-// 	context.fillStyle = 'brown';
-// 	context.fillRect( 0, 0, width, height );
+//     const context = canvas.getContext( '2d' );
+//     context.fillStyle = 'brown';
+//     context.fillRect( 0, 0, width, height );
 
-// 	const image = context.getImageData( 0, 0, canvas.width, canvas.height );
-// 	const imageData = image.data;
+//     const image = context.getImageData( 0, 0, canvas.width, canvas.height );
+//     const imageData = image.data;
 
-// 	for ( let i = 0, j = 0, l = imageData.length; i < l; i += 4, j ++ ) {
+//     for ( let i = 0, j = 0, l = imageData.length; i < l; i += 4, j ++ ) {
 
-// 		// imageData[ i ] = ( 96 + shade * 128 ) * ( 0.5 + data[ j ] * 0.007 );
-// 		// imageData[ i + 1 ] = ( 32 + shade * 96 ) * ( 0.5 + data[ j ] * 0.007 );
-// 		// imageData[ i + 2 ] = ( shade * 96 ) * ( 0.5 + data[ j ] * 0.007 );
+//         // imageData[ i ] = ( 96 + shade * 128 ) * ( 0.5 + data[ j ] * 0.007 );
+//         // imageData[ i + 1 ] = ( 32 + shade * 96 ) * ( 0.5 + data[ j ] * 0.007 );
+//         // imageData[ i + 2 ] = ( shade * 96 ) * ( 0.5 + data[ j ] * 0.007 );
 
-// 	}
+//     }
 
-// 	context.putImageData( image, 0, 0 );
+//     context.putImageData( image, 0, 0 );
 
-// 	return canvas;
+//     return canvas;
 
 // }
 
 
 class GenerateIslandDemo {
 
-	constructor( container ) {
+    constructor( container ) {
 
-		this.renderer = {
-			main: new THREE.WebGLRenderer(),
-			mini: new THREE.WebGLRenderer( { alpha: true } )
-		};
+        this.renderer = {
+            main: new THREE.WebGLRenderer(),
+            mini: new THREE.WebGLRenderer( { alpha: true } )
+        };
 
-		this.renderer.main.setPixelRatio( window.devicePixelRatio );
-		this.renderer.mini.setPixelRatio( window.devicePixelRatio );
+        this.renderer.main.setPixelRatio( window.devicePixelRatio );
+        this.renderer.mini.setPixelRatio( window.devicePixelRatio );
 
-		this.renderer.main.setSize( window.innerWidth, window.innerHeight );
-		this.renderer.mini.setSize( window.innerWidth * 0.25, window.innerHeight * 0.25 );
+        this.renderer.main.setSize( window.innerWidth, window.innerHeight );
+        this.renderer.mini.setSize( window.innerWidth * 0.25, window.innerHeight * 0.25 );
 
-		this.renderer.mini.domElement.style.position = 'absolute';
-		this.renderer.mini.domElement.style.top = '0';
+        this.renderer.mini.domElement.style.position = 'absolute';
+        this.renderer.mini.domElement.style.top = '0';
 
-		container.append( this.renderer.main.domElement );
-		container.append( this.renderer.mini.domElement );
+        container.append( this.renderer.main.domElement );
+        container.append( this.renderer.mini.domElement );
 
-		this.lookAt = new THREE.Vector3();
+        this.lookAt = new THREE.Vector3();
 
-		let aspect = container.offsetWidth / container.offsetHeight;
+        let aspect = container.offsetWidth / container.offsetHeight;
 
-		this.camera = new THREE.PerspectiveCamera( 90, aspect, 0.1, 1000 );
-		this.camera.rotation.y = Math.PI;
-		//this.camera.position.z = worldSize;
-		//cameraPerspective.position.z = worldSize * 0.5;
-		this.helper = new THREE.CameraHelper( this.camera );
+        this.camera = new THREE.PerspectiveCamera( 90, aspect, 0.1, 1000 );
+        this.camera.rotation.y = Math.PI;
+        //this.camera.position.z = worldSize;
+        //cameraPerspective.position.z = worldSize * 0.5;
+        this.helper = new THREE.CameraHelper( this.camera );
 
-		this.scene = new THREE.Scene();
-		this.scene.add( this.helper );
-
-
-		let hemiLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 0.6 );
-		hemiLight.color.setHSL( 0.6, 0.75, 0.5 );
-		hemiLight.groundColor.setHSL( 0.095, 0.5, 0.5 );
-		hemiLight.position.set( 0, 500, 0 );
-		this.scene.add( hemiLight );
-
-		let dirLight = new THREE.DirectionalLight( 0xffffff, 2 );
-		dirLight.position.set( - 1, 1, 0 );
-
-		this.scene.add( dirLight );
-		this.scene.add( dirLight.shadow.camera );
-
-		dirLight.castShadow = true;
-		dirLight.shadow.mapSize.width = dirLight.shadow.mapSize.height = 1024 * 2;
+        this.scene = new THREE.Scene();
+        this.scene.add( this.helper );
 
 
-		new OrbitControls( cameraPerspective, mainRenderer.domElement );
-		new OrbitControls( cameraOrtho, mainRenderer.domElement );
+        let hemiLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 0.6 );
+        hemiLight.color.setHSL( 0.6, 0.75, 0.5 );
+        hemiLight.groundColor.setHSL( 0.095, 0.5, 0.5 );
+        hemiLight.position.set( 0, 500, 0 );
+        this.scene.add( hemiLight );
 
-	}
+        let dirLight = new THREE.DirectionalLight( 0xffffff, 2 );
+        dirLight.position.set( - 1, 1, 0 );
+
+        this.scene.add( dirLight );
+        this.scene.add( dirLight.shadow.camera );
+
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = dirLight.shadow.mapSize.height = 1024 * 2;
+
+
+        new OrbitControls( cameraPerspective, mainRenderer.domElement );
+        new OrbitControls( cameraOrtho, mainRenderer.domElement );
+
+    }
 
 }
 
@@ -118,50 +118,50 @@ class GenerateIslandDemo {
 
 function animate() {
 
-	requestAnimationFrame( animate );
+    requestAnimationFrame( animate );
 
-	render();
+    render();
 
 }
 
 
 function render() {
 
-	if ( activeCamera === cameraPerspective ) {
+    if ( activeCamera === cameraPerspective ) {
 
-		cameraPerspective.far = cameraPerspective.position.length() + worldSize * 0.5;
-		cameraPerspective.updateProjectionMatrix();
+        cameraPerspective.far = cameraPerspective.position.length() + worldSize * 0.5;
+        cameraPerspective.updateProjectionMatrix();
 
-		cameraPerspectiveHelper.update();
-		cameraPerspectiveHelper.visible = true;
+        cameraPerspectiveHelper.update();
+        cameraPerspectiveHelper.visible = true;
 
-		cameraOrthoHelper.visible = false;
+        cameraOrthoHelper.visible = false;
 
-	} else {
+    } else {
 
-		cameraOrtho.far = cameraOrtho.position.length() + worldSize * 0.5;
-		cameraOrtho.updateProjectionMatrix();
+        cameraOrtho.far = cameraOrtho.position.length() + worldSize * 0.5;
+        cameraOrtho.updateProjectionMatrix();
 
-		cameraOrthoHelper.update();
-		cameraOrthoHelper.visible = true;
+        cameraOrthoHelper.update();
+        cameraOrthoHelper.visible = true;
 
-		cameraPerspectiveHelper.visible = false;
+        cameraPerspectiveHelper.visible = false;
 
-	}
+    }
 
-	cameraRig.lookAt( lookAt );
+    cameraRig.lookAt( lookAt );
 
-	//renderer.clear();
+    //renderer.clear();
 
-	activeHelper.visible = false;
+    activeHelper.visible = false;
 
-	//mainRenderer.setViewport( 0, 0, window.innerWidth, window.innerHeight );
-	mainRenderer.render( scene, activeCamera );
+    //mainRenderer.setViewport( 0, 0, window.innerWidth, window.innerHeight );
+    mainRenderer.render( scene, activeCamera );
 
-	activeHelper.visible = true;
+    activeHelper.visible = true;
 
-	//minimapRenderer.setViewport( screenWidth / 2, screenHeight / 2, screenWidth / 2, screenHeight / 2 );
-	minimapRenderer.render( scene, this.camera.mini );
+    //minimapRenderer.setViewport( screenWidth / 2, screenHeight / 2, screenWidth / 2, screenHeight / 2 );
+    minimapRenderer.render( scene, this.camera.mini );
 
 }
 

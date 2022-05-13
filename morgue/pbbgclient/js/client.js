@@ -1,81 +1,81 @@
 ( function () {
 
-	const PBBG = window.PBBG = {};
+    const PBBG = window.PBBG = {};
 
-	try {
+    try {
 
-		PBBG.cacheStorage = JSON.parse( localStorage.getItem( "PBBG" ) || "{}" );
-		console.log( "(localStorage) " + JSON.stringify( PBBG.cacheStorage, null, 4 ) );
+        PBBG.cacheStorage = JSON.parse( localStorage.getItem( "PBBG" ) || "{}" );
+        console.log( "(localStorage) " + JSON.stringify( PBBG.cacheStorage, null, 4 ) );
 
-	} catch ( e ) { }
+    } catch ( e ) { }
 
-	PBBG.store = ( key, value ) => {
+    PBBG.store = ( key, value ) => {
 
-		if ( ! PBBG.cacheStorage.hasOwnProperty( key ) || ( typeof value !== "undefined" && value !== PBBG.cacheStorage[ key ] ) ) {
+        if ( ! PBBG.cacheStorage.hasOwnProperty( key ) || ( typeof value !== "undefined" && value !== PBBG.cacheStorage[ key ] ) ) {
 
-			PBBG.cacheStorage[ key ] = value;
-			localStorage.setItem( "PBBG", JSON.stringify( PBBG.cacheStorage, null, 4 ) );
-			console.log( "(localStorage) " + JSON.stringify( PBBG.cacheStorage, null, 4 ) );
+            PBBG.cacheStorage[ key ] = value;
+            localStorage.setItem( "PBBG", JSON.stringify( PBBG.cacheStorage, null, 4 ) );
+            console.log( "(localStorage) " + JSON.stringify( PBBG.cacheStorage, null, 4 ) );
 
-		}
+        }
 
-		return PBBG.cacheStorage[ key ];
-
-
-	};
+        return PBBG.cacheStorage[ key ];
 
 
-	PBBG.send = ( json ) => {
+    };
 
-		if ( ! PBBG.ws || PBBG.ws.readyState === WebSocket.CLOSING || PBBG.ws.readyState === WebSocket.CLOSED ) {
 
-			console.log( "Connecting to Primordial Soup" );
+    PBBG.send = ( json ) => {
 
-			PBBG.ws = new WebSocket( 'ws://primordial-soup.glitch.me' );
+        if ( ! PBBG.ws || PBBG.ws.readyState === WebSocket.CLOSING || PBBG.ws.readyState === WebSocket.CLOSED ) {
 
-			PBBG.ws.addEventListener( 'message', ( event ) => {
+            console.log( "Connecting to Primordial Soup" );
 
-				let message = JSON.parse( event.data );
+            PBBG.ws = new WebSocket( 'ws://primordial-soup.glitch.me' );
 
-				console.log( "(received) " + JSON.stringify( message, null, 4 ) );
+            PBBG.ws.addEventListener( 'message', ( event ) => {
 
-				message.token && PBBG.store( "token", message.token );
+                let message = JSON.parse( event.data );
 
-				message.username && PBBG.store( "username", message.username );
+                console.log( "(received) " + JSON.stringify( message, null, 4 ) );
 
-				message.password && PBBG.store( "password", message.password );
+                message.token && PBBG.store( "token", message.token );
 
-				if ( message.error === "Auth token not valid" ) {
+                message.username && PBBG.store( "username", message.username );
 
-					let username = PBBG.store( "username" );
+                message.password && PBBG.store( "password", message.password );
 
-					if ( username.startsWith( "Guest-" ) ) {
+                if ( message.error === "Auth token not valid" ) {
 
-						PBBG.send( { username: username, password: PBBG.store( "password" ) } );
+                    let username = PBBG.store( "username" );
 
-					}
+                    if ( username.startsWith( "Guest-" ) ) {
 
-				}
+                        PBBG.send( { username: username, password: PBBG.store( "password" ) } );
 
-			} );
+                    }
 
-		}
+                }
 
-		json = json || {};
+            } );
 
-		function _send() {
+        }
 
-			json.token = PBBG.store( "token" );
-			let message = JSON.stringify( json, null, 4 );
-			PBBG.ws.send( message );
-			console.log( "(sent) " + message );
+        json = json || {};
 
-		}
+        function _send() {
 
-		PBBG.ws.readyState === WebSocket.OPEN ? _send() : PBBG.ws.addEventListener( "open", _send );
+            json.token = PBBG.store( "token" );
+            let message = JSON.stringify( json, null, 4 );
+            PBBG.ws.send( message );
+            console.log( "(sent) " + message );
 
-	};
+        }
 
-	PBBG.send();
+        PBBG.ws.readyState === WebSocket.OPEN ? _send() : PBBG.ws.addEventListener( "open", _send );
+
+    };
+
+    PBBG.send();
 
 } )();
