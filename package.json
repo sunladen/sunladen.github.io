@@ -8,6 +8,10 @@
 	"repository": {
 		"url": "https://github.com/sunladen/sunladen.git"
 	},
+	"scripts": {
+		"lint": "eslint",
+		"lint:compact": "eslint --format compact"
+	},
 	"devDependencies": {
 		"eslint": "^8.15.0",
 		"eslint-config-mdcs": "^5.0.0",

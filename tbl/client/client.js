@@ -6,7 +6,7 @@ export default class Client {
         this.params = new URLSearchParams( url.search );
         this.updateIntervalMS = 1000;
         this.outbound = [];
-        this.clients = {};
+        this.state = {};
 
         try {
 
@@ -106,16 +106,18 @@ export default class Client {
      *             clients: {
      *                 {string} <id>: {...},
      *                 ...
-     *             }
+     *             },
+	 *             ...
      *         }
      *     }
      * }
      */
     receiveConnectionInfo( message ) {
 
-        localStorage.setItem( 'client.identity', this.identity = JSON.stringify( message.value.identity ) );
-
-        this.clients = message.value.state.clients;
+        this.identity = message.value.identity;
+        localStorage.setItem( 'client.identity', JSON.stringify( this.identity ) );
+        this.state = message.value.state;
+        delete this.state.clients[ this.identity.id ];
 
     }
 
@@ -130,18 +132,10 @@ export default class Client {
      */
     receiveClientConnected( message ) {
 
-        this.clients[ message.from ] = message.value;
+        if ( message.from !== this.identity.id ) this.state.clients[ message.from ] = message.value;
 
         this.connected( message.from );
 
-    }
-
-
-    /**
-   * Called when a new client connects.
-   * @param {string} id
-   */
-    connected( id ) {
     }
 
 
@@ -155,7 +149,7 @@ export default class Client {
      */
     receiveClientDisconnected( message ) {
 
-        delete this.clients[ message.from ];
+        delete this.state.clients[ message.from ];
 
         this.disconnected( message.from );
 
@@ -163,9 +157,17 @@ export default class Client {
 
 
     /**
-   * Called when a client disconnects.
-   * @param {string} id
-   */
+	 * Called when a new client connects.
+	 * @param {string} id
+	 */
+    connected( id ) {
+    }
+
+
+    /**
+	 * Called when a client disconnects.
+	 * @param {string} id
+	 */
     disconnected( id ) {
     }
 

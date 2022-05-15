@@ -4,7 +4,7 @@ import crypto from 'crypto';
 
 export default class Server {
 
-    constructor( port, uuid = ( bytes = 16 ) => crypto.randomBytes( bytes ).toString( "hex" ) ) {
+    constructor( port ) {
 
         this.pingIntervalMS = 10000;
         this.updateIntervalMS = 2000;
@@ -46,10 +46,10 @@ export default class Server {
             if ( ! ( 'id' in ws ) ) {
 
                 // assign a unique id for the client
-                while ( ! ( 'id' in ws ) || ws.id in this.clientsById ) ws.id = uuid();
+                while ( ! ( 'id' in ws ) || ws.id in this.clientsById ) ws.id = Server.uuid();
 
                 // assign a unique secret for the new client
-                while ( ! ( 'secret' in ws ) || ws.secret in this.clientsBySecret ) ws.secret = uuid();
+                while ( ! ( 'secret' in ws ) || ws.secret in this.clientsBySecret ) ws.secret = Server.uuid();
 
             }
 
@@ -84,7 +84,8 @@ export default class Server {
 
                     console.log( '-> %s', data );
                     const messages = JSON.parse( data );
-                    this.inbound.push( messages );
+    				if ( messages.constructor !== Array ) messages = [ messages ];
+                    for ( const message of messages ) this.inbound.push( { message: message, from: ws.id } );
 
                 } catch ( e ) {
 
@@ -106,8 +107,8 @@ export default class Server {
 
                 for ( const message of _inbound ) {
 
-                    const receiveFuncName = `receive${message.type}`;
-                    if ( receiveFuncName in this ) this[ receiveFuncName ]( message );
+                    const receiveFuncName = `receive${message.message.type}`;
+                    if ( receiveFuncName in this ) this[ receiveFuncName ]( message.message, message.from );
                     else console.log( `no listener for "${receiveFuncName}"` );
 
                 }
@@ -205,18 +206,23 @@ export default class Server {
     }
 
 
+    static uuid( bytes = 16 ) {
+
+        return crypto.randomBytes( bytes ).toString( "hex" );
+
+    }
 
     /**
      * Send a message (buffered).
      *
      * @param type
      * @param value
-     * @param target
+     * @param to
      * @param from
      */
-    send( type, value, target = 'global', from = 'server' ) {
+    send( type, value, to = 'global', from = 'server' ) {
 
-        ( target in this.outbound ? this.outbound[ target ] : this.outbound[ target ] = [] ).push( { from: from, type: type, value: value } );
+        ( to in this.outbound ? this.outbound[ to ] : this.outbound[ to ] = [] ).push( { from: from, type: type, value: value } );
 
     }
 
@@ -246,6 +252,22 @@ export default class Server {
      * Interval frequency is defined by this.updateIntervalMS [default=2000]
      */
     update() {
+    }
+
+
+    /**
+	 * Called when a client sends Chat message.
+	 * @param {json} message {
+	 * 		type: "Send",
+	 * 		value: {json},
+	 * 		to: {clientid}
+	 * }
+	 * @param {clientid} from
+	 */
+    receiveSend( message, from ) {
+
+    	this.send( message.type, message.value, message.to, from );
+
     }
 
 }
