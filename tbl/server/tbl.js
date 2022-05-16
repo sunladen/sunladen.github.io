@@ -1,14 +1,11 @@
 import Server from './server.js';
 
-
 let server;
 let world;
-
+let startercamp;
 
 const entities = [];
 const playersById = {};
-
-
 
 export default class TextBattleLootServer extends Server {
 
@@ -20,17 +17,15 @@ export default class TextBattleLootServer extends Server {
 
     }
 
-
     connected( ws, id ) {
 
         console.log( `client ${id} connected` );
 
-        const entity = new PlayerCharacter( id );
-        playersById[ id ] = entity;
-        world.add( entity );
+        const player = new PlayerCharacter( id );
+        playersById[ id ] = player;
+        startercamp.add( player );
 
     }
-
 
     disconnected( id ) {
 
@@ -41,7 +36,6 @@ export default class TextBattleLootServer extends Server {
 
     }
 
-
     update() {
 
         for ( const entity of entities ) {
@@ -49,8 +43,6 @@ export default class TextBattleLootServer extends Server {
             if ( entity.dirty ) {
 
                 entity.update();
-
-            	console.log( entity );
 
             }
 
@@ -84,14 +76,20 @@ class Entity {
 
         if ( ! this.dirty ) return;
 
-        this.world.parent = this.parent ? this.parent.id : null;
-        this.world.name = this.name;
-        this.world.baseWeight = this.baseWeight;
-        this.world.weight = this.weight;
+        const delta = { id: this.id };
 
-        delete this.world[ 'contents' ];
+        const parent = this.parent == null ? null : this.parent.id;
 
-    	server.send( 'Update', this.world );
+        if ( this.world.parent !== parent )
+            delta.parent = this.world.parent = parent;
+        if ( this.world.name !== this.name )
+        	delta.name = this.world.name = this.name;
+        if ( this.world.baseWeight !== this.baseWeight )
+        	delta.baseWeight = this.world.baseWeight = this.baseWeight;
+        if ( this.world.weight !== this.weight )
+        	delta.weight = this.world.weight = this.weight;
+
+    	server.send( 'Update', delta );
 
         this.dirty = false;
 
@@ -104,19 +102,20 @@ class Entity {
         if ( index === - 1 ) {
 
             entity.parent = this;
+            entity.dirty = true;
         	this.contents.push( entity );
             this.changeWeight( entity.weight );
 
         }
 
         index = this.world.contents.indexOf( entity.world );
-        if ( index === - 1 ) this.world.contents.push( entity );
+        if ( index === - 1 ) this.world.contents.push( entity.world );
 
     }
 
     remove( entity ) {
 
-        const index = this.contents.indexOf( entity );
+        let index = this.contents.indexOf( entity );
 
         if ( index > - 1 ) {
 
@@ -168,7 +167,6 @@ class PlayerCharacter extends Entity {
         super( name, id );
         this.changeBaseWeight( 80 );
 
-
     }
 
 }
@@ -178,14 +176,15 @@ function createWorld( _server ) {
 
     server = _server;
 
-    const world = new Location();
+    const world = new Entity();
+    startercamp = new Location( 'Starter camp' );
+    world.add( startercamp );
 
     server.state.world = world.world;
 
     return world;
 
 }
-
 
 
 new TextBattleLootServer();

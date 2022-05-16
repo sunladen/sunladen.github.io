@@ -1,11 +1,11 @@
 import { WebSocketServer } from 'ws';
 import crypto from 'crypto';
 
-
 export default class Server {
 
-    constructor( port ) {
+    constructor( port, debug = false ) {
 
+        this.debug = debug;
         this.pingIntervalMS = 10000;
         this.updateIntervalMS = 2000;
         this.connectionSecretRE = /[?&]{1}secret=(\w+)/;
@@ -16,9 +16,7 @@ export default class Server {
         this.inbound = [];
         this.outbound = {};
 
-        this.state = {
-            clients: {},
-        };
+        this.state = { clients: {}, };
 
         this.wss = new WebSocketServer( { port: port } );
 
@@ -59,7 +57,7 @@ export default class Server {
 
             ws.last_heard = Date.now();
 
-            console.log( '-> connection %s, { id: "%s", secret: "%s" }', req.url, ws.id, ws.secret );
+            if ( this.debug ) console.log( '-> connection %s, { id: "%s", secret: "%s" }', req.url, ws.id, ws.secret );
 
             // update clients last_heard when pong received
             ws.on( 'pong', () => ws.id in this.clientsById && ( this.clientsById[ ws.id ].last_heard = Date.now() ) );
@@ -82,7 +80,7 @@ export default class Server {
 
                 try {
 
-                    console.log( '-> %s', data );
+                    if ( this.debug ) console.log( '-> %s', data );
                     const messages = JSON.parse( data );
     				if ( messages.constructor !== Array ) messages = [ messages ];
                     for ( const message of messages ) this.inbound.push( { message: message, from: ws.id } );
@@ -108,8 +106,15 @@ export default class Server {
                 for ( const message of _inbound ) {
 
                     const receiveFuncName = `receive${message.message.type}`;
-                    if ( receiveFuncName in this ) this[ receiveFuncName ]( message.message, message.from );
-                    else console.log( `no listener for "${receiveFuncName}"` );
+
+                    if ( receiveFuncName in this ) {
+
+                        this[ receiveFuncName ]( message.message, message.from );
+                        continue;
+
+                    }
+
+                    console.log( `no listener for "${receiveFuncName}"` );
 
                 }
 
@@ -121,8 +126,6 @@ export default class Server {
                 const _global = _outbound.global || [];
                 const sent = {};
 
-                //console.log( this.clientsById );
-
                 for ( const id in _outbound ) {
 
                     if ( ! ( id in this.clientsById ) ) continue;
@@ -133,7 +136,7 @@ export default class Server {
 
                     const _message_string = JSON.stringify( _outbound[ id ].concat( _global ) );
                     ws.send( _message_string );
-                    console.log( '<- %s', _message_string );
+                    if ( this.debug ) console.log( '<- %s', _message_string );
 
                     sent[ id ] = null;
 
@@ -149,7 +152,7 @@ export default class Server {
 
                         const ws = this.clientsById[ id ];
                         ws.send( _message_string );
-                        console.log( '<- %s', _message_string );
+                        if ( this.debug ) console.log( '<- %s', _message_string );
 
                     }
 
@@ -162,7 +165,6 @@ export default class Server {
             }
 
         }, this.updateIntervalMS );
-
 
         // Disconnect clients that haven't responded for awhile
         setInterval( () => {
@@ -205,8 +207,7 @@ export default class Server {
 
     }
 
-
-    static uuid( bytes = 16 ) {
+    static uuid( bytes = 4 ) {
 
         return crypto.randomBytes( bytes ).toString( "hex" );
 
@@ -226,8 +227,6 @@ export default class Server {
 
     }
 
-
-
     /**
      * Called on client connection.
      * @param ws
@@ -236,15 +235,12 @@ export default class Server {
     connected( ws, id ) {
     }
 
-
     /**
      * Called on client disconnection.
      * @param id
      */
     disconnected( id ) {
     }
-
-
 
     /**
      * Update server state.
@@ -253,7 +249,6 @@ export default class Server {
      */
     update() {
     }
-
 
     /**
 	 * Called when a client sends Chat message.

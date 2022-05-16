@@ -49,11 +49,16 @@ export default class Client {
 
             console.log( 'Messages from server ', messages );
 
-            for ( var message of messages ) {
+            for ( const message of messages ) {
 
                 const receiveFuncName = `receive${message.type}`;
 
-                if ( receiveFuncName in this ) return this[ receiveFuncName ]( message );
+                if ( receiveFuncName in this ) {
+
+                    this[ receiveFuncName ]( message );
+                    continue;
+
+                }
 
                 console.log( `no listener for "${receiveFuncName}"` );
 
