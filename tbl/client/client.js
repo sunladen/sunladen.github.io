@@ -7,6 +7,7 @@ export default class Client {
         this.updateIntervalMS = 1000;
         this.outbound = [];
         this.state = {};
+        this.debug = true;
 
         try {
 

@@ -121,7 +121,7 @@ class Entity {
 
             entity.parent = this.parent;
             this.contents.splice( index, 1 );
-            this.changeWeight( entity.weight );
+            this.changeWeight( - entity.weight );
 
         }
 
@@ -153,7 +153,7 @@ class Location extends Entity {
     constructor( name = '[Unnamed location]' ) {
 
         super( name );
-        this.changeBaseWeight( Number.MAX_SAFE_INTEGER );
+        this.changeBaseWeight( 5000000 );
 
     }
 

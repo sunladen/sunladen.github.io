@@ -1,12 +1,14 @@
 
 export default class TextBattleLootUI {
 
-    constructor( container = document.body ) {
+    constructor( tbl, container = document.body ) {
 
+		this.tbl = tbl;
         this.container = container;
+		this.debug = true;
 
         this.container.innerHTML += `
-		<div class="tbl-flex">
+		<div class="tbl-container tbl-flex">
 			<div class="tbl-grow">
 				<div class="tbl-outer"></div>
 				<div class="tbl-focus"></div>
@@ -26,20 +28,96 @@ export default class TextBattleLootUI {
         this.viewDomElement = this.container.querySelector( '.tbl-view' );
         this.offscreen = this.container.querySelector( '.tbl-offscreen' );
 
+		const self = this;
+		this.container.addEventListener( 'keyup', event => self.keyUp( event ) );
+
     }
+
+    setFocus( entity ) {
+
+		if ( this.debug ) console.log( `setFocus( ${entity} )` );
+
+		this.#setEntities( this.viewDomElement, entity.contents, entity.contents.length ? entity.contents[ 0 ].id : null );
+
+        const parent = this.tbl.entitiesById[ entity.parent ];
+
+        this.#setEntities( this.focusDomElement, parent.contents, entity.id );
+
+		this.focusedEntity = entity;
+
+		const grandparent = this.tbl.entitiesById[ parent.parent ];
+
+        this.#setEntities( this.outerDomElement, grandparent ? grandparent.contents : [], parent.id );
+
+    }
+
+	#setEntities( uiElement, entities, selectedId ) {
+
+		if ( this.debug ) console.log( `setEntities( ${uiElement}, ${entities}, ${selectedId} )` );
+
+        uiElement.innerHTML = '';
+
+        for ( const entity of entities ) {
+
+            const entityDom = document.createElement( 'div' );
+            entityDom.className = 'tbl-entity';
+			if ( selectedId === entity.id ) entityDom.className += ' tbl-selected';
+            entityDom.id = `tbl-entity-${entity.id}`;
+            entityDom.innerHTML = `
+				<div class="tbl-entity-name">${entity.name}</div>
+				<div class="tbl-entity-weight">${entity.weight}</div>
+			`;
+            uiElement.append( entityDom );
+
+        }
+
+	}
+
+	removeEntity( entity ) {
+
+		if ( this.debug ) console.log( `removeEntity( ${entity} )` );
+
+		const element = document.getElementById( `tbl-entity-${entity.id}`  );
+		element.remove();
+
+	}
+
+	keyUp( event ) {
+
+		if ( this.debug ) console.log( `keyUp( ${event} )` );
+
+		if ( event.key === 'h' ) return this.tbl.focusEntity( this.focusedEntity.parent );
+		if ( event.key === 'l' ) return this.tbl.focusEntity( this.focusedEntity.contents.length ? this.focusedEntity.contents[ 0 ].id : this.focusedEntity.id );
+
+	}
 
 }
 
 
 // style
 document.head.innerHTML += `<style>
-.tbl-flex  { display: flex; box-sizing: border-box; height: 100%; }
-.tbl-grow  { display: flex; flex-grow: 1; border: 5px solid red; }
-.tbl-outer { flex-grow: 1; border-radius: 5px; margin: 6px 3px 6px 6px; background: #555555; }
-.tbl-focus { flex-grow: 1; border-radius: 5px; margin: 6px 3px 6px 3px; background: #333333; }
-.tbl-view  { flex-grow: 1; border-radius: 5px; margin: 6px 6px 6px 6px; background: #555555; }
-.tbl-outer .tbl-focusplate { display: none }
-.tbl-offscreen { display: none }
+.tbl-container * {
+	box-sizing: border-box;
+	border-radius: 5px;
+	font-family: "Fira Sans","Helvetica Neue",Helvetica,"Roboto",Arial,sans-serif;
+	cursor: default;
+}
+.tbl-flex   { display: flex; height: 100%; }
+.tbl-grow   { display: flex; flex: 1; border: 5px solid red; }
+.tbl-outer  { flex: 1; margin: 6px 3px 6px 6px; background: #555555; }
+.tbl-focus  { flex: 1; 5px; margin: 6px 3px 6px 3px; background: #333333; }
+.tbl-view   { flex: 1; 5px; margin: 6px 6px 6px 6px; background: #555555; }
+.tbl-entity {
+	background: #fff;
+	border: 1px solid #ddd;
+	cursor: pointer;
+}
+.tbl-entity * { cursor: pointer; }
+.tbl-selected { background: #f7630c; }
+.tbl-entity-name { display: inline-block; }
+.tbl-entity-name:after { content: " >"; color: #ddd; }
+.tbl-entity-weight { display: inline-block; float: right; }
+.tbl-entity-weight:before { content: "< "; color: #ddd; }
 </style>
 `;
 

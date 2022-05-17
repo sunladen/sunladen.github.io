@@ -9,21 +9,49 @@ export default class TextBattleLoot extends Client {
         super( location.port ? 'ws://localhost:6500' : 'wss://bead-rural-poison.glitch.me/' );
 
         this.entitiesById = {};
-        this.ui = new TextBattleLootUI( container );
+
+        this.currentFocus = null;
+
+        this.ui = new TextBattleLootUI( this, container );
 
     }
 
 
     connected( id ) {
 
-        console.log( `client ${id} connected` );
+        if ( this.debug ) console.log( `connected( ${id} )` );
 
     }
 
 
-    disconncted( id ) {
+    disconnected( id ) {
 
-        console.log( `client ${id} disconnected` );
+        if ( this.debug ) console.log( `disconnected( ${id} )` );
+        this.removeEntity( id );
+
+    }
+
+    removeEntity( id ) {
+
+        if ( this.debug ) console.log( `removeEntity( ${id} )` );
+
+        if ( ! ( id in this.entitiesById ) ) return console.log( `remove [${id}] failed; unknown entity identity` );
+
+        const entity = this.entitiesById[ id ];
+
+        delete this.entitiesById[ id ];
+
+        const parent = this.entitiesById[ entity.parent ];
+        const siblings = parent.contents;
+        const index = siblings.indexOf( entity );
+
+        if ( index > - 1 ) siblings.splice( index, 1 );
+
+        if ( id === this.currentFocus ) siblings.length ? this.focusEntity( siblings[ 0 ].id ) : this.focusEntity( entity.parent );
+
+        this.ui.removeEntity( entity );
+
+        for ( const content in entity.contents ) this.removeEntity( content.id );
 
     }
 
@@ -62,22 +90,20 @@ export default class TextBattleLoot extends Client {
 
     }
 
+
     focusEntity( id ) {
 
-        if ( ! id in this.entitiesById ) return console.log( `focus '${id}' failed; unknown entity` );
+        if ( id === this.currentFocus ) return;
+
+        if ( ! id in this.entitiesById ) return console.log( `focus [${id}] failed; unknown entity identity` );
 
         const entity = this.entitiesById[ id ];
 
-        if ( ! entity.parent in this.entitiesById ) return console.log( `focus '${id}' failed; unknown parent '${entity.parent}'` );
-        const parent = this.entitiesById[ entity.parent ];
+        if ( ! entity.parent ) return console.log( `focus [${id}]"${entity.name}" failed; [${id}]"${entity.name}" is a top-level entity` );
 
-        if ( ! parent.parent ) return console.log( `cannot focus '${id}'; is a top-level entity` );
+        this.ui.setFocus( entity );
 
-        for ( const content of parent.contents ) {
-
-        	console.log( content );
-
-        }
+        this.currentFocus = id;
 
     }
 
