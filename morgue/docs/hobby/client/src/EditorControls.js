@@ -5,7 +5,6 @@ import { Vector2 } from "threejs/math/Vector2"
 import { Spherical } from "threejs/math/Spherical"
 import { EventDispatcher } from "threejs/core/EventDispatcher"
 
-
 class EditorControls extends EventDispatcher {
 
     constructor( object, domElement ) {
@@ -111,8 +110,6 @@ class EditorControls extends EventDispatcher {
 
 }
 
-
-
 const onMouseDown = event => {
 
     if ( scope.enabled === false ) return;
@@ -208,6 +205,5 @@ const spherical = new Spherical();
 const changeEvent = { type: 'change' };
 
 let scope
-
 
 export { EditorControls, changeEvent }

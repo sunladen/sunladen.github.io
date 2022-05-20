@@ -10,8 +10,6 @@ const info = ( name, value ) => {
 
 };
 
-
 info.values = {};
-
 
 export default info;

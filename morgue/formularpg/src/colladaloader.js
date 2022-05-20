@@ -742,7 +742,6 @@ export const ColladaLoader = function () {
 
         }
 
-
         var i, j, w, vidx, weight;
         var v = new THREE.Vector3(), o, s;
 
@@ -786,10 +785,7 @@ export const ColladaLoader = function () {
 
         console.log( 'ColladaLoader:', animationBounds.ID + ' has ' + sortedbones.length + ' bones.' );
 
-
-
         skinToBindPose( geometry, skeleton, skinController );
-
 
         for ( frame = 0; frame < animationBounds.frames; frame ++ ) {
 
@@ -1206,7 +1202,6 @@ export const ColladaLoader = function () {
 
                 if ( skinController !== undefined ) {
 
-
                     applySkin( geom, skinController );
 
                     if ( geom.morphTargets.length > 0 ) {
@@ -1221,16 +1216,12 @@ export const ColladaLoader = function () {
 
                     }
 
-
                     mesh = new THREE.SkinnedMesh( geom, material, false );
-
 
                     //mesh.skeleton = skinController.skeleton;
                     //mesh.skinController = controllers[ skinController.url ];
                     //mesh.skinInstanceController = skinController;
                     mesh.name = 'skin_' + skins.length;
-
-
 
                     //mesh.animationHandle.setKey(0);
                     skins.push( mesh );
@@ -2680,7 +2671,6 @@ export const ColladaLoader = function () {
 
                 }
 
-
                 break;
 
             case 'extra':
@@ -2937,7 +2927,6 @@ export const ColladaLoader = function () {
                     vcount = p.length / maxOffset;
 
                 }
-
 
                 for ( j = 0; j < vcount; j ++ ) {
 

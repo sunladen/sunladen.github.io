@@ -65,23 +65,27 @@
             WORLDJS.translate( node, node.x + noise( WORLDJS.time, 0, 1 ) * .2 * ( 2 - node.opacity ), node.y + noise( 0, WORLDJS.time, 1 ) * .2 * ( 2 - node.opacity ) )
         }
     }
+
     function createSmoke( origin_node, dx, dy ) {
         let pos = WORLDJS.absolutePosition( origin_node )
         pos.x += ( dx || 0 )
         pos.y += ( dy || 0 )
         return WORLDJS.add( { sprite: { image: '../1/assets/smoke' }, x: pos.x, y: pos.y, inViewUpdates: [ inViewUpdates.smoke ], layer: 3, rotation: Math.random() * Math.PI * 2, rotationLock: true, opacity: .15 - Math.random() * .13 } )
     }
+
     function createEmber( origin_node, dx, dy ) {
         let pos = WORLDJS.absolutePosition( origin_node )
         pos.x += ( dx || 0 )
         pos.y += ( dy || 0 )
         WORLDJS.add( { sprite: { image: Math.random() > .5 ? '../1/assets/ember' : '../1/assets/ember1' }, x: pos.x, y: pos.y, inViewUpdates: [ inViewUpdates.ember ], layer: origin_node.layer + 1 } )
     }
+
     const characterTypeInfo = {
         'tank': { image: '../2/assets/tank', base_speed: .02 },
         'melee': { image: '../2/assets/melee', base_speed: .03 },
         'ranged': { image: '../2/assets/ranged', base_speed: .04 },
     }
+
     function createCharacter( options ) {
         options = options || {}
         let types = Object.keys( characterTypeInfo )
@@ -114,12 +118,14 @@
         setHealth( character, 100, -16 )
         return character
     }
+
     function setHealth( node, health, healthbarYOffset ) {
         node.health = health
         node.healthbar = {}
         node.healthbar.black = WORLDJS.add( node, { y: healthbarYOffset, sprite: { image: '../2/assets/line' }, sprite_scale_x: .8, sprite_scale_y: 2 } )
         node.healthbar.green = WORLDJS.add( node.healthbar.black, { sprite: { image: '../2/assets/line', colour: '#00aa00' }, sprite_scale_x: node.healthbar.black.sprite_scale_x, sprite_scale_y: 2 } )
     }
+
     function createCampfire( x, y ) {
         let campfire = WORLDJS.addNearestUnblocked( {
             sprite: { image: '../1/assets/campfire' },
@@ -134,11 +140,13 @@
         createFlame( campfire, 3 * ( Math.random() - .5 ), 3 * ( Math.random() - .5 ) )
         return campfire
     }
+
     function createFlame( origin_node, dx, dy ) {
         let x = origin_node.x + ( dx || 0 )
         let y = origin_node.y + ( dy || 0 )
         WORLDJS.add( origin_node, { sprite: { image: '../3/assets/flame' }, x: 0, y: 0, inViewUpdates: [ inViewUpdates.flame ], opacity: .5, rotation: Math.random() * 2 * Math.PI } )
     }
+
     let playerspawn
     let playerspawncounter = 0
     let player

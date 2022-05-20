@@ -4,29 +4,28 @@ import config from '../../config'
 const TYPE = 'cell/blank'
 
 entity.type(TYPE, (ent, fromString) => {
-  // on entity create
+    // on entity create
 
-  return ent
+    return ent
 
 }, (ent, toString) => {
-  // on entity toString
-  
-  return toString
+    // on entity toString
+
+    return toString
 
 }, (ent) => {
-  // on entity update 
- 
+    // on entity update
+
 }, (ent) => {
-  // on entity destroy
+    // on entity destroy
 
 })
 
-
 export default (ent) => {
-  // create helper 
-  
-  ent = ent || {} 
-  ent.type = TYPE
-  return entity(ent)
+    // create helper
+
+    ent = ent || {}
+    ent.type = TYPE
+    return entity(ent)
 
 }

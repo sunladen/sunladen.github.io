@@ -117,7 +117,6 @@
         document.getElementsByTagName( "head" )[ 0 ].appendChild( style );
     } )( document.createElement( "style" ) );
 
-
     function xpath( expression, context, type ) {
         return document.evaluate( expression, context || document, prefix => {
             return prefix === "svg" ? "http://www.w3.org/2000/svg" : null;

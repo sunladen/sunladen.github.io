@@ -2,7 +2,7 @@ import canvastexture from "./canvastexture.js";
 import CardinalSpline from "./cardinalspline.js";
 import * as THREE from "./three.module.js";
 import { three } from "./display.js";
-import { listen, announce } from "./event.js";
+import { announce, listen } from "./event.js";
 
 const Track = () => {
 
@@ -15,7 +15,7 @@ const Track = () => {
     ( track => {
 
         listen( track.spline, "addControl", () => {
-            
+
             CardinalSpline.updatePoints( track.spline, true );
 
             Track.updateMesh( track );
@@ -23,7 +23,7 @@ const Track = () => {
         } );
 
         listen( Track, "materialReady", () => {
-            
+
             Track.updateMesh( track );
 
         } );
@@ -38,23 +38,20 @@ const Track = () => {
 
 }
 
-
-
 Track.updateMesh = track => {
 
     if ( ! material ) {
-        
+
         return;
 
     }
 
-    
     let geometry = new THREE.Geometry();
 
     for ( let index in track.spline.points ) {
 
         let vector = track.spline.points[ index ];
-        
+
         //let perpendicular = new THREE.Vector3();
         //let up = new THREE.Vector3( 0, 0, 1 );
         //perpendicular.crossVectors( vector, up );
@@ -82,9 +79,6 @@ Track.updateMesh = track => {
 
 };
 
-
-
-
 let material;
 
 ( new THREE.TextureLoader() ).load(
@@ -106,6 +100,5 @@ let material;
     }
 
 );
-
 
 export default Track;

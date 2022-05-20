@@ -1,4 +1,3 @@
-
 const plane = ( size, draw, texture ) => {
 
     let canvas = document.createElement( 'canvas' );

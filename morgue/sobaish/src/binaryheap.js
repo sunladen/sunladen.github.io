@@ -5,14 +5,12 @@ let BinaryHeap = () => {
     return heap
 }
 
-
 function push( heap, item ) {
     // add the new element to the end of the array
     heap.items.push( item )
     // allow it to bubble up
     bubbleUp( heap, heap.items.length - 1 )
 }
-
 
 function pop( heap ) {
     // store the first item so we can return it later
@@ -27,11 +25,9 @@ function pop( heap ) {
     return result
 }
 
-
 function rescore( heap, item ) {
     sinkDown( heap, heap.items.indexOf( item ) )
 }
-
 
 function remove( heap, item ) {
 
@@ -54,11 +50,9 @@ function remove( heap, item ) {
 
 }
 
-
 function size( heap ) {
     return heap.items.length
 }
-
 
 function bubbleUp( heap, i ) {
     // fetch the item that has to be moved
@@ -77,7 +71,6 @@ function bubbleUp( heap, i ) {
         i = parentN
     }
 }
-
 
 function sinkDown( heap, i ) {
 
@@ -117,6 +110,5 @@ function sinkDown( heap, i ) {
     }
 
 }
-
 
 export { BinaryHeap, push, pop, rescore, remove, size, bubbleUp, sinkDown }

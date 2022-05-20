@@ -7,7 +7,6 @@ import { Mesh } from './threejs/objects/Mesh.js'
 import { SphereGeometry } from './threejs/geometries/SphereGeometry.js'
 import { CylinderGeometry } from './threejs/geometries/CylinderGeometry.js'
 
-
 export function Object() {
 
     let object = {
@@ -32,13 +31,11 @@ export function Object() {
 
 }
 
-
 const VEC3 = new Vector3()
-
 
 /**
  * Object's update task.
- * @param {Object} object 
+ * @param {Object} object
  */
 function update( object ) {
     if ( object.action_movement ) {
@@ -58,10 +55,9 @@ function update( object ) {
     }
 }
 
-
 /**
  * Return the Object's position.
- * @param {Object} object 
+ * @param {Object} object
  * @example
  *      position( object ).set( 0, 0, 0 )
  *      position( object ).copy( vec3 )
@@ -73,11 +69,10 @@ export function position( object ) {
 
 }
 
-
 /**
  * Move an Object over time using it's speed towards the target destination.
- * @param {Object} object 
- * @param {Vector3} to 
+ * @param {Object} object
+ * @param {Vector3} to
  */
 export function move( object, to ) {
 
@@ -97,11 +92,10 @@ export function move( object, to ) {
 
 }
 
-
 /**
  * Adds a Mesh to the Object.
- * @param {Object} object 
- * @param {Mesh} mesh 
+ * @param {Object} object
+ * @param {Mesh} mesh
  * @return {Mesh} the added Mesh
  */
 export function addMesh( object, mesh ) {

@@ -4,9 +4,7 @@ function E( tagName, id, className, contents ) {
     if ( id ) element.id = id;
     if ( className ) element.className = className;
     if ( contents === undefined ) return element;
-
     if ( contents.constructor !== Array ) contents = [ contents ];
-
     for ( var i = 0; i < contents.length; i ++ ) {
 
         let content = contents[ i ];
@@ -15,11 +13,9 @@ function E( tagName, id, className, contents ) {
         element.appendChild( content );
 
     }
-
     return element;
 
 }
-
 
 function query( xpath, context ) {
 
@@ -27,11 +23,9 @@ function query( xpath, context ) {
 
 }
 
-
 function recursiveParentRefs( item, parent ) {
 
     if ( parent ) item.parent = parent;
-
     for ( let key in item.contents ) recursiveParentRefs( item.contents[ key ], item );
 
 }
@@ -40,16 +34,13 @@ function updateCreateContentDivs( id, content, offscreen ) {
 
     let elementId = `${id}-dom`;
     let contentDiv = document.getElementById( elementId );
-
     if ( ! contentDiv ) {
 
         console.log( 'existing contentDiv not found' );
-
         contentDiv = E( 'div', elementId, null, [
             E( 'div', `${id}-outerplate`, 'tbl-outerplate', `outerplate: ${content.name}` ),
             E( 'div', `${id}-focusplate`, 'tbl-focusplate', `focusplate: ${content.name}` )
         ] );
-
         offscreen.append( contentDiv );
 
     }
@@ -60,6 +51,4 @@ function updateCreateContentDivs( id, content, offscreen ) {
     //return contentDiv;
 
 }
-
-
 

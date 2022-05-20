@@ -72,8 +72,6 @@ const noise = ( x, y ) => {
 
 }
 
-
-
 /**
  * Seeds simplex.noise.
  * @param {string} seed
@@ -94,7 +92,7 @@ const seed = seed => {
     while ( C-- ) {
         P[ C ] = ( ( ( currentSeed = Math.sin( currentSeed ) * 10000 ) - Math.floor( currentSeed ) ) * 256 ) | 0
     }
-    
+
     // To remove the need for index wrapping, double the permutation table length
     C = 512
 
@@ -105,7 +103,6 @@ const seed = seed => {
 
 }
 
-
 /**
  * Returns a random string of characters in the range [a-Z0-9] of length n.
  * @param {number} n
@@ -115,8 +112,6 @@ const randomString = n => {
     return Array( n ).join().split( "," ).map(() => { return "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".charAt( Math.floor( Math.random() * 62 ) ) } ).join( "" )
 
 }
-
-
 
 let currentSeed
 
@@ -131,8 +126,6 @@ const grad3 = new Float32Array( [
     0, 1, 1, 0, -1, 1, 0, 1, -1, 0, -1, -1
 ] )
 
-
 seed( randomString( 16 ) )
-
 
 export { noise, seed, randomString }

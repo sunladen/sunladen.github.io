@@ -102,4 +102,6 @@ function remove() {
     data.splice(0, 10000);
 
     draw();
-};
+}
+
+;

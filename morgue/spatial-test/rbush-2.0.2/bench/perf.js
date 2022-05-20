@@ -59,7 +59,6 @@ for (i = 0; i < 1000; i++) {
 }
 console.timeEnd('1000 searches 0.01%');
 
-
 console.time('remove 1000 one by one');
 for (i = 0; i < 1000; i++) {
     tree.remove(data[i]);

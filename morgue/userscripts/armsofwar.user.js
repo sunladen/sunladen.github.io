@@ -38,6 +38,7 @@
         log( 'Donations ' + ( donate ? donate.match[ 1 ] : '0' ) )
         setInterval( update, 2000 )
     }
+
     init()
 
     function update() {

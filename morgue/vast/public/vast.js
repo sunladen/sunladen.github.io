@@ -10,8 +10,6 @@
 
     }
 
-
-
     function scene( newscene ) {
 
         _scene.destroy();
@@ -22,13 +20,7 @@
 
     }
 
-
-
-
-
-
     let _scene = { update: () => {}, destroy: () => {} };
-
 
     animate( 0 );
 

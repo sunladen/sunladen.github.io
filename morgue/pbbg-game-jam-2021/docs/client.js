@@ -30,12 +30,8 @@ function circle( cx = '50', cy = '50', radius = '50', fill = 'blue', parentEleme
 
 }
 
-
-
 var identity = localStorage.getItem( 'identity' );
 var self;
-
-
 
 function connect( url ) {
 
@@ -60,7 +56,6 @@ function connect( url ) {
 		var messages = JSON.parse( e.data );
 
 		console.log( 'Messages from server ', messages );
-
 
 		for ( var message of messages ) {
 
@@ -138,13 +133,11 @@ function connect( url ) {
 
 }
 
-
 window.addEventListener( 'resize', () => {
 
 	if ( self ) document.body.style.transform = `translate(${window.innerWidth * 0.5 - self.x}px, ${window.innerHeight * 0.5 - self.y}px)`;
 
 } );
-
 
 document.addEventListener( 'click', e => {
 
@@ -157,9 +150,7 @@ document.addEventListener( 'click', e => {
 
 } );
 
-
 connect( location.port ? 'ws://localhost:6500' : 'wss://bead-rural-poison.glitch.me/' );
-
 
 const items = {};
 const svgs = {};

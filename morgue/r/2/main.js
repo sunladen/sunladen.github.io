@@ -45,11 +45,13 @@
             }
         }
     } )
+
     function createFlame( origin_node, dx, dy ) {
         let x = origin_node.x + ( dx || 0 )
         let y = origin_node.y + ( dy || 0 )
         WORLDJS.add( origin_node, { name: 'flame', sprite: { image: '../1/assets/flame' }, x: 0, y: 0, inViewUpdate: flameInViewUpdate, opacity: .5, rotation: Math.random() * 2 * Math.PI, layer: origin_node.layer + 1 } )
     }
+
     function flameInViewUpdate( node ) {
         let x_frequency = ( ( node.id + node.x ) * 9999 + node.translate_x_delta + WORLDJS.time ) * .0005
         let y_frequency = ( ( node.id + node.y ) * 9999 + node.translate_y_delta + WORLDJS.time ) * .0005
@@ -60,12 +62,14 @@
         if ( rand > .97 ) createEmber( node, 20 * ( Math.random() - .5 ), 20 * ( Math.random() - .5 ) )
         if ( rand > .995 ) createSmoke( node )
     }
+
     function createEmber( origin_node, dx, dy ) {
         let pos = WORLDJS.absolutePosition( origin_node )
         pos.x += ( dx || 0 )
         pos.y += ( dy || 0 )
         WORLDJS.add( { name: 'ember', sprite: { image: Math.random() > .5 ? '../1/assets/ember' : '../1/assets/ember1' }, x: pos.x, y: pos.y, inViewUpdate: emberInViewUpdate, layer: origin_node.layer + 1 } )
     }
+
     function emberInViewUpdate( node ) {
         if ( node.opacity < 0.2 ) {
             WORLDJS.remove( node )
@@ -77,12 +81,14 @@
             node.opacity -= Math.random() * .02
         }
     }
+
     function createSmoke( origin_node, dx, dy ) {
         let pos = WORLDJS.absolutePosition( origin_node )
         pos.x += ( dx || 0 )
         pos.y += ( dy || 0 )
         return WORLDJS.add( { name: 'smoke', sprite: { image: '../1/assets/smoke' }, x: pos.x, y: pos.y, inViewUpdate: smokeInViewUpdate, layer: origin_node.layer + 1, rotation: Math.random() * Math.PI * 2, rotationLock: true, opacity: .15 - Math.random() * .13 } )
     }
+
     function smokeInViewUpdate( node ) {
         let age = WORLDJS.time - node.createdTime
         node.opacity -= age * .00000001
@@ -94,6 +100,7 @@
             WORLDJS.translate( node, node.x + WORLDJS.noise( time, 0 ) * .2 * ( 2 - node.opacity ), node.y + WORLDJS.noise( 0, time ) * .2 * ( 2 - node.opacity ) )
         }
     }
+
     function windInViewUpdate( node ) {
         let time = WORLDJS.time * .0001
         let positional_noise = WORLDJS.noise( node.x + time, node.y + time )
@@ -101,15 +108,18 @@
         node.rotation_delta = noise * .1
         node.sprite_scale_x_delta = node.sprite_scale_y_delta = ( 1 + noise ) * 2
     }
+
     function createWater( cell ) {
         WORLDJS.add( { sprite: { image: WORLDJS.noise( cell.x, cell.y ) > 0 ? '../1/assets/water' : '../1/assets/water1' }, x: cell.x, y: cell.y, width: 1, height: 1, opacity: .5, rotation: WORLDJS.noise( cell.x * .0001, cell.y * .0001 ) * Math.PI * 2, layer: 1, inViewUpdate: swellInViewUpdate } )
     }
+
     function swellInViewUpdate( node ) {
         let time = WORLDJS.time * .0001
         let positional_noise = WORLDJS.noise( node.x + time, node.y + time )
         node.rotation_delta = ( positional_noise * .3 + global_noise * .7 ) * .5
         node.sprite_scale_x_delta = node.sprite_scale_y_delta = ( 1 + positional_noise * .5 + global_noise * .5 ) * 10
     }
+
     function createCampfire( x, y ) {
         let campfire = WORLDJS.add( {
             name: 'campfire',
@@ -139,6 +149,7 @@
         }
         return campfire
     }
+
     function createCharacter( options ) {
         options = options || {}
         let types = Object.keys( characterTypeInfo )
@@ -167,28 +178,33 @@
         setHealth( character, 100, -16 )
         return character
     }
+
     const characterTypeInfo = {
         'tank': { image: '../2/assets/tank', base_speed: .02 },
         'melee': { image: '../2/assets/melee', base_speed: .03 },
         'ranged': { image: '../2/assets/ranged', base_speed: .04 },
     }
+
     function setHealth( node, health, healthbarYOffset ) {
         node.health = health
         node.healthbar = {}
         node.healthbar.black = WORLDJS.add( node, { y: healthbarYOffset, sprite: { image: '../2/assets/line' }, sprite_scale_x: .8, sprite_scale_y: 2, layer: node.layer + 1 } )
         node.healthbar.green = WORLDJS.add( node.healthbar.black, { sprite: { image: '../2/assets/line', colour: '#00aa00' }, sprite_scale_x: node.healthbar.black.sprite_scale_x, sprite_scale_y: 2, layer: node.healthbar.black.layer + 1 } )
     }
+
     function loseHealth( node, amount ) {
         node.health = Math.max( 0, node.health - amount )
         node.healthbar.green.sprite_scale_x = ( node.health / 100 ) * node.healthbar.black.sprite_scale_x
         let pos = WORLDJS.absolutePosition( node.healthbar.green )
         WORLDJS.add( { text: { text: '-' + amount, colour: '#aa0000', textAlign: 'center' }, x: pos.x, y: pos.y, layer: node.healthbar.green.layer + 1, rotationLock: true, inViewUpdate: lostHealthInViewUpdate } )
     }
+
     function lostHealthInViewUpdate( node ) {
         node.opacity -= WORLDJS.elapsed * .0001
         WORLDJS.translate( node, node.x, node.y - WORLDJS.elapsed * .02 )
         if ( node.opacity <= 0 ) WORLDJS.remove( node )
     }
+
     function shootArrow( source, x, y ) {
         let speed = .5
         let arrow = WORLDJS.add( {
@@ -223,6 +239,7 @@
             }
         } )
     }
+
     function arrowInViewUpdate( arrow ) {
         if ( arrow.timed_removed ) {
             arrow.opacity = 1 - ( WORLDJS.time - arrow.timed_removed ) * .0001
@@ -247,12 +264,15 @@
         }
         WORLDJS.add( { name: 'arrowtrail', sprite: { image: '../2/assets/line' }, x: arrow.x, y: arrow.y, inViewUpdate: arrowTrailInViewUpdate, opacity: .3, rotation: arrow.rotation, layer: arrow.layer + 1 } )
     }
+
     function arrowTrailInViewUpdate( node ) {
         node.opacity -= WORLDJS.elapsed * .0004
         if ( node.opacity <= 0.001 ) WORLDJS.remove( node )
     }
+
     const attackable = [ 'character' ]
     let move_or_attack_check_last = { x: null, y: null }
+
     function move_or_attack_check() {
         let x = WORLDJS.mouse.world.x
         let y = WORLDJS.mouse.world.y
@@ -265,10 +285,12 @@
             WORLDJS.move( player, dx, dy, move_or_attack_check )
         }
     }
+
     let player
     let global_noise
     const activeDamageContacts = {}
     const activeDamageContactKeys = []
+
     function createDamageContact( sourceNode, targetNode, options ) {
         let key = sourceNode.id + ',' + targetNode.id
         if ( -1 < activeDamageContactKeys.indexOf( key ) ) return
@@ -282,6 +304,7 @@
         }, options )
         activeDamageContactKeys.push( key )
     }
+
     let lastUpdateTime = 0
     const actions = []
     const resolveDamagedNodes = []

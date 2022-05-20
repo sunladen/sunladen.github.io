@@ -12,13 +12,10 @@ import 'src/rules/all'
 
 random.seed( 'development' )
 
-
 global.display.addAmbientLight( 0x333333 )
 global.display.addDirectionalLight( 0xffffff, 1, 1, -0.5, 0.5 )
 
-
 let player = null
-
 
 global.world.addEventListener( events.CREATED, function ( event ) {
 
@@ -38,7 +35,6 @@ global.world.addEventListener( events.CREATED, function ( event ) {
     }
 
 } )
-
 
 document.addEventListener( 'keyup', function ( event ) {
 

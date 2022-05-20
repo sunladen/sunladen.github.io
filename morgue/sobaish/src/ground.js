@@ -6,14 +6,14 @@ import { BoxGeometry } from './threejs/geometries/BoxGeometry.js'
 import { Mesh } from './threejs/objects/Mesh.js'
 
 function Ground() {
-	let ground = {
-		position: new Vector3(),
-		object: new Object3D()
-	}
-	let geometry = new BoxGeometry( world.size.x, world.size.z, 0.01 )
-	ground.object.add( new Mesh( geometry, materials.GRASS ) )
-	ground.object.rotation.x = Math.PI / 2
-	return ground
+    let ground = {
+        position: new Vector3(),
+        object: new Object3D()
+    }
+    let geometry = new BoxGeometry( world.size.x, world.size.z, 0.01 )
+    ground.object.add( new Mesh( geometry, materials.GRASS ) )
+    ground.object.rotation.x = Math.PI / 2
+    return ground
 }
 
 export { Ground }

@@ -1,4 +1,3 @@
-
 module.exports = genData;
 
 function randBox(size) {
@@ -15,7 +14,9 @@ function genData(N, size) {
         data.push(randBox(size));
     }
     return data;
-};
+}
+
+;
 
 genData.convert = function (data) {
     var result = [];

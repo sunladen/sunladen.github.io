@@ -1,9 +1,7 @@
 import * as canvas from '../canvas/canvas'
 import * as simplex from '../simplex/simplex'
 
-
 simplex.seed( 'seed to make the output consistent between runs' )
-
 
 const colour = noise => {
 
@@ -15,7 +13,6 @@ const colour = noise => {
 
 }
 
-
 canvas.paint( canvas.Canvas( 'static' ), ( x, y, width, height ) => {
 
     let noise = simplex.noise( x, y )
@@ -24,7 +21,6 @@ canvas.paint( canvas.Canvas( 'static' ), ( x, y, width, height ) => {
 
 } )
 
-
 canvas.paint( canvas.Canvas( 'low_frequency' ), ( x, y, width, height ) => {
 
     let noise = simplex.noise( x / width, y / height )
@@ -32,7 +28,6 @@ canvas.paint( canvas.Canvas( 'low_frequency' ), ( x, y, width, height ) => {
     return colour( noise )
 
 } )
-
 
 canvas.paint( canvas.Canvas( 'grain' ), ( x, y, width, height ) => {
 
@@ -43,7 +38,6 @@ canvas.paint( canvas.Canvas( 'grain' ), ( x, y, width, height ) => {
     return colour( grain )
 
 } )
-
 
 canvas.paint( canvas.Canvas( 'grain_plus_finer_noise' ), ( x, y, width, height ) => {
 
@@ -56,7 +50,6 @@ canvas.paint( canvas.Canvas( 'grain_plus_finer_noise' ), ( x, y, width, height )
     return colour(( 0.85 * grain ) + ( 0.15 * finer ) )
 
 } )
-
 
 canvas.paint( canvas.Canvas( 'grain_plus_finer_noise_plus_streak' ), ( x, y, width, height ) => {
 

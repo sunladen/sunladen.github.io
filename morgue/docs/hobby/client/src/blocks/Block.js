@@ -66,7 +66,6 @@ class Block extends EventDispatcher {
 
 }
 
-
 const TEXTURESIZE = 256
 const GLYPHEDGESIZE = 3
 const chars = ' 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_.,-~∼=:;+?#%⁂⨍≋$&@<>()[]{}\/`\'"^*!━╰╭|│╯╮┐┘┌└∩⌐░▒▓▢■'

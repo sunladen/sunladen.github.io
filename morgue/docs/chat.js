@@ -1,6 +1,5 @@
 import * as utils from './utils.js';
 
-
 export default class Chat {
 
     constructor( io, dom ) {
@@ -72,7 +71,6 @@ export default class Chat {
         io.on( 'success', ( ws, message ) => this.write( message, '-success' ) );
         io.on( 'say', ( ws, message, author ) => this.write( message, author ) );
 
-
         this.dom = {};
         this.dom.chat = utils.E( 'div', 'ws-chat ws-chat-font' );
         this.dom.history = utils.E( 'div', 'ws-chat-history', null, this.dom.chat );
@@ -130,7 +128,6 @@ export default class Chat {
 
     }
 
-
     /**
 	 * Focus chat input.
 	 */
@@ -143,7 +140,6 @@ export default class Chat {
 
     }
 
-
     /**
 	 * Blur or unfocus from chat input.
 	 */
@@ -154,7 +150,6 @@ export default class Chat {
         // this.dom.input.removeAttribute( 'placeholder' );
 
     }
-
 
     /**
 	 *
@@ -192,7 +187,6 @@ export default class Chat {
         this.write( `Command '${message}' not found`, '-system' );
 
     }
-
 
     /**
 	 * Writes a message to chat history.
@@ -234,8 +228,6 @@ export default class Chat {
         this.lastwrite = time;
 
     }
-
-
 
     mute( name ) {
 
@@ -317,8 +309,6 @@ export default class Chat {
 
 }
 
-
-
 window.CHAT = {
 
     mouseOverMention: e => {
@@ -336,7 +326,6 @@ window.CHAT = {
     }
 
 };
-
 
 function mousetrack( e ) {
 
@@ -357,11 +346,9 @@ function mousetrack( e ) {
         var bcr = hover.getBoundingClientRect();
         ( x < bcr.left || x > bcr.right || y < bcr.top || y > bcr.bottom ) && hover.remove();
 
-
     } );
 
 }
-
 
 function markup( type, ...args ) {
 
@@ -376,11 +363,9 @@ function markup( type, ...args ) {
 
 }
 
-
 const instances = [];
 const mention_hovers = [];
 const mouse = { x: 0, y: 0 };
-
 
 document.body.addEventListener( 'mousemove', mousetrack );
 document.body.addEventListener( 'click', mousetrack );

@@ -46,17 +46,21 @@
         }
         return vec
     }
+
     function length( vec ) {
         return Math.sqrt( vec.x * vec.x + vec.y * vec.y )
     }
+
     WORLDJS.distance = ( a, b ) => {
         let x = a.x - b.x
         let y = a.y - b.y
         return Math.sqrt( x * x + y * y )
     }
+
     function heuristic( a, b ) {
         return Math.abs( b.x - a.x ) + Math.abs( b.y - a.y )
     }
+
     WORLDJS.containsPoint = ( node, point ) => {
         let sin = Math.sin( -node.rotation )
         let cos = Math.cos( -node.rotation )
@@ -95,7 +99,7 @@
             sprite_scale_y_delta: 0,
             inViewUpdates: []
         },
-            options
+        options
         )
         WORLDJS.setSprite( node, options.sprite )
         return node
@@ -110,10 +114,12 @@
             let image_path = typeof node.sprite.image === 'string' ? node.sprite.image.split( '/' ) : node.sprite.image.src.split( '/' )
             node.name = image_path[ image_path.length - 1 ].split( '.' )[ 0 ]
         }
+
         function ready() {
             options.colour && WORLDJS.setSpriteColour( node, options.colour )
             WORLDJS.dispatchEvent( node, 'ready', node )
         }
+
         node.sprite.ready ? ready() : WORLDJS.addEventListener( node.sprite, 'ready', ready )
     }
     WORLDJS.setSpriteColour = ( node, colour ) => {
@@ -146,10 +152,12 @@
         let ready = () => { repaint( sprite ) }
         sprite.ready ? ready() : WORLDJS.addEventListener( sprite, 'ready', ready )
     }
+
     function comparator( node_a, node_b ) {
         let layer = node_a.layer - node_b.layer
         return layer === 0 ? node_a.y - node_b.y : layer
     }
+
     function insert( array, item, comparator, noduplicates ) {
         if ( !array.length ) return array.push( item )
         let high = array.length - 1
@@ -169,6 +177,7 @@
         }
         array.splice( i, 0, item )
     }
+
     WORLDJS.closestUnblockedPosition = ( node, origin ) => {
         let layer = 1
         let leg = 0
@@ -177,10 +186,10 @@
         let y = 0
         while ( WORLDJS.cellsBlocked( WORLDJS.cellsOccupiedBy( pos, node.width * node.sprite_scale_x, node.height * node.sprite_scale_y, node.rotation ), node ) ) {
             switch ( leg ) {
-                case 0: ++x; if ( x == layer )++leg; break;
-                case 1: ++y; if ( y == layer )++leg; break;
-                case 2: --x; if ( -x == layer )++leg; break;
-                case 3: --y; if ( -y == layer ) { leg = 0; ++layer; } break;
+            case 0: ++x; if ( x == layer )++leg; break;
+            case 1: ++y; if ( y == layer )++leg; break;
+            case 2: --x; if ( -x == layer )++leg; break;
+            case 3: --y; if ( -y == layer ) { leg = 0; ++layer; } break;
             }
             pos.x = origin.x + x * WORLDJS.CELLSIZE
             pos.y = origin.y + y * WORLDJS.CELLSIZE
@@ -335,9 +344,11 @@
     WORLDJS.stop = ( node ) => {
         node.moveAnimationId && WORLDJS.stopAnimation( node.moveAnimationId )
     }
+
     function path( node, x, y, onComplete ) {
         if ( x === node.x && y === node.y ) { onComplete && onComplete(); return }
         node.followingpath = findpath( node, x, y )
+
         function followpath() {
             if ( ( x === node.x && y === node.y ) || 0 === node.followingpath.length ) { onComplete && onComplete(); return }
             let p = node.followingpath.pop()
@@ -346,8 +357,10 @@
             if ( 0 === dx && 0 === dy ) return followpath()
             WORLDJS.translate( node, node.x + dx, node.y + dy, node.speed, followpath )
         }
+
         followpath()
     }
+
     function draw( node ) {
         ctx.save()
         ctx.translate( node.x + node.translate_x_delta, node.y + node.translate_y_delta )
@@ -362,6 +375,7 @@
         for ( let i = 0, l = node.children.length; i < l; i++ ) draw( node.children[ i ] )
         ctx.restore()
     }
+
     WORLDJS.absolutePosition = node => {
         let pos = WORLDJS.setXY( {}, node.x, node.y )
         while ( node.parent ) {
@@ -371,12 +385,14 @@
         }
         return pos
     }
+
     function updateVisibleNode( node ) {
         for ( let i = 0, l = node.inViewUpdates.length; i < l; i++ )
             node.inViewUpdates[ i ]( node )
         for ( let i = 0, l = node.children.length; i < l; i++ )
             updateVisibleNode( node.children[ i ] )
     }
+
     WORLDJS.opacity = ( node, opacity ) => {
         node.opacity = opacity
         return node
@@ -418,21 +434,26 @@
             pushNodeAndDescendants( nodes, children[ i ] )
         return nodes
     }
+
     function pushNodeAndDescendants( array, node ) {
         array.push( node )
         let children = node.children
         for ( let i = 0, l = children.length; i < l; i++ )
             pushNodeAndDescendants( array, children[ i ] )
     }
+
     class Heap {
+
         constructor() {
             this.items = []
         }
+
         push( item ) {
             item.index = this.items.length
             this.items.push( item )
             this.bubbleUp( this.items.length - 1 )
         }
+
         pop() {
             let items = this.items
             let result = items[ 0 ]
@@ -440,6 +461,7 @@
             0 < items.length && ( items[ 0 ] = end, this.sinkDown( 0 ) )
             return result
         }
+
         remove( item ) {
             let items = this.items
             let l = items.length
@@ -453,9 +475,11 @@
                     break
                 }
         }
+
         size() {
             return this.items.length
         }
+
         bubbleUp( index ) {
             let items = this.items
             let item = items[ index ]
@@ -471,6 +495,7 @@
                 index = i
             }
         }
+
         sinkDown( index ) {
             for ( let items = this.items, l = items.length, item = items[ index ], score = item.score; ; ) {
                 let child2 = 2 * ( index + 1 )
@@ -486,10 +511,13 @@
                 index = item.index = swap
             }
         }
+
     }
+
     function cellBlockedForNode( cell, node ) {
         return cell.physical && cell.physical !== node
     }
+
     function findpath( node, x, y ) {
         findpath.id = findpath.id ? findpath.id + 1 : 1
         let start = { x: node.x, y: node.y }
@@ -556,6 +584,7 @@
         }
         return path
     }
+
     WORLDJS.ray = ( a, b, endIfBlocked ) => {
         const interval = WORLDJS.CELLSIZE
         let x = a.x
@@ -710,6 +739,7 @@
         }
         return sprite
     }
+
     function repaint( sprite ) {
         let width = sprite.canvas.width
         let height = sprite.canvas.height
@@ -726,6 +756,7 @@
             ctx.fillText( sprite.text, 0, 0 )
         }
     }
+
     const canvas = document.createElement( 'canvas' )
     //canvas.style.perspectiveOrigin = 'bottom'
     //canvas.style.transform = 'perspective(100vw) rotateX(30deg)'
@@ -744,6 +775,7 @@
     WORLDJS.viewport = viewport
     WORLDJS.inview_cells = []
     WORLDJS.inview_nodes = []
+
     function updateViewport() {
         WORLDJS.mouse.world.x = ( WORLDJS.mouse.screen.x - .5 * canvas.width ) / viewport.scale + viewport.x
         WORLDJS.mouse.world.y = ( WORLDJS.mouse.screen.y - .5 * canvas.height ) / viewport.scale + viewport.y
@@ -793,10 +825,12 @@
         }
         WORLDJS.inview_nodes.sort( comparator )
     }
+
     function canvasPick( x, y ) {
         let v = WORLDJS.rotate( { x: 0, y: 100 }, 30 * Math.PI / 180 )
         return { x: x, y: ( -v.x * y ) / v.y }
     }
+
     function canvasHeight() {
         let v = WORLDJS.rotate( { x: 0, y: 100 }, 30 * Math.PI / 180 )
         let halfheight = .5 * window.innerHeight
@@ -808,6 +842,7 @@
         let p2 = canvasPick( halfheight, halfheight )
         return WORLDJS.distance( p1, p2 )
     }
+
     function resize() {
         // canvas.style.bottom = 0
         canvas.width = window.innerWidth
@@ -826,6 +861,7 @@
         // WORLDJS.zoom( canvas.height / 300 )
         updateViewport()
     }
+
     WORLDJS.setOverdraw = overdraw => {
         viewport.overdraw = overdraw
         updateViewport()
@@ -880,6 +916,7 @@
         ctx.restore()
     }
     WORLDJS.render.previousInviewCount = 0
+
     function updateAnimation( t ) {
         requestAnimationFrame( updateAnimation )
         WORLDJS.elapsed = t - WORLDJS.time
@@ -894,6 +931,7 @@
         }
         WORLDJS.render()
     }
+
     let _globalUpdate = () => { }
     WORLDJS.start = ( globalUpdate ) => {
         if ( globalUpdate ) _globalUpdate = globalUpdate

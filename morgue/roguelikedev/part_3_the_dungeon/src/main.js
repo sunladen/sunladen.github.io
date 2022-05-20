@@ -307,9 +307,9 @@ function grass( x0, y0, x1, y1 ) {
                 tile.glyph = [ glyphs.GRASS1, glyphs.GRASS2 ][ n < 0 ? 0 : 1 ]
             }
         }
-        tile.g = noise.get( x * 0.05, y * 0.05 ) < 0 ? 0.6 : 0.8 
-        tile.g += n * 0.25 
-        tile.b = ( n + 1 ) * 1 
+        tile.g = noise.get( x * 0.05, y * 0.05 ) < 0 ? 0.6 : 0.8
+        tile.g += n * 0.25
+        tile.b = ( n + 1 ) * 1
     } )
 }
 
@@ -322,9 +322,7 @@ function tree( x0, y0, x1, y1 ) {
     } )
 }
 
-
 grass( 0, 0, map.height - 1, map.width - 1 )
-
 
 var start = tileAt( ROT.RNG.getUniformInt( 0, map.width - 1 ), ROT.RNG.getUniformInt( 0, map.width - 1 ) )
 while ( start.glyph === glyphs.TREE ) {

@@ -1,4 +1,3 @@
-
 window.WebSocket = window.WebSocket || window.MozWebSocket
 const connection = new WebSocket( 'wss://localhost' )
 connection.onopen = () => {
@@ -21,7 +20,6 @@ connection.onmessage = message => {
         receive( requests[ i ], message[ requests[ i ] ] )
     }
 }
-
 
 const receive = ( request, params ) => {
     if ( typeof routes[ request ] !== "object" ) {

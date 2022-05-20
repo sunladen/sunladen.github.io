@@ -1,11 +1,11 @@
 import * as world from './world.js'
 
 export const VILLAGER = {
-	act: function( person ) {
-	}
+    act: function( person ) {
+    }
 }
 
 export const GUARD = {
-	act: function( person ) {
-	}
+    act: function( person ) {
+    }
 }

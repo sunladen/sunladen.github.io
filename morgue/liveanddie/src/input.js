@@ -1,7 +1,6 @@
 import './continuous'
 import vec3 from './vec3'
 
-
 /**
  * Creates a new {InputState}.
  *
@@ -16,14 +15,11 @@ let InputState = (key) => {
     }
 }
 
-
 let input = {}
-
 
 input.isDown = (inputstate) => {
     return inputstate.lastDown > inputstate.lastUp
 }
-
 
 input.wasDown = (inputstate, timestamps) => {
 
@@ -46,7 +42,6 @@ input.wasDown = (inputstate, timestamps) => {
     return false
 
 }
-
 
 input[' '] = InputState(' ')
 input['!'] = InputState('!')
@@ -127,49 +122,43 @@ input.MOUSE_RBUTTON = InputState('MOUSE_RBUTTON')
 input.MOUSE_WHEEL = InputState('MOUSE_WHEEL')
 input.MOUSE_OFFSET = vec3.zero()
 
-
-
 let global = val('global')
 
-
 listen(window, 'contextmenu', 100, (event) => { event.preventDefault() })
-
 
 listen(window, 'mousedown', 100, (event) => {
     event.preventDefault()
     switch (event.button) {
     case 0:
         input.MOUSE_LBUTTON.lastDown = global.timestamp
-    break
+        break
     case 1:
         input.MOUSE_MBUTTON.lastDown = global.timestamp
-    break
+        break
     case 2:
         input.MOUSE_RBUTTON.lastDown = global.timestamp
-    break
+        break
     default:
-    break
+        break
     }
 })
-
 
 listen(window, 'mouseup', 100, (event) => {
     event.preventDefault()
     switch (event.button) {
     case 0:
         input.MOUSE_LBUTTON.lastUp = global.timestamp
-    break
+        break
     case 1:
         input.MOUSE_MBUTTON.lastUp = global.timestamp
-    break
+        break
     case 2:
         input.MOUSE_RBUTTON.lastUp = global.timestamp
-    break
+        break
     default:
-    break
+        break
     }
 })
-
 
 document.addEventListener('keydown', (event) => {
     let char = String.fromCharCode(event.which)
@@ -183,19 +172,16 @@ document.addEventListener('keyup', (event) => {
     input[char].lastUp = global.timestamp
 })
 
-
 listen(window, 'mousemove', 0, (event) => {
     input.MOUSE_OFFSET.x = event.pageX
     input.MOUSE_OFFSET.y = event.pageY
 })
-
 
 listen(window, 'mousewheel', 0, (event) => {
     if (typeof input.MOUSE_WHEEL.delta === 'undefined') input.MOUSE_WHEEL.delta = 0
     input.MOUSE_WHEEL.delta += Math.max(-1, Math.min(1, (event.wheelDelta || -event.detail)))
     input.MOUSE_WHEEL.lastDown = global.timestamp
 })
-
 
 export default input
 

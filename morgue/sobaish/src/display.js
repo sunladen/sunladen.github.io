@@ -23,7 +23,6 @@ const container = document.createElement( 'div' )
 document.body.appendChild( container )
 container.appendChild( renderer.domElement )
 
-
 let directionalLight = new DirectionalLight( 0xffffff )
 directionalLight.position.x = - 0.5
 directionalLight.position.y = 0.5

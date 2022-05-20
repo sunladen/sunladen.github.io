@@ -79,7 +79,6 @@ log( '&nbsp;' )
 log( 'Week 4 - Part 5: Preparing for combat' )
 log( '&nbsp;' )
 
-
 function Tile( glyph, x, y ) {
     return {
     	glyph: glyph,
@@ -197,7 +196,7 @@ function render() {
         tile.fow = false
         fovtiles.push( tile )
     } )
-  
+
     display._backend._context.clearRect( 0, 0, window.innerWidth, window.innerHeight )
 
     var minx = Math.min( Math.max( focus.x - centre.x, 0 ), map.width - options.width )
@@ -248,7 +247,7 @@ function render() {
             if ( tile.fow || ! tile.fov ) {
                 display._backend._context.fillStyle = fov_fillstyle
                 display._backend._context.fillRect( ( x - minx ) * spacing.x, ( y - miny ) * spacing.y, spacing.x, spacing.y )
-            } 
+            }
     		x++
     	}
     	y++
@@ -305,7 +304,7 @@ function input( resolve ) {
                     log( [
                         'The ' + target.name + ' growls at you',
                         'The ' + target.name + ' laughs at your puny efforts to attack him'
-                    ][ ROT.RNG.getUniformInt( 0, 1 ) ] ) 
+                    ][ ROT.RNG.getUniformInt( 0, 1 ) ] )
         			resolve()
         			return
                 } else if ( ! contains( to, blocksmove ) ) {
@@ -431,7 +430,7 @@ function findunblockedtile() {
 
 push( pc, findunblockedtile() )
 
-for ( var i = num_monsters; i--; ) { 
+for ( var i = num_monsters; i--; ) {
     var monster = Actor( monsterglyphs[ ROT.RNG.getUniformInt( 0, monsterglyphs.length - 1 ) ], 0, 0, 0 )
     push( monster, findunblockedtile() )
 }

@@ -10,20 +10,16 @@ import { GridHelper } from './threejs/helpers/GridHelper.js'
 
 const tasks = []
 
-
 export function start( task ) {
     tasks.push( task )
 }
-
 
 export function stop( task ) {
     let i = tasks.indexOf( task )
     if ( i > -1 ) tasks.splice( i, 1 )
 }
 
-
 export let time = 0
-
 
 function update( update_time ) {
     requestAnimationFrame( update )
@@ -37,7 +33,6 @@ function update( update_time ) {
 }
 
 update( time )
-
 
 export const size = { x: 100, z: 100 }
 export const centre = { x: Math.floor( size.x * 0.5 ), z: Math.floor( size.z * 0.5 ) }
@@ -58,7 +53,6 @@ export function cell( x, z ) {
     if ( x < 0 || x >= size.x || z < 0 || z >= size.z ) return null
     return cells[ Math.floor( z ) * size.x + Math.floor( x ) ]
 }
-
 
 export const cellsWithin = function ( x, z, radius ) {
     if ( radius < 0.7 ) {
@@ -85,7 +79,6 @@ export const cellsWithin = function ( x, z, radius ) {
     }
     return result
 }
-
 
 export const add = function ( object ) {
 

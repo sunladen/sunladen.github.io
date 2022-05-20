@@ -1,57 +1,57 @@
 const main = () => {
 
-	const global = {
-		log: require( './log' )
-	};
+    const global = {
+        log: require( './log' )
+    };
 
-	process.on( 'SIGINT', () => {
+    process.on( 'SIGINT', () => {
 
-		global.log( 'SIGINT received, stopping...' );
-		process.exit();
+        global.log( 'SIGINT received, stopping...' );
+        process.exit();
 
-	} );
+    } );
 
-	const httpserver = require( 'http' ).createServer( ( req, res ) => {
+    const httpserver = require( 'http' ).createServer( ( req, res ) => {
 
-		if ( req.url === '/' || req.url === '/index.html' || req.url === '/index.htm' ) {
+        if ( req.url === '/' || req.url === '/index.html' || req.url === '/index.htm' ) {
 
-			res.writeHead( 200, { "Content-Type": "text/plain" } );
-			res.write( "PBBG\n" );
+            res.writeHead( 200, { "Content-Type": "text/plain" } );
+            res.write( "PBBG\n" );
 
-		} else if ( req.url === '/favicon.ico' ) {
+        } else if ( req.url === '/favicon.ico' ) {
 
-			res.writeHead( 200, { "Content-Type": "image/gif" } );
-			res.write( 'base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw' );
+            res.writeHead( 200, { "Content-Type": "image/gif" } );
+            res.write( 'base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw' );
 
-		} else {
+        } else {
 
-			res.writeHead( 302, { 'Location': '/' } );
+            res.writeHead( 302, { 'Location': '/' } );
 
-		}
-		res.end();
+        }
+        res.end();
 
-	} ).listen( process.env.PORT || 8108 );
+    } ).listen( process.env.PORT || 8108 );
 
-	( new require( 'ws' ).Server( { server: httpserver } ) ).on( 'connection', ws => {
+    ( new require( 'ws' ).Server( { server: httpserver } ) ).on( 'connection', ws => {
 
-		ws.on( 'message', message => {
+        ws.on( 'message', message => {
 
-			try {
+            try {
 
-				delete require.cache[ require.resolve( './message' ) ];// dev only; no cache
-				require( './message' ).message( global, ws, JSON.parse( message ) );
+                delete require.cache[ require.resolve( './message' ) ];// dev only; no cache
+                require( './message' ).message( global, ws, JSON.parse( message ) );
 
-			} catch ( err ) {
+            } catch ( err ) {
 
-				global.log( err );
+                global.log( err );
 
-			}
+            }
 
-		} );
+        } );
 
-	} );
+    } );
 
-	global.log( 'Listening on http://localhost:8108/' );
+    global.log( 'Listening on http://localhost:8108/' );
 
 };
 

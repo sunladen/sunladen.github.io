@@ -18,7 +18,7 @@
         autoSellLevel: 0,
 
         updateTimeout: 0,
-        
+
         lastMouseMove: 0,
 
         xpath: {
@@ -35,21 +35,21 @@
                 return document.evaluate(xpath, context || document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null)
             },
         },
-    
+
         log: (msg) => {
             let message = { timestamp: mod.timestamp(), text: ('' + msg).trim() }
             console.log('%c' + message.timestamp + ' %c' + message.text, 'color:#444', 'color:#777')
         },
-    
+
         timestamp: (date) => {
             let d = date || new Date
             return d.getFullYear() + '-' + mod.pad(d.getMonth() + 1) + '-' + mod.pad(d.getDate()) + 'T' + mod.pad(d.getHours()) + ':' + mod.pad(d.getMinutes()) + ':' + mod.pad(d.getSeconds())
         },
-    
+
         pad: (number) => {
             return number.toString().padStart(2, '0')
         },
-    
+
         available: (node) => {
             if (!node) return false
             while (node && node.tagName !== 'BODY') {
@@ -60,7 +60,7 @@
             }
             return true
         },
-    
+
         click: (xpath, callback) => {
             let result = mod.xpath.nodes(xpath)
             for(let i = 0; i < result.snapshotLength; i++) {

@@ -12,7 +12,6 @@ import * as global from 'src/global'
 import { OrbitControls } from 'src/OrbitControls'
 import * as events from 'src/events'
 
-
 export class Display extends EventDispatcher {
 
     constructor( options ) {
@@ -152,7 +151,6 @@ export class Display extends EventDispatcher {
         cameraLookAt.set( 0, 0, -1 )
         cameraLookAt.applyQuaternion( camera.quaternion )
 
-
         if ( this.previousCameraZoom !== camera.zoom ) {
 
             this.previousCameraZoom = camera.zoom
@@ -187,10 +185,8 @@ export class Display extends EventDispatcher {
 
 }
 
-
 const cameraPosition = new Vector3()
 const cameraLookAt = new Vector3()
-
 
 const style = document.createElement( 'style' )
 style.textContent = 'body { margin: 0; overflow: hidden; background-color: black }'

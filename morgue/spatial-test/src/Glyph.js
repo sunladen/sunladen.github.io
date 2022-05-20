@@ -9,7 +9,6 @@ import { TextureLoader } from 'threejs'
 import { _Math } from 'threejs'
 import { NearestFilter } from 'threejs'
 
-
 export class Glyph {
 
     constructor( char, options ) {
@@ -132,7 +131,6 @@ export class Glyph {
 
 }
 
-
 function createMesh( char, options ) {
 
     options = options || {}
@@ -220,7 +218,6 @@ function createMesh( char, options ) {
 
 }
 
-
 function createBase( height, colour ) {
 
     let geometry = new BoxGeometry( 1, height, 1 )
@@ -243,10 +240,6 @@ function createBase( height, colour ) {
     return mesh
 
 }
-
-
-
-
 
 // -----------------------------------------------------------------------------------
 
@@ -303,8 +296,6 @@ const solidMaterialByColour = {}
 solidMaterialByColour[ 0x777777 ] = new MeshBasicMaterial( {
     color: 0x777777
 } )
-
-
 
 // const meshes = {}
 

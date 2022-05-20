@@ -4,7 +4,6 @@ import * as object from '../object.js'
 import { Mesh } from '../threejs/objects/Mesh.js'
 import { BoxGeometry } from '../threejs/geometries/BoxGeometry.js'
 
-
 export function Cell() {
 
     let cell = object.Object()
@@ -19,10 +18,9 @@ export function Cell() {
 
 }
 
-
 /**
  * Cell's update task.
- * @param {Cell} cell 
+ * @param {Cell} cell
  */
 function update( cell ) {
 

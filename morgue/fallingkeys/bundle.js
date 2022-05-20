@@ -1,7 +1,7 @@
 (function () {
-	'use strict';
+    'use strict';
 
-	/*
+    /*
 	let ground = new Body( { mass: 0 } )
 	ground.addShape( new Plane( new Vec3( 0, 0, 1 ) ) )
 	world.addBody( ground )
@@ -27,7 +27,7 @@
 	    while( i-- ) {
 	        let k = keys[ i ]
 	        let p = k.b.position
-	        k.e.style.webkitTransform = 'translate(' + p.x + 'px,' + p.z + 'px)' 
+	        k.e.style.webkitTransform = 'translate(' + p.x + 'px,' + p.z + 'px)'
 	        k.e.style.transform = 'translate(' + p.x + 'px,' + p.z + 'px)'
 	    }
 	    world.step( step )

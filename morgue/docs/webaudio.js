@@ -1,82 +1,81 @@
 class WebAudio {
 
-	constructor( src ) {
+    constructor( src ) {
 
-		this.audioContext = new AudioContext();
+        this.audioContext = new AudioContext();
 
-		if ( src ) this.load( src );
+        if ( src ) this.load( src );
 
-	}
+    }
 
-	load( src ) {
+    load( src ) {
 
-		if ( src ) this.src = src;
+        if ( src ) this.src = src;
 
-		var self = this;
-		var xhr = new XMLHttpRequest();
+        var self = this;
+        var xhr = new XMLHttpRequest();
 
-		xhr.open( 'GET', this.src, true );
-		xhr.responseType = 'arraybuffer';
-		xhr.onload = function () {
+        xhr.open( 'GET', this.src, true );
+        xhr.responseType = 'arraybuffer';
+        xhr.onload = function () {
 
-			self.audioContext.decodeAudioData( xhr.response, function ( buffer ) {
+            self.audioContext.decodeAudioData( xhr.response, function ( buffer ) {
 
-				if ( ! buffer ) return self.onerror();
+                if ( ! buffer ) return self.onerror();
 
-				self.buffer = buffer;
+                self.buffer = buffer;
 
-				self.onload( self );
+                self.onload( self );
 
-			}, self.onerror );
+            }, self.onerror );
 
-		};
+        };
 
-		xhr.send();
+        xhr.send();
 
-	}
+    }
 
-	onerror( err ) {
+    onerror( err ) {
 
-		console.log( err );
+        console.log( err );
 
-	}
+    }
 
-	onload( webaudio ) {
-	}
+    onload( webaudio ) {
+    }
 
-	play() {
+    play() {
 
-		// options = Object.assign( {
-		// 	loop: false
-		// }, options );
+        // options = Object.assign( {
+        // 	loop: false
+        // }, options );
 
-		var source = this.audioContext.createBufferSource();
-		source.buffer = this.buffer;
-		source.connect( this.audioContext.destination );
+        var source = this.audioContext.createBufferSource();
+        source.buffer = this.buffer;
+        source.connect( this.audioContext.destination );
 
-		//source.loop = options.loop;
+        //source.loop = options.loop;
 
-		user_gesture ? source.start( 0 ) : pre_user_gesture_plays.push( source );
+        user_gesture ? source.start( 0 ) : pre_user_gesture_plays.push( source );
 
-	}
+    }
 
 }
-
 
 var user_gesture = false;
 const pre_user_gesture_plays = [];
 
 document.addEventListener( 'mousedown', () => {
 
-	user_gesture = true;
+    user_gesture = true;
 
-	while ( pre_user_gesture_plays.length ) {
+    while ( pre_user_gesture_plays.length ) {
 
-		var source = pre_user_gesture_plays.shift();
-		console.log( source );
-		source.start( 0 );
+        var source = pre_user_gesture_plays.shift();
+        console.log( source );
+        source.start( 0 );
 
-	}
+    }
 
 } );
 

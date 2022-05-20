@@ -1,9 +1,8 @@
 import info from "./info.js";
-import { input, isDown, wasDown, hasChanged } from "./input.js";
-import { listen, announce } from "./event.js";
+import { hasChanged, input, isDown, wasDown } from "./input.js";
+import { announce, listen } from "./event.js";
 import * as THREE from "./three.module.js";
 import { OrbitControls } from "./OrbitControls"
-
 
 let canv = document.getElementsByTagName("canvas")[0];
 let w = canv.clientWidth;
@@ -18,8 +17,6 @@ const three = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera( 70, w / h, 0.01, 1000 );
 camera.position.set( 0, 5, 10 );
 
-
-
 listen( window, "resize", () => {
 
     camera.aspect = window.innerWidth / window.innerHeight;
@@ -28,12 +25,10 @@ listen( window, "resize", () => {
 
 }, 100 );
 
-
 let current;
 let mouseIntersects;
 
 export const global = {};
-
 
 global.init = () => {
 
@@ -41,10 +36,10 @@ global.init = () => {
 
         global.light1 = new THREE.DirectionalLight( 0xffeeee, 0.7 );
         global.light1.position.set( 1, 1, 1 );
-        
+
         global.light2 = new THREE.DirectionalLight( 0xffffff, 0.3 );
         global.light2.position.set( - 1, - 1, 1 );
-        
+
         global.light3 = new THREE.DirectionalLight( 0xffffff, 0.1 );
         global.light3.position.set( - 1, - 1, - 0.5 );
 
@@ -53,7 +48,7 @@ global.init = () => {
         //global.controls.mouseButtons.ORBIT = THREE.MOUSE.MIDDLE;
 
     }
-    
+
     var cube = new THREE.Mesh(
         new THREE.CubeGeometry( 5, 5, 5 ),
         new THREE.MeshLambertMaterial( { color: 0xFF0000 } )
@@ -66,7 +61,6 @@ global.init = () => {
 
     var axisHelper = new THREE.AxisHelper( 5 );
     three.add( axisHelper );
-
 
     const raycaster = new THREE.Raycaster();
     const mouseprojected = new THREE.Vector2();
@@ -111,7 +105,6 @@ global.update = () => {
 
 };
 
-
 export const scene = newScene => {
 
     for ( let i = three.children.length - 1; i >= 0 ; i -- ) {
@@ -133,9 +126,7 @@ export const scene = newScene => {
 
 };
 
-
 scene( global );
-
 
 const animate = time => {
 

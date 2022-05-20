@@ -169,7 +169,6 @@ export function OrbitControls( object, domElement ) {
 
             spherical.makeSafe();
 
-
             spherical.radius *= scale;
 
             // restrict radius to be between desired limits
@@ -280,7 +279,6 @@ export function OrbitControls( object, domElement ) {
 
     };
 
-
     //
     // internals
     //
@@ -364,7 +362,6 @@ export function OrbitControls( object, domElement ) {
 
             v.setFromMatrixColumn( objectMatrix, 1 ); // get Y column of objectMatrix
             v.multiplyScalar( distance );
-
 
             panOffset.add( v );
 
@@ -556,25 +553,25 @@ export function OrbitControls( object, domElement ) {
 
         switch ( event.keyCode ) {
 
-            case scope.keys.UP:
-                pan( 0, scope.keyPanSpeed );
-                scope.update();
-                break;
+        case scope.keys.UP:
+            pan( 0, scope.keyPanSpeed );
+            scope.update();
+            break;
 
-            case scope.keys.BOTTOM:
-                pan( 0, - scope.keyPanSpeed );
-                scope.update();
-                break;
+        case scope.keys.BOTTOM:
+            pan( 0, - scope.keyPanSpeed );
+            scope.update();
+            break;
 
-            case scope.keys.LEFT:
-                pan( scope.keyPanSpeed, 0 );
-                scope.update();
-                break;
+        case scope.keys.LEFT:
+            pan( scope.keyPanSpeed, 0 );
+            scope.update();
+            break;
 
-            case scope.keys.RIGHT:
-                pan( - scope.keyPanSpeed, 0 );
-                scope.update();
-                break;
+        case scope.keys.RIGHT:
+            pan( - scope.keyPanSpeed, 0 );
+            scope.update();
+            break;
 
         }
 
@@ -679,35 +676,35 @@ export function OrbitControls( object, domElement ) {
 
         switch ( event.button ) {
 
-            case scope.mouseButtons.ORBIT:
+        case scope.mouseButtons.ORBIT:
 
-                if ( scope.enableRotate === false ) return;
+            if ( scope.enableRotate === false ) return;
 
-                handleMouseDownRotate( event );
+            handleMouseDownRotate( event );
 
-                state = STATE.ROTATE;
+            state = STATE.ROTATE;
 
-                break;
+            break;
 
-            case scope.mouseButtons.ZOOM:
+        case scope.mouseButtons.ZOOM:
 
-                if ( scope.enableZoom === false ) return;
+            if ( scope.enableZoom === false ) return;
 
-                handleMouseDownDolly( event );
+            handleMouseDownDolly( event );
 
-                state = STATE.DOLLY;
+            state = STATE.DOLLY;
 
-                break;
+            break;
 
-            case scope.mouseButtons.PAN:
+        case scope.mouseButtons.PAN:
 
-                if ( scope.enablePan === false ) return;
+            if ( scope.enablePan === false ) return;
 
-                handleMouseDownPan( event );
+            handleMouseDownPan( event );
 
-                state = STATE.PAN;
+            state = STATE.PAN;
 
-                break;
+            break;
 
         }
 
@@ -730,29 +727,29 @@ export function OrbitControls( object, domElement ) {
 
         switch ( state ) {
 
-            case STATE.ROTATE:
+        case STATE.ROTATE:
 
-                if ( scope.enableRotate === false ) return;
+            if ( scope.enableRotate === false ) return;
 
-                handleMouseMoveRotate( event );
+            handleMouseMoveRotate( event );
 
-                break;
+            break;
 
-            case STATE.DOLLY:
+        case STATE.DOLLY:
 
-                if ( scope.enableZoom === false ) return;
+            if ( scope.enableZoom === false ) return;
 
-                handleMouseMoveDolly( event );
+            handleMouseMoveDolly( event );
 
-                break;
+            break;
 
-            case STATE.PAN:
+        case STATE.PAN:
 
-                if ( scope.enablePan === false ) return;
+            if ( scope.enablePan === false ) return;
 
-                handleMouseMovePan( event );
+            handleMouseMovePan( event );
 
-                break;
+            break;
 
         }
 
@@ -801,39 +798,39 @@ export function OrbitControls( object, domElement ) {
 
         switch ( event.touches.length ) {
 
-            case 1:	// one-fingered touch: rotate
+        case 1:	// one-fingered touch: rotate
 
-                if ( scope.enableRotate === false ) return;
+            if ( scope.enableRotate === false ) return;
 
-                handleTouchStartRotate( event );
+            handleTouchStartRotate( event );
 
-                state = STATE.TOUCH_ROTATE;
+            state = STATE.TOUCH_ROTATE;
 
-                break;
+            break;
 
-            case 2:	// two-fingered touch: dolly
+        case 2:	// two-fingered touch: dolly
 
-                if ( scope.enableZoom === false ) return;
+            if ( scope.enableZoom === false ) return;
 
-                handleTouchStartDolly( event );
+            handleTouchStartDolly( event );
 
-                state = STATE.TOUCH_DOLLY;
+            state = STATE.TOUCH_DOLLY;
 
-                break;
+            break;
 
-            case 3: // three-fingered touch: pan
+        case 3: // three-fingered touch: pan
 
-                if ( scope.enablePan === false ) return;
+            if ( scope.enablePan === false ) return;
 
-                handleTouchStartPan( event );
+            handleTouchStartPan( event );
 
-                state = STATE.TOUCH_PAN;
+            state = STATE.TOUCH_PAN;
 
-                break;
+            break;
 
-            default:
+        default:
 
-                state = STATE.NONE;
+            state = STATE.NONE;
 
         }
 
@@ -854,36 +851,36 @@ export function OrbitControls( object, domElement ) {
 
         switch ( event.touches.length ) {
 
-            case 1: // one-fingered touch: rotate
+        case 1: // one-fingered touch: rotate
 
-                if ( scope.enableRotate === false ) return;
-                if ( state !== STATE.TOUCH_ROTATE ) return; // is this needed?...
+            if ( scope.enableRotate === false ) return;
+            if ( state !== STATE.TOUCH_ROTATE ) return; // is this needed?...
 
-                handleTouchMoveRotate( event );
+            handleTouchMoveRotate( event );
 
-                break;
+            break;
 
-            case 2: // two-fingered touch: dolly
+        case 2: // two-fingered touch: dolly
 
-                if ( scope.enableZoom === false ) return;
-                if ( state !== STATE.TOUCH_DOLLY ) return; // is this needed?...
+            if ( scope.enableZoom === false ) return;
+            if ( state !== STATE.TOUCH_DOLLY ) return; // is this needed?...
 
-                handleTouchMoveDolly( event );
+            handleTouchMoveDolly( event );
 
-                break;
+            break;
 
-            case 3: // three-fingered touch: pan
+        case 3: // three-fingered touch: pan
 
-                if ( scope.enablePan === false ) return;
-                if ( state !== STATE.TOUCH_PAN ) return; // is this needed?...
+            if ( scope.enablePan === false ) return;
+            if ( state !== STATE.TOUCH_PAN ) return; // is this needed?...
 
-                handleTouchMovePan( event );
+            handleTouchMovePan( event );
 
-                break;
+            break;
 
-            default:
+        default:
 
-                state = STATE.NONE;
+            state = STATE.NONE;
 
         }
 

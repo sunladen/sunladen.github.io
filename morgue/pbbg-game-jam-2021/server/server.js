@@ -2,9 +2,7 @@ import { WebSocketServer } from 'ws';
 import crypto from 'crypto';
 import RBush from './rbush.js';
 
-
 const wss = new WebSocketServer( { port: process.env.PORT } );
-
 
 wss.on( 'connection', ws => {
 
@@ -53,8 +51,6 @@ wss.on( 'connection', ws => {
 
 			send( { type: 'item', value: ws.spatial } );
 
-
-
 			ws.last_heard = ( new Date() ).getTime();
 			ws.on( 'pong', () => {
 
@@ -72,17 +68,13 @@ wss.on( 'connection', ws => {
 
 } );
 
-
 const uuid = ( bytes = 16 ) => crypto.randomBytes( bytes ).toString( "hex" );
-
 
 const identified = {};
 const CLIENT_PING_INTERVAL = 10000;
 const CLIENT_UPDATE_INTERVAL = 2000;
 
-
 var messages = {};
-
 
 setInterval( () => {
 
@@ -104,7 +96,6 @@ setInterval( () => {
 	}
 
 }, CLIENT_PING_INTERVAL );
-
 
 setInterval( () => {
 
@@ -133,8 +124,6 @@ setInterval( () => {
 
 }, CLIENT_UPDATE_INTERVAL );
 
-
-
 function disconnect( id ) {
 
 	if ( ! identified.hasOwnProperty( id ) ) return;
@@ -147,13 +136,11 @@ function disconnect( id ) {
 
 }
 
-
 function send( message, target = 'global' ) {
 
 	( messages.hasOwnProperty( target ) ? messages[ target ] : messages[ target ] = [] ).push( message );
 
 }
-
 
 class SpatialItem {
 
@@ -204,10 +191,8 @@ class SpatialItem {
 
 }
 
-
 const tree = new RBush();
 const items = {};
-
 
 function spiralNonblockedLocation( item ) {
 
@@ -229,10 +214,7 @@ function spiralNonblockedLocation( item ) {
 
 	}
 
-
 }
-
-
 
 function move( id, toX, toY ) {
 

@@ -70,8 +70,6 @@ const noise = ( x, y ) => {
 
 }
 
-
-
 /**
  * Seeds simplex.noise.
  * @param {string} seed
@@ -103,7 +101,6 @@ const seed = seed => {
 
 }
 
-
 /**
  * Returns a random string of characters in the range [a-Z0-9] of length n.
  * @param {number} n
@@ -113,8 +110,6 @@ const randomString = n => {
     return Array( n ).join().split( "," ).map( () => { return "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".charAt( Math.floor( Math.random() * 62 ) ) } ).join( "" )
 
 }
-
-
 
 let currentSeed
 
@@ -128,7 +123,6 @@ const grad3 = new Float32Array( [
     1, 0, 1, -1, 0, 1, 1, 0, -1, -1, 0, -1,
     0, 1, 1, 0, -1, 1, 0, 1, -1, 0, -1, -1
 ] )
-
 
 seed( randomString( 16 ) )
 

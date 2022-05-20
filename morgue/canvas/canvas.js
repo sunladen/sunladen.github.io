@@ -12,7 +12,7 @@ const Canvas = ( id, width, height ) => {
     let canvas = {
         element: document.getElementById( id )
     }
-    
+
     if ( ! canvas.element ) {
 
         console.warn( 'Canvas "' + id + '" not found' )

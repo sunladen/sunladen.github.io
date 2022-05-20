@@ -2877,7 +2877,6 @@
 
         }
 
-
         text = globals.converter._dispatch( 'italicsAndBold.after', text, options, globals );
         return text;
 

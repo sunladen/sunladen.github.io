@@ -20,7 +20,6 @@ class Water extends Liquid {
 
 registerBlockType( "Water", Water )
 
-
 register( "~", {
     edge: "rgba( 100, 100, 255, 0.3 )",
     fill: "rgba( 100, 100, 255, 0.3 )",

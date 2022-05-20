@@ -2,7 +2,6 @@ import * as THREE from 'https://cdn.skypack.dev/three@0.135.0/build/three.module
 import { OrbitControls } from 'https://cdn.skypack.dev/three@0.135.0/examples/jsm/controls/OrbitControls.js';
 import * as Landscape from './landscape.js';
 
-
 const landscapeGeometry = Landscape.generateIslandGeometry( worldSize );
 
 var dirtMaterial = new THREE.MeshStandardMaterial( {
@@ -19,13 +18,10 @@ wireframe.material.opacity = 0.25;
 wireframe.material.transparent = true;
 scene.add( wireframe );
 
-
 var waterGeometry = new THREE.PlaneGeometry( worldSize, worldSize );
 var waterMaterial = new THREE.MeshStandardMaterial( { color: 'blue' } );
 var waterMesh = new THREE.Mesh( waterGeometry, waterMaterial );
 scene.add( waterMesh );
-
-
 
 // function dirtTexture( width, height ) {
 
@@ -53,7 +49,6 @@ scene.add( waterMesh );
 //     return canvas;
 
 // }
-
 
 class GenerateIslandDemo {
 
@@ -89,7 +84,6 @@ class GenerateIslandDemo {
         this.scene = new THREE.Scene();
         this.scene.add( this.helper );
 
-
         let hemiLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 0.6 );
         hemiLight.color.setHSL( 0.6, 0.75, 0.5 );
         hemiLight.groundColor.setHSL( 0.095, 0.5, 0.5 );
@@ -105,16 +99,12 @@ class GenerateIslandDemo {
         dirLight.castShadow = true;
         dirLight.shadow.mapSize.width = dirLight.shadow.mapSize.height = 1024 * 2;
 
-
         new OrbitControls( cameraPerspective, mainRenderer.domElement );
         new OrbitControls( cameraOrtho, mainRenderer.domElement );
 
     }
 
 }
-
-
-
 
 function animate() {
 
@@ -123,7 +113,6 @@ function animate() {
     render();
 
 }
-
 
 function render() {
 
@@ -164,7 +153,6 @@ function render() {
     minimapRenderer.render( scene, this.camera.mini );
 
 }
-
 
 animate();
 

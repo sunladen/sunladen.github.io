@@ -1,4 +1,3 @@
-
 function Cell( x, y ) {
 
     let cell = {
@@ -38,6 +37,5 @@ function generation( cell, generationInfo ) {
     return _cell;
 
 }
-
 
 export { Cell, generation };

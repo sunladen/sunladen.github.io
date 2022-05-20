@@ -76,7 +76,7 @@ function noise( xin, yin ) {
         var grad = gradients[ gi ]
         n0 = t0 * t0 * ( grad[ 0 ] * x0 + grad[ 1 ] * y0 )
     }
-    
+
     var t1 = 0.5 - x1 * x1 - y1 * y1
     if ( t1 >= 0 ) {
         t1 *= t1
@@ -84,7 +84,7 @@ function noise( xin, yin ) {
         var grad = gradients[ gi ]
         n1 = t1 * t1 * ( grad[ 0 ] * x1 + grad[ 1 ] * y1 )
     }
-    
+
     var t2 = 0.5 - x2 * x2 - y2 * y2
     if ( t2 >= 0 ) {
         t2 *= t2

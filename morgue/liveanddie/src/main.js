@@ -7,24 +7,18 @@ import cells from './cells'
 import ui from './ui'
 import input from './input'
 import math from './math'
-
-
 // Entities
 import blankcell from './entities/cell/blank'
 import grass from './entities/flora/grass'
 import person from './entities/animal/person'
-
 // Effects
 import movefindpath from './effects/movefindpath'
-
 
 let global = val('global')
 let my = val('liveanddie')
 
-
 const BLANK_CELL = blankcell()
 const GRASS = grass()
-
 
 /**
  * Updates the display and view dimensions based on the current window.
@@ -56,7 +50,6 @@ let updateDisplayViewDraw = () => {
     my.draw.min.y = Math.max(my.view.min.y - config.overdraw_north, 0)
     my.draw.max.y = Math.min(my.view.max.y + config.overdraw_south, config.cells)
 
-
     // Log view dimension changes
     if (my.updateDisplayViewDraw_timer) clearTimeout(my.updateDisplayViewDraw_timer)
 
@@ -78,8 +71,6 @@ let updateDisplayViewDraw = () => {
 
 }
 
-
-
 // Initialisation of state. Only run on first load (i.e. don't run on reloads from livecoding updates)
 once('liveanddie', () => {
 
@@ -99,8 +90,6 @@ once('liveanddie', () => {
     ui.terminal.say('help')
 
 })
-
-
 
 repeat('liveanddie_3_Hz', 333, () => {
 
@@ -123,10 +112,10 @@ repeat('liveanddie_3_Hz', 333, () => {
         my.mouse.y = input.MOUSE_OFFSET.y
 
         let cll = cells.getCell(
-                my.cells,
-                my.view.min.x + ~~(my.mouse.x / global.pixels_per_cell.x),
-                my.view.min.y + ~~(my.mouse.y / global.pixels_per_cell.y)
-            )
+            my.cells,
+            my.view.min.x + ~~(my.mouse.x / global.pixels_per_cell.x),
+            my.view.min.y + ~~(my.mouse.y / global.pixels_per_cell.y)
+        )
 
         if (cll !== my.mouse.cell) {
 
@@ -145,8 +134,6 @@ repeat('liveanddie_3_Hz', 333, () => {
     }
 
 })
-
-
 
 repeat('liveanddie_15_Hz', 66, () => {
 
@@ -186,14 +173,11 @@ repeat('liveanddie_15_Hz', 66, () => {
 
 })
 
-
-
 repeat('liveanddie_60_Hz', 15, () => {
 
     let left = (0.5 - config.overdraw_west) * global.pixels_per_cell.x
     let pos = {x: left, y: (0.5 - config.overdraw_north) * global.pixels_per_cell.y, z: 0}
     let tint
-
 
     // Draw a grid like underlay to show the cells
     /*for (let y = my.draw.min.y; y <= my.draw.max.y; ++y) {

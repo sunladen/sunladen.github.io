@@ -8,7 +8,6 @@ import * as global from 'src/global'
 import { Partition } from 'src/Partition'
 import * as events from 'src/events'
 
-
 export class World extends EventDispatcher {
 
     constructor( display ) {
@@ -19,7 +18,6 @@ export class World extends EventDispatcher {
 
         this.worldobjects = []
         this.time = 0
-
 
         this.partitions = {}
 
@@ -98,13 +96,10 @@ export class World extends EventDispatcher {
 
 }
 
-
-
 const VIEW_TOPLEFT = new Vector2( -1, 1 )
 const VIEW_TOPRIGHT = new Vector2( 1, 1 )
 const VIEW_BOTTOMLEFT = new Vector2( -1, -1 )
 const VIEW_BOTTOMRIGHT = new Vector2( 1, -1 )
-
 
 const intersect_topleft = new Vector3()
 const intersect_topright = new Vector3()

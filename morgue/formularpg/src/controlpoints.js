@@ -8,7 +8,6 @@ controlpoints.hovered = null;
 
 controlpoints.list = [];
 
-
 controlpoints.add = ( point, afterControlPoint ) => {
 
     let geometry = new THREE.CubeGeometry( 0.5, 0.5, 0.5 );
@@ -66,8 +65,6 @@ controlpoints.setSelected = controlpoint => {
 
 }
 
-
-
 controlpoints.setHovered = controlpoint => {
 
     if ( controlpoint && controlpoint === controlpoints.hovered ) {
@@ -93,7 +90,6 @@ controlpoints.setHovered = controlpoint => {
     return controlpoints.hovered;
 
 }
-
 
 export default controlpoints;
 

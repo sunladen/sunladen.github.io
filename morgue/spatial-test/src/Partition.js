@@ -1,7 +1,6 @@
 import { EventDispatcher } from 'threejs'
 import { Vector3 } from 'threejs'
 
-
 export class Partition extends EventDispatcher {
 
     constructor( world, x, z ) {

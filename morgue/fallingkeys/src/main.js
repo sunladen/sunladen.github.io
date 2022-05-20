@@ -29,7 +29,6 @@ Object()
 
 const STEP = 1 / 60
 
-
 function animate() {
     requestAnimationFrame( animate )
     world.step( STEP )
@@ -68,7 +67,7 @@ function update( time ) {
     while( i-- ) {
         let k = keys[ i ]
         let p = k.b.position
-        k.e.style.webkitTransform = 'translate(' + p.x + 'px,' + p.z + 'px)' 
+        k.e.style.webkitTransform = 'translate(' + p.x + 'px,' + p.z + 'px)'
         k.e.style.transform = 'translate(' + p.x + 'px,' + p.z + 'px)'
     }
     world.step( step )

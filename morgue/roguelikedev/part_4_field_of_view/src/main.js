@@ -47,7 +47,6 @@ const blocksmove = [ glyphs.PC, glyphs.NPC, glyphs.VOID, glyphs.WALL, glyphs.TRE
 
 const blocksfov = [ glyphs.VOID, glyphs.WALL, glyphs.TREE ]
 
-
 function Tile( glyph, x, y ) {
     return {
     	glyph: glyph,
@@ -166,7 +165,7 @@ function render() {
         tile.fow = false
         fovtiles.push( tile )
     } )
-  
+
     display._backend._context.fillStyle = 'black'
     display._backend._context.fillRect( 0, 0, window.innerWidth, window.innerHeight )
 
@@ -354,9 +353,9 @@ function grass( x0, y0, x1, y1 ) {
             tile.glyph = glyphs.TREE
         }
         tile.g = noise.get( x * 0.05, y * 0.05 ) < 0 ? 0.3 : 0.6
-        tile.g += n * 0.2 
-        tile.b = ( noise.get( x * 0.005, y * 0.005 ) + 1 ) * 0.2 
-        tile.r = ( noise.get( x * 0.04, y * 0.04 ) + 1 ) * 0.1 
+        tile.g += n * 0.2
+        tile.b = ( noise.get( x * 0.005, y * 0.005 ) + 1 ) * 0.2
+        tile.r = ( noise.get( x * 0.04, y * 0.04 ) + 1 ) * 0.1
     } )
 }
 
@@ -369,9 +368,7 @@ function tree( x0, y0, x1, y1 ) {
     } )
 }
 
-
 grass( 0, 0, map.height - 1, map.width - 1 )
-
 
 var start = tileAt( ROT.RNG.getUniformInt( 0, map.width - 1 ), ROT.RNG.getUniformInt( 0, map.width - 1 ) )
 while ( start.glyph === glyphs.TREE ) {

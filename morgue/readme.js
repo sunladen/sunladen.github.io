@@ -11,7 +11,7 @@
             return [ {
 
                 type: "output",
-                
+
                 filter: function ( text ) {
 
                     return text.replace( /(?:<p>)?<img.*?src="(.+?)"(.*?)\/?>(?:<\/p>)?/gi, ( match, url ) => {

@@ -43,7 +43,6 @@ let cannibalNumbers = ( seq, target ) => {
     return singles + cannibals
 }
 
-
 let tests = [
     {
         name: "u/mn-haskell-guy's Input // Ouput (slow to calculate)", input: `7 1
@@ -73,7 +72,6 @@ let tests = [
 
 // console > DOM duplicate log
 ; ( ( l, e ) => { e = e[ e.length - 1 ]; console.log = msg => { e.innerHTML += msg + '<br/>'; l( msg ) } } )( console.log, document.getElementsByTagName( 'code' ) )
-
 
 let run_test = () => {
     let test = tests.pop()

@@ -7,11 +7,13 @@
         void 0 === arr[ type ] && ( arr[ type ] = [] )
         arr[ type ].push( listener )
     }
+
     function hasEventListener( object, type, listener ) {
         if ( void 0 === object._listeners ) return false
         let arr = object._listeners
         return void 0 !== arr[ type ] && -1 !== arr[ type ].indexOf( listener )
     }
+
     WORLDJS.removeEventListener = ( object, type, listener ) => {
         if ( void 0 === object._listeners ) return
         let arr = object._listeners[ type ]
@@ -27,11 +29,13 @@
         arr = arr.slice( 0 )
         for ( let i = 0, l = arr.length; i < l; i++ ) arr[ i ].call( object, ...args )
     }
+
     function set( vec, x, y ) {
         vec.x = x
         vec.y = y
         return vec
     }
+
     function rotate( vec, radians, origin ) {
         let sin = Math.sin( radians )
         let cos = Math.cos( radians )
@@ -47,17 +51,21 @@
             vec.y += origin.y
         }
     }
+
     function length( vec ) {
         return Math.sqrt( vec.x * vec.x + vec.y * vec.y )
     }
+
     WORLDJS.distance = ( a, b ) => {
         let x = a.x - b.x
         let y = a.y - b.y
         return Math.sqrt( x * x + y * y )
     }
+
     function heuristic( a, b ) {
         return Math.abs( b.x - a.x ) + Math.abs( b.y - a.y )
     }
+
     WORLDJS.containsPoint = ( node, point ) => {
         let sin = Math.sin( -node.rotation )
         let cos = Math.cos( -node.rotation )
@@ -94,7 +102,7 @@
             sprite_scale: 1,
             sprite_scale_delta: 0
         },
-            options
+        options
         )
         WORLDJS.setSprite( node, options.sprite )
         return node
@@ -107,16 +115,20 @@
         node.sprite.name = name
         if ( typeof node.name === 'undefined' ) node.name = name
         sprite = WORLDJS.sprites[ node.sprite.name ] || WORLDJS.defineSprite( sprite )
+
         function ready() {
             node.ready = true
             WORLDJS.dispatchEvent( node, 'ready', node )
         }
+
         sprite.image ? ready() : WORLDJS.addEventListener( sprite, 'ready', ready )
     }
+
     function comparator( node_a, node_b ) {
         let layer = node_a.layer - node_b.layer
         return layer === 0 ? node_a.y - node_b.y : layer
     }
+
     function insert( array, item, comparator, noduplicates ) {
         if ( !array.length ) return array.push( item )
         let high = array.length - 1
@@ -136,6 +148,7 @@
         }
         array.splice( i, 0, item )
     }
+
     WORLDJS.add = ( parent, node ) => {
         if ( !node ) {
             node = typeof parent.id === 'undefined' ? WORLDJS.defineNode( parent ) : parent
@@ -161,6 +174,7 @@
         parent.children.splice( i, 1 )
         WORLDJS.dispatchEvent( WORLDJS, 'cellchildrenchanged', parent )
     }
+
     function assignNodeToCells( node ) {
         let cells = WORLDJS.cellsOccupiedBy( node, node )
         let nodecellschanged = false
@@ -199,6 +213,7 @@
             node.inview = inview
         }
     }
+
     WORLDJS.translate = ( node, x, y, duration, onComplete ) => {
         if ( x === node.x && y === node.y ) { onComplete && onComplete(); return }
         let dx = x - node.x
@@ -267,9 +282,11 @@
         let duration = Math.sqrt( dx * dx + dy * dy ) / node.speed
         WORLDJS.translate( node, x + dx, y + dy, duration, onComplete )
     }
+
     function path( node, x, y, onComplete ) {
         if ( x === node.x && y === node.y ) { onComplete && onComplete(); return }
         node.followingpath = findpath( node, x, y )
+
         function followpath() {
             if ( ( x === node.x && y === node.y ) || 0 === node.followingpath.length ) { onComplete && onComplete(); return }
             let p = node.followingpath.pop()
@@ -279,8 +296,10 @@
             let duration = Math.sqrt( dx * dx + dy * dy ) / node.speed
             WORLDJS.translate( node, node.x + dx, node.y + dy, duration, followpath )
         }
+
         followpath()
     }
+
     function draw( node ) {
         ctx.save()
         ctx.translate( node.x + node.translate_x_delta, node.y + node.translate_y_delta )
@@ -295,11 +314,13 @@
         for ( let i = 0, l = node.children.length; i < l; i++ ) draw( node.children[ i ] )
         ctx.restore()
     }
+
     function updateVisibleNode( node ) {
         _visibleUpdate( node )
         for ( let i = 0, l = node.children.length; i < l; i++ )
             updateVisibleNode( node.children[ i ] )
     }
+
     WORLDJS.opacity = ( node, opacity ) => {
         node.opacity = opacity
         return node
@@ -337,15 +358,19 @@
         }
         return nodes
     }
+
     class Heap {
+
         constructor() {
             this.items = []
         }
+
         push( item ) {
             item.index = this.items.length
             this.items.push( item )
             this.bubbleUp( this.items.length - 1 )
         }
+
         pop() {
             let items = this.items
             let result = items[ 0 ]
@@ -353,6 +378,7 @@
             0 < items.length && ( items[ 0 ] = end, this.sinkDown( 0 ) )
             return result
         }
+
         remove( item ) {
             let items = this.items
             let l = items.length
@@ -366,9 +392,11 @@
                     break
                 }
         }
+
         size() {
             return this.items.length
         }
+
         bubbleUp( index ) {
             let items = this.items
             let item = items[ index ]
@@ -384,6 +412,7 @@
                 index = i
             }
         }
+
         sinkDown( index ) {
             for ( let items = this.items, l = items.length, item = items[ index ], score = item.score; ; ) {
                 let child2 = 2 * ( index + 1 )
@@ -399,7 +428,9 @@
                 index = item.index = swap
             }
         }
+
     }
+
     function findpath( node, x, y ) {
         findpath.id = findpath.id ? findpath.id + 1 : 1
         let start = { x: node.x, y: node.y }
@@ -466,6 +497,7 @@
         }
         return path
     }
+
     WORLDJS.ray = ( a, b, node, stoponcollision ) => {
         let x = a.x
         let y = a.y
@@ -588,6 +620,7 @@
         }
         return sprite
     }
+
     function repaint( sprite ) {
         let width = sprite.canvas.width
         let height = sprite.canvas.height
@@ -597,6 +630,7 @@
         sprite.image && ctx.drawImage( sprite.image, 0, 0, width, height )
         sprite.border && ( ctx.beginPath(), ctx.strokeStyle = sprite.bordercolour, ctx.lineWidth = .5 * sprite.border, ctx.rect( .5, .5, width - 1, height - 1 ), ctx.stroke() )
     }
+
     const canvas = document.createElement( 'canvas' )
     canvas.style.width = canvas.style.height = '100%'
     canvas.width = 640
@@ -615,6 +649,7 @@
     }
     WORLDJS.inview_cells = []
     WORLDJS.inview_nodes = []
+
     function updateViewport() {
         viewport.width = canvas.width + viewport.overdraw * 2
         viewport.height = canvas.height + viewport.overdraw * 2
@@ -662,10 +697,12 @@
         }
         WORLDJS.inview_nodes.sort( comparator )
     }
+
     function resize() {
         canvas.height = ( window.innerHeight / window.innerWidth ) * canvas.width
         updateViewport()
     }
+
     WORLDJS.setOverdraw = overdraw => {
         viewport.overdraw = overdraw
         updateViewport()
@@ -683,6 +720,7 @@
     const animations = []
     WORLDJS.time = 0
     WORLDJS.elapsed = 0
+
     function startAnimation( duration, stepCallback, onComplete ) {
         let animation = {
             id: nextGUID++,
@@ -694,10 +732,12 @@
         animations.push( animation )
         return animation.id
     }
+
     function stopAnimation( id ) {
         for ( let i = 0; i < animations.length; i++ )
             if ( animations[ i ].id === id ) return animations.splice( i, 1 )
     }
+
     WORLDJS.render = () => {
         ctx.save()
         canvas.width = canvas.width
@@ -714,6 +754,7 @@
         }
         ctx.restore()
     }
+
     function updateAnimation( t ) {
         requestAnimationFrame( updateAnimation )
         WORLDJS.elapsed = t - WORLDJS.time
@@ -728,6 +769,7 @@
         }
         WORLDJS.render()
     }
+
     let _globalUpdate = () => { }
     let _visibleUpdate = ( node ) => { }
     WORLDJS.start = ( globalUpdate, visibleUpdate ) => {

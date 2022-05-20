@@ -1,15 +1,14 @@
 import { noise } from './noise.js';
 
 const world = {
-	size: 100,
-	cell: [],
-	updateWater: []
+    size: 100,
+    cell: [],
+    updateWater: []
 };
 
-
 const view = {
-	x: 0,
-	y: 0
+    x: 0,
+    y: 0
 };
 
 const canvas = document.createElement( 'canvas' );
@@ -35,55 +34,54 @@ const data = imageData.data;
 
 const ctx = canvas.getContext( '2d' );
 
-
 function initialise() {
 
-	world.cell = new Array( world.size );
+    world.cell = new Array( world.size );
 
-	for ( var y = 0; y < world.size; y ++ ) {
+    for ( var y = 0; y < world.size; y ++ ) {
 
-		world.cell[ y ] = new Array( world.size );
+        world.cell[ y ] = new Array( world.size );
 
-		for ( var x = 0; x < world.size; x ++ ) {
+        for ( var x = 0; x < world.size; x ++ ) {
 
-			const i = ( y * world.size + x ) * 4;
+            const i = ( y * world.size + x ) * 4;
 
-			const xp = x / world.size;
-			const yp = y / world.size;
-			const n = noise( xp * 1, yp * 1 ) * .6 + noise( ( xp + 15 ) * 4, ( yp + 15 ) * 4 ) * .3 + noise( ( xp + 1000 ) * 8, ( yp + 1000 ) * 8 ) * .1;
-			const height = Math.max( 0, Math.min( 255, Math.floor( ( n + 1 ) * 255 * 0.5 ) ) );
+            const xp = x / world.size;
+            const yp = y / world.size;
+            const n = noise( xp * 1, yp * 1 ) * .6 + noise( ( xp + 15 ) * 4, ( yp + 15 ) * 4 ) * .3 + noise( ( xp + 1000 ) * 8, ( yp + 1000 ) * 8 ) * .1;
+            const height = Math.max( 0, Math.min( 255, Math.floor( ( n + 1 ) * 255 * 0.5 ) ) );
 
-			var water = Math.random();
-			water = water > 0.5 ? Math.floor( Math.random() * 255 ) : 0;
+            var water = Math.random();
+            water = water > 0.5 ? Math.floor( Math.random() * 255 ) : 0;
 
-			world.cell[ y ][ x ] = {
-				x: x,
-				y: y,
-				height: height,
-				water: water
-			};
+            world.cell[ y ][ x ] = {
+                x: x,
+                y: y,
+                height: height,
+                water: water
+            };
 
-			if ( water > 0 ) world.updateWater.push( world.cell[ y ][ x ] );
+            if ( water > 0 ) world.updateWater.push( world.cell[ y ][ x ] );
 
-			imageData.data[ i ] = imageData.data[ i + 1 ] = imageData.data[ i + 2 ] = height;
-			imageData.data[ i + 3 ] = 255;
+            imageData.data[ i ] = imageData.data[ i + 1 ] = imageData.data[ i + 2 ] = height;
+            imageData.data[ i + 3 ] = 255;
 
-		}
+        }
 
-	}
+    }
 
-	for ( var y = 0; y < world.size; y ++ ) {
+    for ( var y = 0; y < world.size; y ++ ) {
 
-		for ( var x = 0; x < world.size; x ++ ) {
+        for ( var x = 0; x < world.size; x ++ ) {
 
-			world.cell[ y ][ x ].north = y > 0 ? world.cell[ y - 1 ][ x ] : null;
-			world.cell[ y ][ x ].south = y < world.size - 1 ? world.cell[ y + 1 ][ x ] : null;
-			world.cell[ y ][ x ].east = x < world.size - 1 ? world.cell[ y ][ x + 1 ] : null;
-			world.cell[ y ][ x ].west = x > 0 ? world.cell[ y ][ x - 1 ] : null;
+            world.cell[ y ][ x ].north = y > 0 ? world.cell[ y - 1 ][ x ] : null;
+            world.cell[ y ][ x ].south = y < world.size - 1 ? world.cell[ y + 1 ][ x ] : null;
+            world.cell[ y ][ x ].east = x < world.size - 1 ? world.cell[ y ][ x + 1 ] : null;
+            world.cell[ y ][ x ].west = x > 0 ? world.cell[ y ][ x - 1 ] : null;
 
-		}
+        }
 
-	}
+    }
 
 }
 
@@ -92,134 +90,127 @@ initialise();
 var lasttime = 0;
 var frames = 0;
 
-
 function animate() {
 
-	const time = performance.now();
-	const elapsed = time - lasttime;
+    const time = performance.now();
+    const elapsed = time - lasttime;
 
-	lasttime = time;
+    lasttime = time;
 
-	//const nextUpdateWater = [];
+    //const nextUpdateWater = [];
 
-	for ( var y = 0; y < world.size; y ++ ) {
+    for ( var y = 0; y < world.size; y ++ ) {
 
-		for ( var x = 0; x < world.size; x ++ ) {
+        for ( var x = 0; x < world.size; x ++ ) {
 
-			const cell = world.cell[ y ][ x ];
+            const cell = world.cell[ y ][ x ];
 
-			if ( Math.random() > 0.999 ) cell.water ++;
+            if ( Math.random() > 0.999 ) cell.water ++;
 
+            //for ( var i = 0; i < world.updateWater.length; i ++ ) {
 
-			//for ( var i = 0; i < world.updateWater.length; i ++ ) {
+            //	var cell = world.updateWater[ i ];
 
-			//	var cell = world.updateWater[ i ];
+            if ( cell.north && cell.north.height + cell.north.water < cell.height + cell.water ) {
 
-			if ( cell.north && cell.north.height + cell.north.water < cell.height + cell.water ) {
+                cell.water --;
+                cell.north.water ++;
+                //nextUpdateWater.push( cell.north );
 
-				cell.water --;
-				cell.north.water ++;
-				//nextUpdateWater.push( cell.north );
+            }
 
-			}
+            if ( cell.south && cell.south.height + cell.south.water < cell.height + cell.water ) {
 
-			if ( cell.south && cell.south.height + cell.south.water < cell.height + cell.water ) {
+                cell.water --;
+                cell.south.water ++;
+                //nextUpdateWater.push( cell.south );
 
-				cell.water --;
-				cell.south.water ++;
-				//nextUpdateWater.push( cell.south );
+            }
 
-			}
+            if ( cell.east && cell.east.height + cell.east.water < cell.height + cell.water ) {
 
-			if ( cell.east && cell.east.height + cell.east.water < cell.height + cell.water ) {
+                cell.water --;
+                cell.east.water ++;
+                //nextUpdateWater.push( cell.east );
 
-				cell.water --;
-				cell.east.water ++;
-				//nextUpdateWater.push( cell.east );
+            }
 
-			}
+            if ( cell.west && cell.west.height + cell.west.water < cell.height + cell.water ) {
 
-			if ( cell.west && cell.west.height + cell.west.water < cell.height + cell.water ) {
+                cell.water --;
+                cell.west.water ++;
+                //nextUpdateWater.push( cell.west );
 
-				cell.water --;
-				cell.west.water ++;
-				//nextUpdateWater.push( cell.west );
+            }
 
-			}
+            //if ( ( cell.north && cell.north.water < cell.water ) ||
+            //	( cell.south && cell.south.water < cell.water ) ||
+            //	( cell.east && cell.east.water < cell.water ) ||
+            //	( cell.west && cell.west.water < cell.water ) )
+            //nextUpdateWater.push( cell );
 
+        }
 
-			//if ( ( cell.north && cell.north.water < cell.water ) ||
-			//	( cell.south && cell.south.water < cell.water ) ||
-			//	( cell.east && cell.east.water < cell.water ) ||
-			//	( cell.west && cell.west.water < cell.water ) )
-			//nextUpdateWater.push( cell );
+    }
 
-		}
+    //world.updateWater = nextUpdateWater;
 
-	}
+    for ( var y = 0; y < world.size; y ++ ) {
 
-	//world.updateWater = nextUpdateWater;
+        for ( var x = 0; x < world.size; x ++ ) {
 
-	for ( var y = 0; y < world.size; y ++ ) {
+            const i = ( y * world.size + x ) * 4;
 
-		for ( var x = 0; x < world.size; x ++ ) {
+            const cell = world.cell[ y ][ x ];
 
-			const i = ( y * world.size + x ) * 4;
+            data[ i ] = imageData.data[ i + 1 ] = imageData.data[ i + 2 ] = cell.height;
 
-			const cell = world.cell[ y ][ x ];
+            if ( cell.water <= 100 ) {
 
-			data[ i ] = imageData.data[ i + 1 ] = imageData.data[ i + 2 ] = cell.height;
+                data[ i ] = 155 - cell.water * 1.5;
+                data[ i + 1 ] = 155 - cell.water;
+                data[ i + 2 ] = 100 - cell.water;
 
-			if ( cell.water <= 100 ) {
+                if ( ! cell.lastevaporation || time - cell.lastevaporation > 10000 - cell.water * 40 ) {
 
-				data[ i ] = 155 - cell.water * 1.5;
-				data[ i + 1 ] = 155 - cell.water;
-				data[ i + 2 ] = 100 - cell.water;
+                    cell.water --;
+                    cell.lastevaporation = time;
 
-				if ( ! cell.lastevaporation || time - cell.lastevaporation > 10000 - cell.water * 40 ) {
+                }
 
-					cell.water --;
-					cell.lastevaporation = time;
+            } else {
 
-				}
+                data[ i ] = data[ i + 1 ] = 255 - cell.water * 2;
+                data[ i + 2 ] = cell.water;
 
-			} else {
+                if ( ! cell.lastevaporation || time - cell.lastevaporation > cell.water * 10 ) {
 
-				data[ i ] = data[ i + 1 ] = 255 - cell.water * 2;
-				data[ i + 2 ] = cell.water;
+                    cell.water --;
+                    cell.lastevaporation = time;
 
-				if ( ! cell.lastevaporation || time - cell.lastevaporation > cell.water * 10 ) {
+                }
 
-					cell.water --;
-					cell.lastevaporation = time;
+            }
 
-				}
+        }
 
-			}
+    }
 
+    offctx.putImageData( imageData, 0, 0 );
+    ctx.drawImage( offscreen, 0, 0, canvas.width * ( canvas.width / world.size ), canvas.height * ( canvas.height / world.size ) );// canvas.width / world.size, canvas.height / world.size );
 
-		}
-
-	}
-
-	offctx.putImageData( imageData, 0, 0 );
-	ctx.drawImage( offscreen, 0, 0, canvas.width * ( canvas.width / world.size ), canvas.height * ( canvas.height / world.size ) );// canvas.width / world.size, canvas.height / world.size );
-
-	frames ++;
-	//requestAnimationFrame( animate );
-	//clearInterval( id );
-
+    frames ++;
+    //requestAnimationFrame( animate );
+    //clearInterval( id );
 
 }
 
 var id = setInterval( animate, 0 );
 
-
-
 setInterval( () => {
 
-	console.log( `${frames}fps` );
-	frames = 0;
+    console.log( `${frames}fps` );
+    frames = 0;
 
 }, 1000 );
 

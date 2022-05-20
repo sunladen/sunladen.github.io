@@ -7,18 +7,18 @@ import { BoxGeometry } from './threejs/geometries/BoxGeometry.js'
 import { GridHelper } from './threejs/helpers/GridHelper.js'
 
 function Cursor() {
-	let cursor = {
-		position: new Vector3(),
-		object: new Object3D(),
-		speed: -1
-	}
-	let box = new Mesh( new BoxGeometry( 1, 1, 1 ), materials.CURSOR )
-	box.position.y = 0.5
-	let grid = new GridHelper( 100, 100 )
-	grid.position.set( 0, 0.01, 0 )
-	cursor.object.add( box )
-	cursor.object.add( grid )
-	return cursor
+    let cursor = {
+        position: new Vector3(),
+        object: new Object3D(),
+        speed: -1
+    }
+    let box = new Mesh( new BoxGeometry( 1, 1, 1 ), materials.CURSOR )
+    box.position.y = 0.5
+    let grid = new GridHelper( 100, 100 )
+    grid.position.set( 0, 0.01, 0 )
+    cursor.object.add( box )
+    cursor.object.add( grid )
+    return cursor
 }
 
 const cursor = Cursor()

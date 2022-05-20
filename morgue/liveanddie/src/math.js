@@ -2,7 +2,6 @@ import './continuous'
 
 let math = {}
 
-
 /**
  * Returns the same psuedo-random number given the same inputs.
  * @param {number} x
@@ -75,8 +74,6 @@ math.noise = function (x, y) {
 
 };
 
-
-
 /**
  * Seeds the Math.random() number generator given a {string}.
  * @param {string} seed
@@ -90,18 +87,15 @@ math.seed = function(seed) {
         my.currentSeed |= 0;
     }
 
-
     // Override the built-in Math.random with a seeded psuedo-random implementation
     Math.random = function() {
         my.currentSeed = Math.sin(my.currentSeed) * 10000;
         return my.currentSeed - Math.floor(my.currentSeed);
     };
 
-
     // Initialise the noise constants
     my.f2 = 0.5 * (Math.sqrt(3.0) - 1.0);
     my.g2 = (3.0 - Math.sqrt(3.0)) / 6.0;
-
 
     var C = 256;
     var P = new Uint8Array(C);
@@ -122,27 +116,23 @@ math.seed = function(seed) {
 
 };
 
-
-
 let my = val('math')
-
 
 if (!my.initialised) {
 
-  my.initialised = true
+    my.initialised = true
 
-  my.grad3 = new Float32Array([
-      1, 1, 0, -1,   1, 0, 1, -1,   0, -1, -1,  0,
-      1, 0, 1, -1,   0, 1, 1,  0,  -1, -1,  0, -1,
-      0, 1, 1,  0,  -1, 1, 0,  1,  -1,  0, -1, -1
+    my.grad3 = new Float32Array([
+        1, 1, 0, -1,   1, 0, 1, -1,   0, -1, -1,  0,
+        1, 0, 1, -1,   0, 1, 1,  0,  -1, -1,  0, -1,
+        0, 1, 1,  0,  -1, 1, 0,  1,  -1,  0, -1, -1
     ])
 
-  my.currentSeed = 0
+    my.currentSeed = 0
 
-  math.seed('000000000000000000')
+    math.seed('000000000000000000')
 
 }
-
 
 export default math
 

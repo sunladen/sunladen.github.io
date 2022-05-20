@@ -7,15 +7,15 @@ import * as pc from './objects/pc'
 import NPC from './objects/npc'
 
 function loop() {
-	display.update()
-	for ( var i = object.actions.length; i--; ) object.actions[ i ]()
-	pc.act( function() { setTimeout( loop, 0 ) } )
+    display.update()
+    for ( var i = object.actions.length; i--; ) object.actions[ i ]()
+    pc.act( function() { setTimeout( loop, 0 ) } )
 }
 
 for ( var y = - map.centre.y; y < map.centre.y; y++ ) {
-	for ( var x = - map.centre.x; x < map.centre.x; x++ ) {
-		map.push( floor.Floor(), { x: x, y: y } )
-	}
+    for ( var x = - map.centre.x; x < map.centre.x; x++ ) {
+        map.push( floor.Floor(), { x: x, y: y } )
+    }
 }
 
 map.raise( { x: -5, y: -1 }, 7 )
@@ -29,7 +29,6 @@ map.raise( { x: 2, y: -1 }, 20 )
 map.raise( { x: 3, y: -1 }, 20 )
 map.raise( { x: 3, y: 0 }, 14 )
 map.raise( { x: 3, y: 1 }, 7 )
-
 
 map.raise( { x: -1, y: -2 }, 50 )
 map.raise( { x: 0, y: -2 }, 50 )

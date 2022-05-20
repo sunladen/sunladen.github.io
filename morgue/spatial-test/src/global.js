@@ -7,11 +7,9 @@ import { Display } from 'src/Display'
 import { World } from 'src/World'
 import { Heap } from 'src/Heap'
 
-
 export const mouseoverEvent = { type: 'mouseover' }
 export const mouseleaveEvent = { type: 'mouseleave' }
 export const changeEvent = { type: 'change' }
-
 
 export const tmp_v2 = new Vector2()
 export const v3_posY = new Vector3( 0, 1, 0 )
@@ -26,10 +24,8 @@ export let elapsed = 0
 let lag = 0
 export const LOGICINTERVAL = 1000.0 / 20.0
 
-
 export const logicheap = new Heap()
 export const animationlist = []
-
 
 export function schedule( callback, when ) {
 
@@ -39,13 +35,11 @@ export function schedule( callback, when ) {
 
 }
 
-
 export function startAnimation( callback ) {
 
     animationlist.push( callback )
 
 }
-
 
 export function stopAnimation( callback ) {
 
@@ -59,11 +53,9 @@ export function stopAnimation( callback ) {
 
 }
 
-
 export const display = new Display( { camera: 'perspective' } ) // 'orthographic' 'perspective'
 
 export const world = new World( display )
-
 
 document.addEventListener( 'mousemove', function ( event ) {
 
@@ -86,7 +78,6 @@ document.addEventListener( 'mousemove', function ( event ) {
     }
 
 } )
-
 
 function gameloop( current ) {
 
@@ -131,7 +122,6 @@ function gameloop( current ) {
     }
 
 }
-
 
 export function run() {
 

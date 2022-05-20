@@ -1,31 +1,29 @@
 export default class Cells {
 
-	constructor( container ) {
+    constructor( container ) {
 
-		this.container = container;
-		this.divs = [];
+        this.container = container;
+        this.divs = [];
 
-		this.container.classList.add( 'cell-container' );
+        this.container.classList.add( 'cell-container' );
 
-		for ( let i = 0; i < 50; i ++ ) {
+        for ( let i = 0; i < 50; i ++ ) {
 
-			this.divs.push( element( 'span', { class: 'cell' }, container ) );
-			// const g = glyph( Math.random() < .5 ? '▢' : 'W', { style: { color: 'green' } } );
-			// pos( g, 0, 0 );
+            this.divs.push( element( 'span', { class: 'cell' }, container ) );
+            // const g = glyph( Math.random() < .5 ? '▢' : 'W', { style: { color: 'green' } } );
+            // pos( g, 0, 0 );
 
-			//     }
+            //     }
 
-			//     if ( i === 0 ) rows = Math.ceil( window.innerHeight / cells[ 0 ].getBoundingClientRect().height );
+            //     if ( i === 0 ) rows = Math.ceil( window.innerHeight / cells[ 0 ].getBoundingClientRect().height );
 
-			// }
+            // }
 
-		}
+        }
 
-	}
+    }
 
 }
-
-
 
 document.head.innerHTML += `<style>
 .cell-container { padding: 0; }
@@ -33,30 +31,27 @@ document.head.innerHTML += `<style>
 .glyph { position: absolute; display: inline-block; z-index: 1; margin: auto; text-align: center; text-baseline: middle; }
 </style>`;
 
-
 function element( tagName, params, parent = document.body, content ) {
 
-	const e = tagName.startsWith( 'svg:' ) ? document.createElementNS( 'http://www.w3.org/2000/svg', tagName ) : document.createElement( tagName );
-	for ( var param in params ) {
+    const e = tagName.startsWith( 'svg:' ) ? document.createElementNS( 'http://www.w3.org/2000/svg', tagName ) : document.createElement( tagName );
+    for ( var param in params ) {
 
-		if ( param === 'style' ) for ( var style in params.style ) e.style[ style ] = params.style[ style ];
-		else e.setAttribute( param, params[ param ] );
+        if ( param === 'style' ) for ( var style in params.style ) e.style[ style ] = params.style[ style ];
+        else e.setAttribute( param, params[ param ] );
 
-	}
+    }
 
-	content && ( content instanceof Element ? e.append( content ) : e.innerHTML = content );
-	parent && parent.append( e );
-	return e;
+    content && ( content instanceof Element ? e.append( content ) : e.innerHTML = content );
+    parent && parent.append( e );
+    return e;
 
 }
 
 function glyph( content = ' ', params ) {
 
-	return element( 'div', Object.assign( { class: 'glyph' }, params ), document.body, content );
+    return element( 'div', Object.assign( { class: 'glyph' }, params ), document.body, content );
 
 }
-
-
 
 // function svg( parent, content ) {
 

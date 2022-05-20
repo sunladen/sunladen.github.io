@@ -30,10 +30,10 @@ http.createServer( ( req, res ) => {
         .pipe( res );
 
 } )
-.on( "error", err => {
+    .on( "error", err => {
 
-    console.log( err );
+        console.log( err );
 
-} )
-.listen( 9999 );
+    } )
+    .listen( 9999 );
 

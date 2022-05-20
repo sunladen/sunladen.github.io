@@ -1,7 +1,6 @@
 import { Block, createBlock } from "client/blocks/Block"
 import * as world from "client/world"
 
-
 class Liquid extends Block {
 
     constructor( params ) {

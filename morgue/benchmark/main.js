@@ -1,8 +1,6 @@
 import Canvas from '../canvas/canvas'
 
-
 const canvas = Canvas( '0', 100, 100 )
-
 
 const array = [
     new Array( canvas.width * canvas.height ),
@@ -19,7 +17,6 @@ let back = array[ 1 - index ]
 const decay = 0.98
 const D = decay * 255
 
-
 for ( let y = 0; y < canvas.height; y ++ ) {
 
     for ( let x = 0; x < canvas.width; x ++ ) {
@@ -30,9 +27,7 @@ for ( let y = 0; y < canvas.height; y ++ ) {
 
 }
 
-
 const DIAG_CONTRIB = 1.0 / 1.41421356237
-
 
 const addA = ( rgba, Uint32, diag ) => {
 
@@ -42,7 +37,6 @@ const addA = ( rgba, Uint32, diag ) => {
     rgba.r += ( ( Uint32 & 0xFF ) / 255 ) * ( diag ? DIAG_CONTRIB : 1 )
 
 }
-
 
 const addB = ( rgba, Uint32 ) => {
 
@@ -140,13 +134,12 @@ const averageB = ( x, y ) => {
 
 }
 
-
 const methodA = () => {
 
     for ( let y = 0; y <= MAXY; y ++ ) {
 
         for ( let x = 0; x <= MAXX; x ++ ) {
-            
+
             back[ y * canvas.width + x ] = averageA( x, y )
 
         }
@@ -170,7 +163,7 @@ const methodB = () => {
     for ( let y = 0; y <= MAXY; y ++ ) {
 
         for ( let x = 0; x <= MAXX; x ++ ) {
-            
+
             back[ y * canvas.width + x ] = averageB( x, y )
 
         }
@@ -189,7 +182,6 @@ const methodB = () => {
 
 }
 
-
 const log = message => {
 
     log.element.textContent += '\n' + message
@@ -199,34 +191,32 @@ const log = message => {
 log.element = document.getElementsByTagName( 'code' )
 log.element = log.element[ log.element.length - 1 ]
 
-
 log( 'Starting tests...\n' )
-
 
 ;( new Benchmark.Suite )
 
-.add( 'methodA', function() {
+    .add( 'methodA', function() {
 
-    methodA()
+        methodA()
 
-} )
+    } )
 
-.add( 'methodB', function() {
+    .add( 'methodB', function() {
 
-    methodB()
+        methodB()
 
-} )
+    } )
 
-.on( 'cycle', function( event ) {
+    .on( 'cycle', function( event ) {
 
-    log( event.target )
+        log( event.target )
 
-} )
+    } )
 
-.on( 'complete', function() {
+    .on( 'complete', function() {
 
-    log( '\nFastest is ' + this.filter( 'fastest' ).map( 'name' ) )
+        log( '\nFastest is ' + this.filter( 'fastest' ).map( 'name' ) )
 
-} )
+    } )
 
-.run( { 'async': true } )
+    .run( { 'async': true } )

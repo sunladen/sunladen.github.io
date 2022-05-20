@@ -1,15 +1,12 @@
-import { element, attrib, style, content } from "./ui.js";
-import { input, isDown, wasDown, hasChanged } from "./input.js";
-import { three, camera, global } from "./display.js";
+import { attrib, content, element, style } from "./ui.js";
+import { hasChanged, input, isDown, wasDown } from "./input.js";
+import { camera, global, three } from "./display.js";
 import * as THREE from "./three.module.js";
 import Track from "./track.js";
 import canvastexture from "./canvastexture.js";
-import { listen, announce } from "./event.js";
-
+import { announce, listen } from "./event.js";
 
 export const editor = {};
-
-
 
 editor.init = () => {
 
@@ -56,18 +53,13 @@ editor.init = () => {
 
     editor.track = Track();
 
-
 };
-
-
 
 editor.update = () => {
 
     global.update();
 
 };
-
-
 
 const getGroundIntersection = () => {
 

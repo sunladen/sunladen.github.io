@@ -495,9 +495,11 @@ function extend(a, b) {
 }
 
 function compareNodeMinX(a, b) { return a.minX - b.minX; }
+
 function compareNodeMinY(a, b) { return a.minY - b.minY; }
 
 function bboxArea(a)   { return (a.maxX - a.minX) * (a.maxY - a.minY); }
+
 function bboxMargin(a) { return (a.maxX - a.minX) + (a.maxY - a.minY); }
 
 function enlargedArea(a, b) {

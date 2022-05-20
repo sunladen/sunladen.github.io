@@ -221,6 +221,7 @@ export default class RBush {
 		return a.minX - b.minX;
 
 	}
+
 	compareMinY( a, b ) {
 
 		return a.minY - b.minY;
@@ -689,7 +690,6 @@ function multiSelect( arr, left, right, n, compare ) {
 	}
 
 }
-
 
 function quickselect( arr, k, left, right, compare ) {
 

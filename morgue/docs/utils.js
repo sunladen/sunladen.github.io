@@ -4,7 +4,6 @@ export function timestamp( date = new Date() ) {
 
 }
 
-
 export function E( tagName, className, content, parent ) {
 
     var div = document.createElement( tagName );

@@ -64,9 +64,7 @@ export const input = label => {
 
 };
 
-
 input.byLabel = {};
-
 
 export const isDown = label => {
 
@@ -81,7 +79,6 @@ export const isDown = label => {
     return false;
 
 };
-
 
 export const wasDown = label => {
 
@@ -98,7 +95,6 @@ export const wasDown = label => {
 
 };
 
-
 export const hasChanged = label => {
 
     let state = input( label );
@@ -114,7 +110,6 @@ export const hasChanged = label => {
 
 };
 
-
 input( "MOUSE_LBUTTON" );
 input( "MOUSE_MBUTTON" );
 input( "MOUSE_RBUTTON" );
@@ -122,35 +117,31 @@ input( "MOUSE_WHEEL" ).delta = 0;
 input( "MOUSE_OFFSET" ).x = 0;
 input( "MOUSE_OFFSET" ).y = 0;
 
-
-
 listen( window, "contextmenu", event => {
 
     event.preventDefault();
 
 }, 100 );
 
-
 listen( document.body, "mousedown", event => {
 
     event.preventDefault();
 
     switch ( event.button ) {
-        case 0:
-            input( "MOUSE_LBUTTON" ).lastChanged = input( "MOUSE_LBUTTON" ).lastDown = info( "time" );
-            break;
-        case 1:
-            input( "MOUSE_MBUTTON" ).lastChanged = input( "MOUSE_MBUTTON" ).lastDown = info( "time" );
-            break;
-        case 2:
-            input( "MOUSE_RBUTTON" ).lastChanged = input( "MOUSE_RBUTTON" ).lastDown = info( "time" );
-            break;
-        default:
-            break;
+    case 0:
+        input( "MOUSE_LBUTTON" ).lastChanged = input( "MOUSE_LBUTTON" ).lastDown = info( "time" );
+        break;
+    case 1:
+        input( "MOUSE_MBUTTON" ).lastChanged = input( "MOUSE_MBUTTON" ).lastDown = info( "time" );
+        break;
+    case 2:
+        input( "MOUSE_RBUTTON" ).lastChanged = input( "MOUSE_RBUTTON" ).lastDown = info( "time" );
+        break;
+    default:
+        break;
     }
 
 }, 100 );
-
 
 listen( document.body, "mouseup", event => {
 
@@ -172,7 +163,6 @@ listen( document.body, "mouseup", event => {
 
 }, 100 );
 
-
 listen( document, "keydown", event => {
 
     let state = input( event.which );
@@ -180,14 +170,12 @@ listen( document, "keydown", event => {
 
 } );
 
-
 listen( document, "keyup", event => {
 
     let state = input( event.which );
     state.lastChanged = state.lastUp = info( "time" );
 
 } );
-
 
 listen( window, "mousemove", event => {
 
@@ -197,7 +185,6 @@ listen( window, "mousemove", event => {
     state.lastChanged = info( "time" );
 
 } );
-
 
 listen( window, "mousewheel", event => {
 

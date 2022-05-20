@@ -1,4 +1,4 @@
-import { listen, announce } from "./event.js";
+import { announce, listen } from "./event.js";
 import * as THREE from "./three.module.js";
 import { three } from "./display.js";
 
@@ -74,7 +74,6 @@ CardinalSpline.addControl = ( cardinalspline, vector3, insertBefore ) => {
     announce( cardinalspline, "addControl" );
 
 }
-
 
 /**
  * Recalculates the points array from the current controls.
@@ -157,7 +156,7 @@ CardinalSpline.updatePoints = ( cardinalspline, closed, tension, numOfSeg ) => {
     for ( let i = 1; i < controls.length - 2; i ++ ) {
 
         let pt0, pt1, pt2, pt3;
-        
+
         if ( controls[ i ].hasOwnProperty( "position" ) ) {
 
             pt0 = controls[ i - 1 ].position;
@@ -200,7 +199,7 @@ CardinalSpline.updatePoints = ( cardinalspline, closed, tension, numOfSeg ) => {
                 c1 * pt1.y + c2 * pt2.y + c3 * t1.y + c4 * t2.y,
                 c1 * pt1.z + c2 * pt2.z + c3 * t1.z + c4 * t2.z
             );
-            
+
         }
 
     }
@@ -208,6 +207,5 @@ CardinalSpline.updatePoints = ( cardinalspline, closed, tension, numOfSeg ) => {
     announce( cardinalspline, "updatePoints" );
 
 };
-
 
 export default CardinalSpline;

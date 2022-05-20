@@ -3,7 +3,6 @@
  */
 if (typeof window !== 'undefined') {
 
-
     window.store = function (key) {
 
         return key ? store[key] = store[key] || {} : undefined
@@ -69,7 +68,6 @@ if (typeof window !== 'undefined') {
 
     }
 
-
     const STORE = 'store'
 
     var store = JSON.parse(localStorage.getItem(STORE) || '{}')
@@ -83,7 +81,6 @@ if (typeof window !== 'undefined') {
     my.loads = my.loads || 0
     ++my.loads
 
-
     once('continuous', function () {
 
         window.addEventListener('beforeunload', function () {
@@ -93,7 +90,6 @@ if (typeof window !== 'undefined') {
         }, false)
 
     })
-
 
     var rAF = function (timestamp) {
 
@@ -116,7 +112,6 @@ if (typeof window !== 'undefined') {
 
     }
 
-
     if (my.rAFId) {
 
         cancelAnimationFrame(my.rAFId)
@@ -124,9 +119,7 @@ if (typeof window !== 'undefined') {
 
     }
 
-
     rAF(performance.now())
-
 
     if (location.hostname === 'localhost') {
 
@@ -161,7 +154,6 @@ if (typeof window !== 'undefined') {
 
                 })
 
-
                 http.send()
 
             })
@@ -170,11 +162,7 @@ if (typeof window !== 'undefined') {
 
     }
 
-
-
 } else {
-
-
 
     var cp = require('child_process')
     var watch = require('node-watch')
@@ -182,10 +170,8 @@ if (typeof window !== 'undefined') {
     var fs = require('fs');
     var path = require('path');
 
-
     var PORT = 8080
     var update = {}
-
 
     function build() {
 
@@ -217,7 +203,6 @@ if (typeof window !== 'undefined') {
         if (!/\.js$/.test(filename)) return
         build()
     })
-
 
     http.createServer(function (request, response) {
 

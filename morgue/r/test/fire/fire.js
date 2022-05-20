@@ -9,6 +9,7 @@
         WORLDJS.add( { sprite: { image: Math.random() > .5 ? '/r/1/assets/ember' : '/r/1/assets/ember1' }, x: x + 20 * ( Math.random() - .5 ), y: y + 20 * ( Math.random() - .5 ), ember_affect: 1, layer: 2 } )
         WORLDJS.add( { sprite: { image: '/r/1/assets/smoke' }, x: x, y: y, smoke_affect: 1, layer: 2, rotation: Math.random() * Math.PI, opacity: .5, created: WORLDJS.time } )
     }
+
     createCampfire( 0, 0 )
     let global_noise
     WORLDJS.start( () => {

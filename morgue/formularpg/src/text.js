@@ -22,12 +22,9 @@ let text = ( str, r, g, b ) => {
 
     }
 
-
-
     let group = new THREE.Group();
 
     let x = - 0.5 * ( str.length - 1 );
-
 
     for ( let index in str ) {
 

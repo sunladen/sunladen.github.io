@@ -24,9 +24,7 @@ export const element = ( id, tag, parent ) => {
 
 };
 
-
 element.byId = {};
-
 
 export const attrib = ( elem, attribs ) => {
 
@@ -44,7 +42,6 @@ export const attrib = ( elem, attribs ) => {
 
 };
 
-
 export const style = ( elem, css ) => {
 
     if ( typeof css === "string" ) return elem.style[ css ];
@@ -58,7 +55,6 @@ export const style = ( elem, css ) => {
     return elem;
 
 };
-
 
 export const content = ( elem, contents ) => {
 
@@ -81,7 +77,6 @@ export const content = ( elem, contents ) => {
     return elem;
 
 };
-
 
 setInterval( () => {
 

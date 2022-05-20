@@ -21,9 +21,7 @@
 
         return PBBG.cacheStorage[ key ];
 
-
     };
-
 
     PBBG.send = ( json ) => {
 

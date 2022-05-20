@@ -30,7 +30,6 @@ for ( let z = -world.halfsize + 1; z < world.halfsize; z++ ) {
     }
 }
 
-
 new Water( { x: 2, z: -2 } )
 
 const player = new Person( { x: 0, z: 0 } )

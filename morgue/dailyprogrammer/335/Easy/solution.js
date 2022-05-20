@@ -18,7 +18,6 @@ function process( input ) {
     } )
 }
 
-
 console.log( 'Example Input // Ouput' )
 process( `6 11
 31 63 53 56 96 62 73 25 54 55 64

@@ -152,7 +152,6 @@ THREE.OrbitControls = function ( object, domElement ) {
 
             spherical.makeSafe();
 
-
             spherical.radius *= scale;
 
             // restrict radius to be between desired limits

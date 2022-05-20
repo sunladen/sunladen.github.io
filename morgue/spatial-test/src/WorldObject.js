@@ -7,7 +7,6 @@ import * as global from 'src/global'
 import { Glyph } from 'src/Glyph'
 import * as events from 'src/events'
 
-
 export class WorldObject extends EventDispatcher {
 
     constructor( options ) {
@@ -231,7 +230,6 @@ export class WorldObject extends EventDispatcher {
     }
 
 }
-
 
 const OriginVec3 = new Vector3()
 const TmpMatrix4 = new Matrix4()

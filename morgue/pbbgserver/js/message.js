@@ -20,17 +20,17 @@ module.exports.message = ( global, ws, message ) => {
         ws.send( JSON.stringify( res ) )
     }
     switch ( message.type ) {
-        case "signup":
-            return account.create( message.username, message.password, ( err, res ) => {
-                response( err ? { error: err } : { type: 'signup', success: true } )
-            } )
-        case "login":
-            return account.login( message.username, message.password, ( err, account ) => {
-                if ( err ) return response( { error: err } )
-                let token = jwt.sign( { username: message.username }, global.secret )
-                global.token_username[ token ] = message.username
-                response( { type: 'login', username: message.username, token: token } )
-            } )
+    case "signup":
+        return account.create( message.username, message.password, ( err, res ) => {
+            response( err ? { error: err } : { type: 'signup', success: true } )
+        } )
+    case "login":
+        return account.login( message.username, message.password, ( err, account ) => {
+            if ( err ) return response( { error: err } )
+            let token = jwt.sign( { username: message.username }, global.secret )
+            global.token_username[ token ] = message.username
+            response( { type: 'login', username: message.username, token: token } )
+        } )
     }
     if ( !message.token ) guest( global, message, null, ( res ) => { response( res ) } )
     let username = global.token_username[ message.token ]
@@ -46,9 +46,9 @@ module.exports.message = ( global, ws, message ) => {
             } )
         }
         switch ( message.type ) {
-            case "say":
-                global.log( message.username + ' says ' + message.message )
-                break
+        case "say":
+            global.log( message.username + ' says ' + message.message )
+            break
         }
     } )
 }

@@ -16,7 +16,6 @@ export const cell = function ( x, z ) {
     return cells[ Math.floor( z ) * size.x + Math.floor( x ) ]
 }
 
-
 export const cellsWithin = function ( x, z, radius ) {
     if ( radius < 0.7 ) {
         let c = cell( x, z )
@@ -42,7 +41,6 @@ export const cellsWithin = function ( x, z, radius ) {
     }
     return result
 }
-
 
 export const add = function ( object, x, y, z ) {
     display.scene.add( object.object )
@@ -84,7 +82,6 @@ export const move = function ( object, x, y, z, instant ) {
     object.easing_movement = task.tween( object.object.position, object.position, duration )
 }
 
-
 export const raytrace = function ( from, to ) {
     let dx = Math.abs( to.x - from.x )
     let dz = Math.abs( to.z - from.z )
@@ -110,7 +107,6 @@ export const raytrace = function ( from, to ) {
     return ray
 }
 
-
 function cleanDirtyPathInfo( clls ) {
     let i = dirtyCells.length
     while ( i-- ) {
@@ -119,7 +115,6 @@ function cleanDirtyPathInfo( clls ) {
         dirtyCell.visited = dirtyCell.closed = dirtyCell.path = null
     }
 }
-
 
 function path( from, to ) {
     if ( to.closed ) {
@@ -131,7 +126,6 @@ function path( from, to ) {
             if ( !cells.collides( ent, cells.collisionArea( ent, destination ) ) ) break
         }
     }
-
 
     if ( ent.collide && cells.collides( ent, cells.collisionArea( ent ) ) ) {
         console.log( 'error: ent is already colliding; need an unstick step here' )
@@ -219,7 +213,6 @@ function path( from, to ) {
 
 }
 
-
 /**
  * Manhattan distance
  */
@@ -231,7 +224,6 @@ let heuristic = ( start, end ) => {
     return dx + dy
 
 }
-
 
 let tracePath = ( cll ) => {
 

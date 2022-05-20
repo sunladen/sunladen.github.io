@@ -101,10 +101,9 @@ function log( msg, colour ) {
 log( 'r/roguelikedev does the complete roguelike tutorial' )
 log( 'Week 5 - Part 7: The GUI', 'yellow' )
 
-
 function updateui() {
     ui.healthlbl.textContent = health( pc )
-    ui.healthloss.style.height = Math.round( 100 * ( pc.maxhealth - pc.health ) / pc.maxhealth ) + '%' 
+    ui.healthloss.style.height = Math.round( 100 * ( pc.maxhealth - pc.health ) / pc.maxhealth ) + '%'
 
     var tile = getTile( mouse.x, mouse.y )
     var targetmsg = tile.fow ? '' : tile.glyph.name
@@ -114,7 +113,6 @@ function updateui() {
     }
     ui.targetinfo.textContent = targetmsg
 }
-
 
 function Tile( glyph, x, y ) {
     return {
@@ -154,7 +152,6 @@ function movepath( thing, astar ) {
     astar.compute( thing.tile.x, thing.tile.y, function( x, y ) { path.push( { x: x, y: y } ) } )
     if ( path.length > 1 ) moveto( thing, path[ 1 ].x, path[ 1 ].y )
 }
- 
 
 function act() {
     var astar = new ROT.Path.AStar( pc.tile.x, pc.tile.y, actorpathfind )
@@ -163,7 +160,7 @@ function act() {
     	var tile = fovtiles[ i ]
     	var things = tile.things
         for ( var t = things.length; t--; ) {
-            var thing = things[ t ] 
+            var thing = things[ t ]
             if ( moved.indexOf( thing ) > -1 ) continue
             if ( actors.indexOf( thing ) > -1 ) {
                 movepath( thing, astar )
@@ -313,10 +310,9 @@ function fov() {
     } )
 }
 
-
 var minx
 var miny
- 
+
 function render() {
     minx = Math.min( Math.max( pc.tile.x - centre.x, 0 ), map.width - options.width )
     miny = Math.min( Math.max( pc.tile.y - centre.y, 0 ), map.height - options.height )
@@ -438,7 +434,6 @@ function mousemove( event ) {
 }
 
 document.addEventListener( 'mousemove', mousemove )
-
 
 function mousedown( event ) {
     var action = actions.PATHTO

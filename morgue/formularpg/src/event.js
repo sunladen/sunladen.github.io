@@ -1,8 +1,6 @@
 import { generateUUID } from "./math.js";
 
-
 const uuids = {};
-
 
 export const listen = ( object, event, fn, delay ) => {
 
@@ -33,7 +31,7 @@ export const listen = ( object, event, fn, delay ) => {
     if ( object === window || object === document || object instanceof HTMLElement ) {
 
         object.addEventListener( event, router );
-    
+
     } else {
 
         if ( ! uuids.hasOwnProperty( event ) ) {
@@ -51,22 +49,21 @@ export const listen = ( object, event, fn, delay ) => {
         if ( ! uuids[ event ].hasOwnProperty( object.uuid ) ) {
 
             uuids[ event ][ object.uuid ] = [];
-        
+
         }
 
         uuids[ event ][ object.uuid ].push( router );
 
     }
-    
-};
 
+};
 
 export const announce = ( object, event ) => {
 
     if ( object === window || object === document || object instanceof HTMLElement ) {
 
         object.dispatchEvent( new Event( event ) );
-    
+
     } else {
 
         if ( uuids.hasOwnProperty( event ) && uuids[ event ].hasOwnProperty( object.uuid ) ) {

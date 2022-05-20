@@ -2,7 +2,6 @@ const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.s
 const uuid = new Array( 36 );
 let rnd = 0, r;
 
-
 export const generateUUID = () => {
 
     for ( var i = 0; i < 36; i ++ ) {
@@ -29,5 +28,4 @@ export const generateUUID = () => {
     return uuid.join( '' );
 
 };
-
 

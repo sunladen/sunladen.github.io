@@ -1,4 +1,3 @@
-
 function animate( time ) {
 
     requestAnimationFrame( animate );
@@ -6,8 +5,6 @@ function animate( time ) {
     _scene.update();
 
 }
-
-
 
 function scene( newscene ) {
 
@@ -18,8 +15,6 @@ function scene( newscene ) {
     _scene.init();
 
 }
-
-
 
 function data( name, value ) {
 
@@ -33,11 +28,7 @@ function data( name, value ) {
 
 }
 
-
 data.values = {};
-
-
-
 
 function listen( object, event, fn, delay ) {
 
@@ -99,9 +90,7 @@ function listen( object, event, fn, delay ) {
 
 }
 
-
 listen.uuids = {};
-
 
 function announce( object, event ) {
 
@@ -125,11 +114,8 @@ function announce( object, event ) {
 
 }
 
-
 let _scene = { update: () => {}, destroy: () => {} };
 
-
 animate( 0 );
-
 
 export { scene, data, listen, announce };

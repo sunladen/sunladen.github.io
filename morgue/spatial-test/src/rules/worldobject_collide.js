@@ -7,8 +7,6 @@ global.world.addEventListener( events.ADDED, function ( event ) {
 
     worldobject.addEventListener( events.COLLIDE, function ( event ) {
 
-
-
     } )
 
 } )
