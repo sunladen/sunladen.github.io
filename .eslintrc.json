@@ -7,7 +7,7 @@
 		"sourceType": "module"
 	},
 	"rules": {
-		"indent": [ "error", 4 ],
+		"indent": [ "error", "tab", { "ObjectExpression": 1 } ],
 		"no-multiple-empty-lines": [ "error", { "max": 1, "maxEOF": 1, "maxBOF": 0 } ],
 		"sort-imports": "error",
 		"eol-last": [ "error", "always" ],
@@ -15,6 +15,7 @@
 		"no-trailing-spaces": "error",
 		"padded-blocks": [ "error", { "classes": "always" } ],
 		"lines-between-class-members": [ "error", "always" ],
+		"multiline-comment-style": [ "error", "starred-block" ],
 		"padding-line-between-statements": [
 			"error",
 			{ "blankLine": "always", "prev": "import", "next": "*" },
