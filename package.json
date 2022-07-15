@@ -1,10 +1,10 @@
 {
 	"name": "sunladen",
-	"version": "0.0.1",
+	"version": "0.1.0",
 	"description": "sunladen.github.io",
-	"type": "module",
 	"author": "Sunladen",
 	"license": "MIT",
+	"type": "module",
 	"repository": {
 		"url": "https://github.com/sunladen/sunladen.git"
 	},
@@ -13,6 +13,6 @@
 	},
 	"devDependencies": {
 		"eslint": "^8.15.0",
-		"npm-check-updates": "^12.5.11"
+		"npm-check-updates": "^15.3.3"
 	}
 }
