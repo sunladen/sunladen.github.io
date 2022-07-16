@@ -1,5 +1,6 @@
 import { WebSocketServer } from 'ws';
 import crypto from 'crypto';
+import fs from 'fs';
 
 const port = process.env.PORT;
 const verifyClient = ( info ) => [ 'http://localhost:8000', 'https://sunladen.github.io' ].indexOf( info.req.headers.origin ) > - 1;
@@ -13,14 +14,18 @@ wss.on( 'connection', ( ws, req ) => {
 	let secret = secretRE.exec( req.url );
 	ws.secret = secret ? secret[ 1 ] : null;
 	ws.id = ws.secret in wsBySecret ? wsBySecret[ ws.secret ].id : null;
+
+	if ( ! ws.id && ws.secret ) {
+		const player = loadPlayerBySecret( ws.secret );
+		if ( player ) wsBySecret[ ws.secret ] = ws;
+	}
+
 	if ( ws.secret in wsBySecret ) {
 		ws.id = wsBySecret[ ws.secret ].id;
 	} else {
 		while ( ! ws.id || ws.id in wsById ) ws.id = uuid();
 		while ( ! ws.secret || ws.secret in wsBySecret ) ws.secret = uuid();
 	}
-
-	console.log( ws.id, ws.secret );
 
 	ws.on( 'message', ( data ) => {
 
@@ -136,9 +141,14 @@ function send( _, message, to = 'global' ) {
 
 function connected( id ) {
 
+	const player = id in playersById ? playersById[ id ] : new Player( { id } );
+	if ( ! player.parent ) startercamp.add( player );
+
 }
 
 function disconnected( id ) {
+
+	save( playersById[ id ] );
 
 }
 
@@ -147,6 +157,8 @@ class Entity {
 	constructor( args = {} ) {
 
 		Object.assign( this, args );
+
+		console.log( this, args );
 
 		this.id || ( this.id = uuid() );
 		this.type = this.constructor.name;
@@ -190,3 +202,116 @@ class Entity {
 const entitiesById = {};
 const playersById = {};
 const dirtyEntities = {};
+
+if ( ! fs.existsSync( '.data/players' ) ) fs.mkdirSync( '.data/players', { recursive: true } );
+
+function load( file ) {
+
+	if ( ! fs.existsSync( file ) ) return null;
+
+	const data = JSON.parse( fs.readFileSync( file ) );
+	const parent = {};
+
+	let first;
+
+	for ( const type of Object.keys( data ) ) {
+
+		const Class = eval( type );
+
+		for ( const e of data[ type ] ) {
+
+			first = first ? first : new Class( { id: e[ 0 ], name: e[ 1 ] } );
+			e[ 2 ] && ( parent[ e[ 0 ] ] = e[ 2 ] );
+
+		}
+
+	}
+
+	for ( const id in parent ) {
+		if ( parent[ id ] in entitiesById ) {
+			const parentEntity = entitiesById[ parent[ id ] ];
+			console.log( id, entitiesById[ id ] );
+			console.log( parent[ id ], parentEntity );
+			entity.add( entitiesById[ id ] );
+		}
+	}
+
+	return first;
+
+}
+
+function loadPlayerBySecret( secret ) {
+
+	if ( ! secret ) return;
+
+	for ( const file of fs.readdirSync( '.data/players' ) ) {
+
+		if ( file.startsWith( `${secret}-` ) ) return loadEntities( `data/players/${file}` );
+
+	}
+
+}
+
+function save( entity, data = {} ) {
+
+	if ( ! entity ) return;
+
+	if ( entity.type === 'Player' ) {
+		const ws = wsById[ entity.id ];
+		fs.writeFileSync( `.data/players/${ws.secret}-${entity.name}.json`, JSON.stringify( save( entity ) ) );
+		return;
+	}
+
+	entity.type in data || ( data[ entity.type ] = [] );
+	data[ entity.type ].push( [ entity.id, entity.name, entity.parent ? entity.parent.id : null ] );
+
+	for ( const content of entity.contents ) save( content, data );
+
+	if ( entity.type === 'Entity' ) {
+		fs.writeFileSync( '.data/world.json', JSON.stringify( data ) );
+	 	console.log( 'world saved.' );
+	}
+
+	return data;
+
+}
+
+// save world state on process exist states
+process.on( 'exit', () => save( world ) );
+process.on( 'SIGINT', () => process.exit( 2 ) );
+process.on( 'uncaughtException', ( e ) => { console.log( e.stack ); process.exit( 99 ); } );
+
+class Location extends Entity {
+
+	constructor( args = {} ) {
+
+		super( Object.assign( { name: '[Unnamed location]' }, args ) );
+
+	}
+
+}
+
+class Player extends Entity {
+
+	constructor( args = {} ) {
+
+		super( Object.assign( { name: `Guest-${args.id}` }, args ) );
+		playersById[ this.id ] = this;
+
+	}
+
+}
+
+function buildNewWorld() {
+
+	const world = new Entity();
+	startercamp = new Location( { name: 'Starter camp' } );
+	world.add( startercamp );
+
+	return world;
+
+}
+
+let startercamp;
+let world = load( '.data/world.json' ) || buildNewWorld();
+
