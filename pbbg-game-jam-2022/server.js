@@ -94,7 +94,14 @@ setInterval( () => {
 			}
 		}
 
-		//update();
+		const _dirtyEntities = dirtyEntities;
+		dirtyEntities = {};
+
+		for ( const id in _dirtyEntities ) {
+			const entity = _dirtyEntities[ id ];
+			if ( entity.destroyed ) continue;
+			entity.update();
+		}
 
 		const _outMessages = outMessages;
 		outMessages = {};
@@ -133,7 +140,7 @@ setInterval( () => {
 
 function send( _, message, to = 'global' ) {
 
-	message._ = _;
+	if ( _ ) message._ = _;
 	( to in outMessages ? outMessages[ to ] : ( outMessages[ to ] = [] ) ).push( message );
 
 }
@@ -194,11 +201,30 @@ class Entity {
 
 	}
 
+	destroy() {
+		if ( this.parent ) {
+			for ( const content of this.contents ) this.parent.add( content, true );
+			const siblings = this.parent.contents;
+			const index = siblings.indexOf( this );
+			if ( index > - 1 ) siblings.splice( index, 1 );
+		}
+		if ( this.id in dirtyEntities ) delete dirtyEntities[ this.id ];
+		send( 'Destroy', { id: this.id } );
+		this.destroyed = true;
+	}
+
+	update() {
+
+		this.delta.id = this.id;
+		send( null, this.delta );
+		this.delta = {};
+	}
+
 }
 
 const entitiesById = {};
 const playersById = {};
-const dirtyEntities = {};
+let dirtyEntities = {};
 
 if ( ! fs.existsSync( '.data/players' ) ) fs.mkdirSync( '.data/players', { recursive: true } );
 
