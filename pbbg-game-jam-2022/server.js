@@ -13,11 +13,10 @@ wss.on( 'connection', ( ws, req ) => {
 
 	let secret = secretRE.exec( req.url );
 	ws.secret = secret ? secret[ 1 ] : null;
-	ws.id = ws.secret in wsBySecret ? wsBySecret[ ws.secret ].id : null;
 
 	if ( ! ws.id && ws.secret ) {
 		const player = loadPlayerBySecret( ws.secret );
-		if ( player ) wsBySecret[ ws.secret ] = ws;
+		if ( player ) ws.id = player.id;
 	}
 
 	if ( ws.secret in wsBySecret ) {
@@ -158,8 +157,6 @@ class Entity {
 
 		Object.assign( this, args );
 
-		console.log( this, args );
-
 		this.id || ( this.id = uuid() );
 		this.type = this.constructor.name;
 		this.name || ( this.name = '[Unnamed]' );
@@ -220,21 +217,15 @@ function load( file ) {
 
 		for ( const e of data[ type ] ) {
 
-			first = first ? first : new Class( { id: e[ 0 ], name: e[ 1 ] } );
-			e[ 2 ] && ( parent[ e[ 0 ] ] = e[ 2 ] );
+			const entity = new Class( { id: e[ 0 ], name: e[ 1 ] } );
+			if ( ! first ) first = entity;
+			e[ 2 ] && ( parent[ entity.id ] = e[ 2 ] );
 
 		}
 
 	}
 
-	for ( const id in parent ) {
-		if ( parent[ id ] in entitiesById ) {
-			const parentEntity = entitiesById[ parent[ id ] ];
-			console.log( id, entitiesById[ id ] );
-			console.log( parent[ id ], parentEntity );
-			entity.add( entitiesById[ id ] );
-		}
-	}
+	for ( const id in parent ) parent[ id ] in entitiesById && entitiesById[ parent[ id ] ].add( entitiesById[ id ] );
 
 	return first;
 
@@ -246,7 +237,7 @@ function loadPlayerBySecret( secret ) {
 
 	for ( const file of fs.readdirSync( '.data/players' ) ) {
 
-		if ( file.startsWith( `${secret}-` ) ) return loadEntities( `data/players/${file}` );
+		if ( file.startsWith( `${secret}-` ) ) return load( `.data/players/${file}` );
 
 	}
 
@@ -256,11 +247,7 @@ function save( entity, data = {} ) {
 
 	if ( ! entity ) return;
 
-	if ( entity.type === 'Player' ) {
-		const ws = wsById[ entity.id ];
-		fs.writeFileSync( `.data/players/${ws.secret}-${entity.name}.json`, JSON.stringify( save( entity ) ) );
-		return;
-	}
+	if ( entity.type === 'Player' ) data = {};
 
 	entity.type in data || ( data[ entity.type ] = [] );
 	data[ entity.type ].push( [ entity.id, entity.name, entity.parent ? entity.parent.id : null ] );
@@ -269,17 +256,13 @@ function save( entity, data = {} ) {
 
 	if ( entity.type === 'Entity' ) {
 		fs.writeFileSync( '.data/world.json', JSON.stringify( data ) );
-	 	console.log( 'world saved.' );
+	} else if ( entity.type === 'Player' ) {
+		fs.writeFileSync( `.data/players/${wsById[ entity.id ].secret}-${entity.name}.json`, JSON.stringify( data ) );
 	}
 
 	return data;
 
 }
-
-// save world state on process exist states
-process.on( 'exit', () => save( world ) );
-process.on( 'SIGINT', () => process.exit( 2 ) );
-process.on( 'uncaughtException', ( e ) => { console.log( e.stack ); process.exit( 99 ); } );
 
 class Location extends Entity {
 
@@ -305,13 +288,14 @@ class Player extends Entity {
 function buildNewWorld() {
 
 	const world = new Entity();
-	startercamp = new Location( { name: 'Starter camp' } );
-	world.add( startercamp );
-
+	world.add( new Location( { name: 'Starter camp' } ) );
 	return world;
 
 }
 
-let startercamp;
 let world = load( '.data/world.json' ) || buildNewWorld();
+let startercamp = world.contents.filter( content => content.name === 'Starter camp' )[ 0 ];
 
+process.on( 'exit', () => save( world ) );
+process.on( 'SIGINT', () => process.exit( 2 ) );
+process.on( 'uncaughtException', ( e ) => { console.log( e.stack ); process.exit( 99 ); } );

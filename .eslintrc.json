@@ -7,22 +7,68 @@
 		"sourceType": "module"
 	},
 	"rules": {
-		"indent": [ "error", "tab", { "ObjectExpression": 1 } ],
-		"no-multiple-empty-lines": [ "error", { "max": 1, "maxEOF": 1, "maxBOF": 0 } ],
+		"indent": [
+			"error",
+			"tab",
+			{
+				"ObjectExpression": 1
+			}
+		],
+		"no-multiple-empty-lines": [
+			"error",
+			{
+				"max": 1,
+				"maxEOF": 1,
+				"maxBOF": 0
+			}
+		],
 		"sort-imports": "error",
-		"eol-last": [ "error", "always" ],
-		"func-call-spacing": [ "error", "never" ],
+		"eol-last": [
+			"error",
+			"always"
+		],
+		"func-call-spacing": [
+			"error",
+			"never"
+		],
 		"no-trailing-spaces": "error",
-		"padded-blocks": [ "error", { "classes": "always" } ],
-		"lines-between-class-members": [ "error", "always" ],
-		"multiline-comment-style": [ "error", "starred-block" ],
+		"padded-blocks": [
+			"error",
+			{
+				"classes": "always"
+			}
+		],
+		"lines-between-class-members": [
+			"error",
+			"always"
+		],
 		"padding-line-between-statements": [
 			"error",
-			{ "blankLine": "always", "prev": "import", "next": "*" },
-			{ "blankLine": "never", "prev": "import", "next": "import" },
-			{ "blankLine": "always", "prev": "*", "next": "function" },
-			{ "blankLine": "always", "prev": "function", "next": "*" },
-			{ "blankLine": "always", "prev": "*", "next": "class" }
+			{
+				"blankLine": "always",
+				"prev": "import",
+				"next": "*"
+			},
+			{
+				"blankLine": "never",
+				"prev": "import",
+				"next": "import"
+			},
+			{
+				"blankLine": "always",
+				"prev": "*",
+				"next": "function"
+			},
+			{
+				"blankLine": "always",
+				"prev": "function",
+				"next": "*"
+			},
+			{
+				"blankLine": "always",
+				"prev": "*",
+				"next": "class"
+			}
 		]
 	}
 }
