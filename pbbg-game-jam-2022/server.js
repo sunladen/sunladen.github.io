@@ -43,7 +43,7 @@ wss.on( 'connection', ( ws, req ) => {
 
 	ws.timestamp = Date.now();
 
-	send( 'verified', { id: ws.id, secret: ws.secret }, ws.id );
+	send( 'verified', { id: ws.id, secret: ws.secret, world: world.world }, ws.id );
 
 	if ( ! ( ws.id in wsById ) ) {
 	    send( 'connected', { id: ws.id } );
@@ -86,13 +86,15 @@ setInterval( () => {
 		for ( const id in wsById ) {
 			const ws = wsById[ id ];
 			if ( ws.timestamp < disconnectedHorizon ) {
+			    disconnected( id );
 			    delete wsById[ id ];
 			    delete wsBySecret[ ws.secret ];
-			    disconnected( id );
 			    ws.terminate();
 				send( 'disconnected', { id } );
 			}
 		}
+
+		console.log( dirtyEntities );
 
 		const _dirtyEntities = dirtyEntities;
 		dirtyEntities = {};
@@ -111,12 +113,15 @@ setInterval( () => {
 
 		for ( const id in _outMessages ) {
 
-			if ( ! ( id in wsById ) ) continue;
-
-			const ws = wsById[ id ];
 			const message = JSON.stringify( _global.length ? _outMessages[ id ].concat( _global ) : _outMessages[ id ] );
-			ws.send( message );
-			console.log( '<- %s', message );
+
+			if ( ! ( id in wsById ) ) {
+				id !== 'global' && console.log( `WARN: disconnected @${id} <- ${message}` );
+				continue;
+			}
+
+			wsById[ id ].send( message );
+			console.log( `@${id} <- ${message}` );
 			sent[ id ] = null;
 
 		}
@@ -124,12 +129,12 @@ setInterval( () => {
 		if ( ! _global.length ) return;
 
 		const message = JSON.stringify( _global );
+		console.log( `@global <- ${message}` );
 
 		for ( const id in wsById ) {
 			if ( id in sent ) continue;
 			const ws = wsById[ id ];
 			ws.send( message );
-			console.log( '<- %s', message );
 		}
 
 	} catch ( e ) {
@@ -147,6 +152,7 @@ function send( _, message, to = 'global' ) {
 
 function connected( id ) {
 
+	console.log( id in playersById );
 	const player = id in playersById ? playersById[ id ] : new Player( { id } );
 	if ( ! player.parent ) startercamp.add( player );
 
@@ -154,7 +160,9 @@ function connected( id ) {
 
 function disconnected( id ) {
 
-	save( playersById[ id ] );
+	const player = playersById[ id ];
+	save( player );
+	player.destroy();
 
 }
 
@@ -170,10 +178,12 @@ class Entity {
 		this.parent = null;
 		this.contents = [];
 		this.world = { id: this.id, type: this.type, name: this.name, contents: [] };
-		this.delta = this.world;
+		this.delta = { type: this.type, name: this.name };
 
 		entitiesById[ this.id ] = this;
 		dirtyEntities[ this.id ] = this;
+
+		console.log( dirtyEntities );
 
 	}
 
@@ -188,6 +198,8 @@ class Entity {
 
 	add( entity ) {
 
+		console.log( `add; ${entity.name}(${entity.id}) -> ${this.name}(${this.id})` );
+
 		if ( entity.parent === this ) return;
 		if ( entity.parent ) {
 
@@ -197,7 +209,11 @@ class Entity {
 		}
 
 		entity.setProperty( 'parent', this );
-		this.contents.push( entity );
+		const index = this.contents.indexOf( entity );
+		if ( index === - 1 ) {
+			this.contents.push( entity );
+			this.world.contents.push( entity.world );
+		}
 
 	}
 
@@ -209,13 +225,14 @@ class Entity {
 			if ( index > - 1 ) siblings.splice( index, 1 );
 		}
 		if ( this.id in dirtyEntities ) delete dirtyEntities[ this.id ];
-		send( 'Destroy', { id: this.id } );
+		send( 'destroy', { id: this.id } );
 		this.destroyed = true;
 	}
 
 	update() {
 
 		this.delta.id = this.id;
+		console.log( 'update', this.delta );
 		send( null, this.delta );
 		this.delta = {};
 	}
@@ -243,15 +260,24 @@ function load( file ) {
 
 		for ( const e of data[ type ] ) {
 
-			const entity = new Class( { id: e[ 0 ], name: e[ 1 ] } );
+			const id = e[ 0 ];
+			const name = e[ 1 ];
+			const parentId = e[ 2 ];
+			const entity = id in entitiesById ? entitiesById[ id ] : new Class( { id, name } );
 			if ( ! first ) first = entity;
-			e[ 2 ] && ( parent[ entity.id ] = e[ 2 ] );
+			parentId && ( parent[ entity.id ] = parentId );
 
 		}
 
 	}
 
-	for ( const id in parent ) parent[ id ] in entitiesById && entitiesById[ parent[ id ] ].add( entitiesById[ id ] );
+	for ( const id in parent ) {
+		console.log( id );
+		if ( parent[ id ] in entitiesById ) {
+			console.log( `-> ${parent[ id ]}` );
+			entitiesById[ parent[ id ] ].add( entitiesById[ id ] );
+		}
+	}
 
 	return first;
 
@@ -260,6 +286,8 @@ function load( file ) {
 function loadPlayerBySecret( secret ) {
 
 	if ( ! secret ) return;
+
+	console.log( `loadPlayerBySecret( "${secret}" )` );
 
 	for ( const file of fs.readdirSync( '.data/players' ) ) {
 

@@ -35,5 +35,107 @@ function onverified( message ) {
 
 	identity = { id: message.id, secret: message.secret };
 	localStorage.setItem( 'client.identity', JSON.stringify( identity ) );
+	read( message.world );
+
+}
+
+function ondestroy( message ) {
+
+	if ( message.id in entitiesById ) entitiesById[ message.id ].destroy();
+
+}
+
+function onconnected( message ) {
+
+	if ( message.id in entitiesById ) entitiesById[ message.id ].destroy();
+
+}
+
+function read( entityData ) {
+
+	console.log( 'read', entityData );
+
+	if ( ! ( entityData.id in entitiesById ) ) {
+		const entity = new Entity( entityData.id, entityData.type, entityData );
+		if ( entity.type === 'Entity' )	document.getElementById( 'world' ).append( entity.dom );
+	} else {
+		entitiesById[ entityData.id ].update( entityData );
+	}
+
+	for ( const content of entityData.contents ) read( content );
+
+}
+
+class Entity {
+
+	constructor( id, type, args = {} ) {
+
+		Object.assign( this, args );
+
+		this.id = id;
+		this.type = type;
+		this.name || ( this.name = '[Unnamed]' );
+		this.parent = null;
+		this.contents = [];
+
+		this.dom = E( null, 'div', this.id, `entity ${this.type}` );
+		this.domName = E( this.dom, 'span', null, 'name', this.name );
+
+		entitiesById[ this.id ] = this;
+
+		if ( args.parent in entitiesById ) entitiesById[ args.parent ].add( this );
+
+	}
+
+	add( entity ) {
+
+		console.log( `add ${entity.name}(${entity.id}) -> ${this.name}(${this.id})` );
+
+		console.log( `entity.parent = ${entity.parent}` );
+
+		if ( entity.parent === this ) return;
+		if ( entity.parent ) {
+
+			const index = entity.parent.contents.indexOf( entity );
+			if ( index > - 1 ) entity.parent.contents.splice( index, 1 );
+
+		}
+
+		entity.parent = this;
+		this.contents.push( entity );
+
+		this.dom.append( entity.dom );
+
+	}
+
+	destroy() {
+		if ( this.parent ) {
+			for ( const content of this.contents ) this.parent.add( content, true );
+			const siblings = this.parent.contents;
+			const index = siblings.indexOf( this );
+			if ( index > - 1 ) siblings.splice( index, 1 );
+			this.dom.remove();
+		}
+	}
+
+	update( data ) {
+
+		if ( data.name !== this.name ) this.name = data.name;
+		if ( data.parent !== this.parent ) entitiesById[ data.parent ].add( this );
+
+	}
+
+}
+
+const entitiesById = {};
+
+function E( parent, tagName, id, className, content ) {
+
+	const element = document.createElement( tagName );
+	id && ( element.id = id );
+	className && ( element.className = className );
+	content && ( content instanceof Element ? element.append( content ) : element.textContent = content );
+	parent && parent.append( element );
+	return element;
 
 }
