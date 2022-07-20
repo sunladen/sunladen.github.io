@@ -163,6 +163,7 @@ function disconnected( id ) {
 	const player = playersById[ id ];
 	save( player );
 	player.destroy();
+	delete playersById[ id ];
 
 }
 

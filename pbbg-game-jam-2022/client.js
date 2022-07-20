@@ -13,7 +13,7 @@ socket.onmessage = ( e ) => {
 		try {
 			eval( funcName )( message );
 		} catch ( err ) {
-			console.log( `no listener for "${funcName}"` );
+			console.log( err );
 		}
 	}
 }
@@ -47,7 +47,13 @@ function ondestroy( message ) {
 
 function onconnected( message ) {
 
-	if ( message.id in entitiesById ) entitiesById[ message.id ].destroy();
+	//might not need this? maybe for notification purposes?
+
+}
+
+function onupdate( message ) {
+
+	read( message );
 
 }
 
@@ -62,7 +68,7 @@ function read( entityData ) {
 		entitiesById[ entityData.id ].update( entityData );
 	}
 
-	for ( const content of entityData.contents ) read( content );
+	if ( 'contents' in entityData ) for ( const content of entityData.contents ) read( content );
 
 }
 
@@ -78,7 +84,15 @@ class Entity {
 		this.parent = null;
 		this.contents = [];
 
-		this.dom = E( null, 'div', this.id, `entity ${this.type}` );
+		this.dom = E( null, 'div', this.id, `entity ${this.type}${identity.id===id?' self':''}` );
+
+		if ( true ) {
+			this.dom.setAttribute( 'draggable', true );
+			this.dom.addEventListener( 'dragstart', this.dragstart.bind(this), false );
+			this.dom.addEventListener( 'dragover', this.dragover.bind(this), false );
+			this.dom.addEventListener( 'drop', this.drop.bind(this), false );
+		}
+
 		this.domName = E( this.dom, 'span', null, 'name', this.name );
 
 		entitiesById[ this.id ] = this;
@@ -122,6 +136,26 @@ class Entity {
 
 		if ( data.name !== this.name ) this.name = data.name;
 		if ( data.parent !== this.parent ) entitiesById[ data.parent ].add( this );
+
+	}
+
+	dragstart( e ) {
+
+		e.stopPropagation();
+		e.dataTransfer.dropEffect = 'move';
+
+	}
+
+	dragover( e ) {
+
+		e.stopPropagation();
+
+	}
+
+	drop( e ) {
+
+		e.stopPropagation();
+		e.target.append( this.dom );
 
 	}
 
