@@ -93,7 +93,14 @@ class Entity {
 			this.dom.addEventListener( 'drop', this.drop.bind(this), false );
 		}
 
-		this.domName = E( this.dom, 'span', null, 'name', this.name );
+		this.glyph = E( this.dom, 'div', null, 'glyph', {
+			'Location': '🏞',
+			'Player': '🧍',
+			'Hatchet': '🪓',
+			'Tree': '🌲'
+		 }[ this.type ] || '?' );
+		this.domName = E( this.dom, 'div', null, 'name', this.name );
+		this.domContents = E( this.dom, 'div', null, 'contents' );
 
 		entitiesById[ this.id ] = this;
 
@@ -118,7 +125,7 @@ class Entity {
 		entity.parent = this;
 		this.contents.push( entity );
 
-		this.dom.append( entity.dom );
+		this.domContents.append( entity.dom );
 
 	}
 

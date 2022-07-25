@@ -152,9 +152,14 @@ function send( _, message, to = 'global' ) {
 
 function connected( id ) {
 
-	console.log( id in playersById );
-	const player = id in playersById ? playersById[ id ] : new Player( { id } );
-	if ( ! player.parent ) startercamp.add( player );
+	let player;
+	//if ( id in playersById ) {
+	//	player = playersById[ id ];
+	//} else {
+	player = new Player( { id } );
+	player.add( new Hatchet() );
+	//}
+	if ( ! player.parent ) playerspawn.add( player );
 
 }
 
@@ -215,6 +220,8 @@ class Entity {
 			this.contents.push( entity );
 			this.world.contents.push( entity.world );
 		}
+
+		return entity;
 
 	}
 
@@ -340,16 +347,31 @@ class Player extends Entity {
 
 }
 
+class Hatchet extends Entity {
+
+	constructor( args = {} ) {
+
+		super( Object.assign( { name: 'Hatchet' }, args ) );
+
+	}
+
+}
+
 function buildNewWorld() {
 
 	const world = new Entity();
-	world.add( new Location( { name: 'Starter camp' } ) );
+	const sunvalley = world.add( new Location( { name: 'Sun valley' } ) );
+	const millscreek = sunvalley.add( new Location( { name: 'Mills creek' } ) );
+	millscreek.add( playerspawn = new Location( { name: 'Mills creek camp' } ) );
 	return world;
 
 }
 
+let playerspawn;
 let world = load( '.data/world.json' ) || buildNewWorld();
-let startercamp = world.contents.filter( content => content.name === 'Starter camp' )[ 0 ];
+world = buildNewWorld();
+
+console.log( playerspawn );
 
 process.on( 'exit', () => save( world ) );
 process.on( 'SIGINT', () => process.exit( 2 ) );

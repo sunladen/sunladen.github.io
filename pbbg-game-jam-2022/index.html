@@ -7,6 +7,8 @@
       body {
         margin: 0;
         background: #333;
+        font-family: Geneva, Verdana, sans-serif;
+        font-size: 20pt;
       }
       .entity {
         border: 1px solid #aaa;
@@ -15,10 +17,24 @@
         border-radius: 2px;
         color: #555;
         margin: 3px;
+        margin-left: 0.5em;
       }
 
       .entity.self {
-        background: #2ef266;
+        color: #2ef266;
+      }
+
+      .entity .glyph {
+        font-weight: bolder;
+        margin: 3px;
+        min-width: 1.5em;
+        display: inline-block;
+        color: transparent;
+        text-shadow: 0 0 0 #444;
+      }
+
+      .entity .name {
+        display: inline-block;
       }
     </style>
   </head>
