@@ -2,154 +2,6 @@ import { WebSocketServer } from 'ws';
 import crypto from 'crypto';
 import fs from 'fs';
 
-const port = process.env.PORT;
-const verifyClient = ( info ) => [ 'http://localhost:8000', 'https://sunladen.github.io' ].indexOf( info.req.headers.origin ) > - 1;
-const secretRE = /[?&]{1}secret=([0-9a-fA-F]{8})/;
-const wss = new WebSocketServer( { port, verifyClient } );
-
-wss.on( 'connection', ( ws, req ) => {
-
-	console.log( `-> ${req.url}` );
-
-	let secret = secretRE.exec( req.url );
-	ws.secret = secret ? secret[ 1 ] : null;
-
-	if ( ! ws.id && ws.secret ) {
-		const player = loadPlayerBySecret( ws.secret );
-		if ( player ) ws.id = player.id;
-	}
-
-	if ( ws.secret in wsBySecret ) {
-		ws.id = wsBySecret[ ws.secret ].id;
-	} else {
-		while ( ! ws.id || ws.id in wsById ) ws.id = uuid();
-		while ( ! ws.secret || ws.secret in wsBySecret ) ws.secret = uuid();
-	}
-
-	ws.on( 'message', ( data ) => {
-
-		try {
-
-			ws.timestamp = Date.now();
-			console.log( `-> ${data}` );
-			const messages = JSON.parse( data );
-			for ( const message of ( messages.constructor !== Array ) ? [ messages ] : messages ) inMessages.push( { message: message, from: ws.id } );
-
-		} catch ( e ) {
-			console.error( e );
-		}
-
-	} );
-
-	ws.timestamp = Date.now();
-
-	send( 'verified', { id: ws.id, secret: ws.secret, world: world.world }, ws.id );
-
-	if ( ! ( ws.id in wsById ) ) {
-	    send( 'connected', { id: ws.id } );
-		connected( ws.id );
-	}
-
-	wsById[ ws.id ] = wsBySecret[ ws.secret ] = ws;
-
-} );
-
-const wsById = {};
-const wsBySecret = {};
-
-function uuid( bytes = uuid.size, id ) {
-
-	while ( ! id || id in uuid.used ) id = crypto.randomBytes( bytes ).toString( 'hex' );
-	return uuid.used[ id ] = id;
-
-}
-
-uuid.size = 4;
-uuid.used = {};
-
-let inMessages = [];
-let outMessages = [];
-
-const updateInterval = 3333;
-
-setInterval( () => {
-
-	try {
-
-		const _inMessages = inMessages;
-		inMessages = [];
-
-		for ( const _in of _inMessages ) this[ `on${_in.message._}` ]( _in.message, _in.from );
-
-		const disconnectedHorizon = Date.now() - updateInterval * 2;
-
-		for ( const id in wsById ) {
-			const ws = wsById[ id ];
-			if ( ws.timestamp < disconnectedHorizon ) {
-			    disconnected( id );
-			    delete wsById[ id ];
-			    delete wsBySecret[ ws.secret ];
-			    ws.terminate();
-				send( 'disconnected', { id } );
-			}
-		}
-
-		console.log( dirtyEntities );
-
-		const _dirtyEntities = dirtyEntities;
-		dirtyEntities = {};
-
-		for ( const id in _dirtyEntities ) {
-			const entity = _dirtyEntities[ id ];
-			if ( entity.destroyed ) continue;
-			entity.update();
-		}
-
-		const _outMessages = outMessages;
-		outMessages = {};
-
-		const _global = _outMessages.global || [];
-		const sent = {};
-
-		for ( const id in _outMessages ) {
-
-			const message = JSON.stringify( _global.length ? _outMessages[ id ].concat( _global ) : _outMessages[ id ] );
-
-			if ( ! ( id in wsById ) ) {
-				id !== 'global' && console.log( `WARN: disconnected @${id} <- ${message}` );
-				continue;
-			}
-
-			wsById[ id ].send( message );
-			console.log( `@${id} <- ${message}` );
-			sent[ id ] = null;
-
-		}
-
-		if ( ! _global.length ) return;
-
-		const message = JSON.stringify( _global );
-		console.log( `@global <- ${message}` );
-
-		for ( const id in wsById ) {
-			if ( id in sent ) continue;
-			const ws = wsById[ id ];
-			ws.send( message );
-		}
-
-	} catch ( e ) {
-		console.error( e );
-	}
-
-}, updateInterval );
-
-function send( _, message, to = 'global' ) {
-
-	if ( _ ) message._ = _;
-	( to in outMessages ? outMessages[ to ] : ( outMessages[ to ] = [] ) ).push( message );
-
-}
-
 function connected( id ) {
 
 	let player;
@@ -188,8 +40,6 @@ class Entity {
 
 		entitiesById[ this.id ] = this;
 		dirtyEntities[ this.id ] = this;
-
-		console.log( dirtyEntities );
 
 	}
 
@@ -240,14 +90,13 @@ class Entity {
 	update() {
 
 		this.delta.id = this.id;
-		console.log( 'update', this.delta );
 		send( null, this.delta );
 		this.delta = {};
 	}
 
 }
 
-const entitiesById = {};
+let entitiesById = {};
 const playersById = {};
 let dirtyEntities = {};
 
@@ -280,9 +129,7 @@ function load( file ) {
 	}
 
 	for ( const id in parent ) {
-		console.log( id );
 		if ( parent[ id ] in entitiesById ) {
-			console.log( `-> ${parent[ id ]}` );
 			entitiesById[ parent[ id ] ].add( entitiesById[ id ] );
 		}
 	}
@@ -359,6 +206,7 @@ class Hatchet extends Entity {
 
 function buildNewWorld() {
 
+	entitiesById = {};
 	const world = new Entity();
 	const sunvalley = world.add( new Location( { name: 'Sun valley' } ) );
 	const millscreek = sunvalley.add( new Location( { name: 'Mills creek' } ) );
@@ -367,12 +215,168 @@ function buildNewWorld() {
 
 }
 
+function uuid( bytes = uuid.size, id ) {
+
+	while ( ! id || id in uuid.used ) id = crypto.randomBytes( bytes ).toString( 'hex' );
+	return uuid.used[ id ] = id;
+
+}
+
+uuid.size = 4;
+uuid.used = {};
+
 let playerspawn;
 let world = load( '.data/world.json' ) || buildNewWorld();
 world = buildNewWorld();
 
-console.log( playerspawn );
-
 process.on( 'exit', () => save( world ) );
 process.on( 'SIGINT', () => process.exit( 2 ) );
 process.on( 'uncaughtException', ( e ) => { console.log( e.stack ); process.exit( 99 ); } );
+
+// update; dont' start until end of setup
+
+const wsById = {};
+
+let wsCount = 0;
+
+let inMessages = [];
+let outMessages = [];
+
+function send( _, message, to = 'global' ) {
+
+	if ( ! wsCount ) return;
+	if ( _ ) message._ = _;
+	( to in outMessages ? outMessages[ to ] : ( outMessages[ to ] = [] ) ).push( message );
+
+}
+
+const updateInterval = 3333;
+
+function update() {
+	try {
+		const _inMessages = inMessages;
+		inMessages = [];
+
+		for ( const _in of _inMessages ) this[ `on${_in.message._}` ]( _in.message, _in.from );
+
+		const disconnectedHorizon = Date.now() - updateInterval * 2;
+
+		for ( const id in wsById ) {
+			const ws = wsById[ id ];
+			if ( ws.timestamp < disconnectedHorizon ) {
+			    disconnected( id );
+			    delete wsById[ id ];
+				wsCount--;
+			    delete wsBySecret[ ws.secret ];
+			    ws.terminate();
+				send( 'disconnected', { id } );
+			}
+		}
+
+		const _dirtyEntities = dirtyEntities;
+		dirtyEntities = {};
+
+		for ( const id in _dirtyEntities ) {
+			const entity = _dirtyEntities[ id ];
+			if ( entity.destroyed ) continue;
+			entity.update();
+		}
+
+		const _outMessages = outMessages;
+		outMessages = {};
+
+		const _global = _outMessages.global || [];
+		const sent = {};
+
+		for ( const id in _outMessages ) {
+
+			const message = JSON.stringify( _global.length ? _outMessages[ id ].concat( _global ) : _outMessages[ id ] );
+
+			if ( ! ( id in wsById ) ) {
+				id !== 'global' && console.log( `WARN: disconnected @${id} <- ${message}` );
+				continue;
+			}
+
+			wsById[ id ].send( message );
+			console.log( `@${id} <- ${message}` );
+			sent[ id ] = null;
+
+		}
+
+		if ( ! _global.length ) return;
+
+		const message = JSON.stringify( _global );
+		console.log( `@global <- ${message}` );
+
+		for ( const id in wsById ) {
+			if ( id in sent ) continue;
+			const ws = wsById[ id ];
+			ws.send( message );
+		}
+
+	} catch ( e ) {
+		console.error( e );
+	}
+}
+
+function listen() {
+	const port = process.env.PORT;
+	const verifyClient = ( info ) => [ 'http://localhost:8000', 'https://sunladen.github.io' ].indexOf( info.req.headers.origin ) > - 1;
+	const secretRE = /[?&]{1}secret=([0-9a-fA-F]{8})/;
+	const wss = new WebSocketServer( { port, verifyClient } );
+
+	wss.on( 'connection', ( ws, req ) => {
+
+		console.log( `-> ${req.url}` );
+
+		let secret = secretRE.exec( req.url );
+
+		if ( secret ) {
+			ws.secret = secret[ 1 ];
+			if ( ws.secret in wsBySecret ) ws.id = wsBySecret[ ws.secret ].id;
+		}
+
+		if ( ! ws.id && ws.secret ) {
+			const player = loadPlayerBySecret( ws.secret );
+			if ( player ) ws.id = player.id;
+		}
+
+		while ( ! ws.id || ws.id in wsById ) ws.id = uuid();
+		while ( ! ws.secret || ws.secret in wsBySecret ) ws.secret = uuid();
+
+		ws.on( 'message', ( data ) => {
+
+			try {
+
+				ws.timestamp = Date.now();
+				console.log( `-> ${data}` );
+				const messages = JSON.parse( data );
+				for ( const message of ( messages.constructor !== Array ) ? [ messages ] : messages ) inMessages.push( { message: message, from: ws.id } );
+
+			} catch ( e ) {
+				console.error( e );
+			}
+
+		} );
+
+		ws.timestamp = Date.now();
+
+		const isNewConnection = ! ( ws.id in wsById );
+		wsById[ ws.id ] = wsBySecret[ ws.secret ] = ws;
+		wsCount++;
+
+		send( 'verified', { id: ws.id, secret: ws.secret, world: world.world }, ws.id );
+
+		if ( isNewConnection ) {
+			send( 'connected', { id: ws.id } );
+			connected( ws.id );
+		}
+
+	} );
+
+	const wsBySecret = {};
+}
+
+update();
+listen();
+setInterval( update, updateInterval );

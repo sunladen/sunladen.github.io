@@ -86,19 +86,7 @@ class Entity {
 
 		this.dom = E( null, 'div', this.id, `entity ${this.type}${identity.id===id?' self':''}` );
 
-		if ( true ) {
-			this.dom.setAttribute( 'draggable', true );
-			this.dom.addEventListener( 'dragstart', this.dragstart.bind(this), false );
-			this.dom.addEventListener( 'dragover', this.dragover.bind(this), false );
-			this.dom.addEventListener( 'drop', this.drop.bind(this), false );
-		}
-
-		this.glyph = E( this.dom, 'div', null, 'glyph', {
-			'Location': '🏞',
-			'Player': '🧍',
-			'Hatchet': '🪓',
-			'Tree': '🌲'
-		 }[ this.type ] || '?' );
+		this.glyph = E( this.dom, 'div', null, 'glyph', GLYPHS[ this.type ] || '?' );
 		this.domName = E( this.dom, 'div', null, 'name', this.name );
 		this.domContents = E( this.dom, 'div', null, 'contents' );
 
@@ -146,26 +134,6 @@ class Entity {
 
 	}
 
-	dragstart( e ) {
-
-		e.stopPropagation();
-		e.dataTransfer.dropEffect = 'move';
-
-	}
-
-	dragover( e ) {
-
-		e.stopPropagation();
-
-	}
-
-	drop( e ) {
-
-		e.stopPropagation();
-		e.target.append( this.dom );
-
-	}
-
 }
 
 const entitiesById = {};
@@ -180,3 +148,10 @@ function E( parent, tagName, id, className, content ) {
 	return element;
 
 }
+
+const GLYPHS = {
+	'Location': '🏞',
+	'Player': '🧍',
+	'Hatchet': '🪓',
+	'Tree': '🌲'
+};
