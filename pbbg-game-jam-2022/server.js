@@ -2,15 +2,93 @@ import { WebSocketServer } from 'ws';
 import crypto from 'crypto';
 import fs from 'fs';
 
+let entitiesById = {};
+const playersById = {};
+let dirtyEntities = {};
+
+if ( ! fs.existsSync( '.data/players' ) ) fs.mkdirSync( '.data/players', { recursive: true } );
+
+function load( file ) {
+
+	if ( ! fs.existsSync( file ) ) return null;
+
+	const data = JSON.parse( fs.readFileSync( file ) );
+	const parent = {};
+
+	let first;
+
+	for ( const type of Object.keys( data ) ) {
+
+		const Class = eval( type );
+
+		for ( const e of data[ type ] ) {
+
+			const id = e[ 0 ];
+			const name = e[ 1 ];
+			const parentId = e[ 2 ];
+			const entity = id in entitiesById ? entitiesById[ id ] : new Class( { id, name } );
+			if ( ! first ) first = entity;
+			parentId && ( parent[ entity.id ] = parentId );
+
+		}
+
+	}
+
+	for ( const id in parent ) {
+		if ( parent[ id ] in entitiesById ) {
+			entitiesById[ parent[ id ] ].add( entitiesById[ id ] );
+		}
+	}
+
+	return first;
+
+}
+
+function loadPlayerBySecret( secret ) {
+
+	if ( ! secret ) return;
+
+	console.log( `loadPlayerBySecret( "${secret}" )` );
+
+	for ( const file of fs.readdirSync( '.data/players' ) ) {
+
+		if ( file.startsWith( `${secret}-` ) ) return load( `.data/players/${file}` );
+
+	}
+
+}
+
+function save( entity, data = {} ) {
+
+	if ( ! entity ) return;
+
+	if ( entity.type === 'Player' ) data = {};
+
+	entity.type in data || ( data[ entity.type ] = [] );
+	data[ entity.type ].push( [ entity.id, entity.name, entity.parent ? entity.parent.id : null ] );
+
+	for ( const content of entity.contents ) save( content, data );
+
+	if ( entity.type === 'Entity' ) {
+		fs.writeFileSync( '.data/world.json', JSON.stringify( data ) );
+	} else if ( entity.type === 'Player' ) {
+		fs.writeFileSync( `.data/players/${wsById[ entity.id ].secret}-${entity.name}.json`, JSON.stringify( data ) );
+	}
+
+	return data;
+
+}
+
 function connected( id ) {
 
 	let player;
-	//if ( id in playersById ) {
-	//	player = playersById[ id ];
-	//} else {
-	player = new Player( { id } );
-	player.add( new Hatchet() );
-	//}
+	console.log( id in playersById );
+	if ( id in playersById ) {
+		player = playersById[ id ];
+	} else {
+		player = new Player( { id } );
+		player.add( new Hatchet() );
+	}
 	if ( ! player.parent ) playerspawn.add( player );
 
 }
@@ -96,83 +174,6 @@ class Entity {
 
 }
 
-let entitiesById = {};
-const playersById = {};
-let dirtyEntities = {};
-
-if ( ! fs.existsSync( '.data/players' ) ) fs.mkdirSync( '.data/players', { recursive: true } );
-
-function load( file ) {
-
-	if ( ! fs.existsSync( file ) ) return null;
-
-	const data = JSON.parse( fs.readFileSync( file ) );
-	const parent = {};
-
-	let first;
-
-	for ( const type of Object.keys( data ) ) {
-
-		const Class = eval( type );
-
-		for ( const e of data[ type ] ) {
-
-			const id = e[ 0 ];
-			const name = e[ 1 ];
-			const parentId = e[ 2 ];
-			const entity = id in entitiesById ? entitiesById[ id ] : new Class( { id, name } );
-			if ( ! first ) first = entity;
-			parentId && ( parent[ entity.id ] = parentId );
-
-		}
-
-	}
-
-	for ( const id in parent ) {
-		if ( parent[ id ] in entitiesById ) {
-			entitiesById[ parent[ id ] ].add( entitiesById[ id ] );
-		}
-	}
-
-	return first;
-
-}
-
-function loadPlayerBySecret( secret ) {
-
-	if ( ! secret ) return;
-
-	console.log( `loadPlayerBySecret( "${secret}" )` );
-
-	for ( const file of fs.readdirSync( '.data/players' ) ) {
-
-		if ( file.startsWith( `${secret}-` ) ) return load( `.data/players/${file}` );
-
-	}
-
-}
-
-function save( entity, data = {} ) {
-
-	if ( ! entity ) return;
-
-	if ( entity.type === 'Player' ) data = {};
-
-	entity.type in data || ( data[ entity.type ] = [] );
-	data[ entity.type ].push( [ entity.id, entity.name, entity.parent ? entity.parent.id : null ] );
-
-	for ( const content of entity.contents ) save( content, data );
-
-	if ( entity.type === 'Entity' ) {
-		fs.writeFileSync( '.data/world.json', JSON.stringify( data ) );
-	} else if ( entity.type === 'Player' ) {
-		fs.writeFileSync( `.data/players/${wsById[ entity.id ].secret}-${entity.name}.json`, JSON.stringify( data ) );
-	}
-
-	return data;
-
-}
-
 class Location extends Entity {
 
 	constructor( args = {} ) {
@@ -236,6 +237,7 @@ process.on( 'uncaughtException', ( e ) => { console.log( e.stack ); process.exit
 // update; dont' start until end of setup
 
 const wsById = {};
+const wsBySecret = {};
 
 let wsCount = 0;
 
@@ -341,8 +343,10 @@ function listen() {
 			if ( player ) ws.id = player.id;
 		}
 
-		while ( ! ws.id || ws.id in wsById ) ws.id = uuid();
-		while ( ! ws.secret || ws.secret in wsBySecret ) ws.secret = uuid();
+		if ( ! ws.id ) {
+			while ( ! ws.id || ws.id in wsById ) ws.id = uuid();
+			while ( ! ws.secret || ws.secret in wsBySecret ) ws.secret = uuid();
+		}
 
 		ws.on( 'message', ( data ) => {
 
@@ -373,8 +377,6 @@ function listen() {
 		}
 
 	} );
-
-	const wsBySecret = {};
 }
 
 update();
