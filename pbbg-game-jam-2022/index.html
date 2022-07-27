@@ -11,19 +11,25 @@
         font-size: 20pt;
       }
       .entity {
-        border: 1px solid #aaa;
+        border-left: 1px solid #aaa;
         min-height: 1em;
         background: white;
-        border-radius: 2px;
-        color: #555;
-        margin: 3px;
-        margin-left: 0.5em;
+        color: #aaa;
+        cursor: default;
+        margin-left: -1px;
       }
-
+      #world > .entity > .contents {
+        border-left: 1px solid #aaa;
+        margin-left: 0.5em;
+        padding: 0;
+      }
       .entity.self {
         color: #2ef266;
       }
-
+      .entity .heading {
+        display: flex;
+        border-left: 2px solid #fff;
+      }
       .entity .glyph {
         font-weight: bolder;
         margin: 3px;
@@ -32,8 +38,11 @@
         color: transparent;
         text-shadow: 0 0 0 #444;
       }
-
       .entity .name {
+        display: inline-block;
+        flex: 1;
+      }
+      .entity .expand {
         display: inline-block;
       }
     </style>

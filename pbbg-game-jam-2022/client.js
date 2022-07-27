@@ -84,10 +84,15 @@ class Entity {
 		this.parent = null;
 		this.contents = [];
 
+		this.headingEventsAdded = false;
+
 		this.dom = E( null, 'div', this.id, `entity ${this.type}${identity.id===id?' self':''}` );
 
-		this.glyph = E( this.dom, 'div', null, 'glyph', GLYPHS[ this.type ] || '?' );
-		this.domName = E( this.dom, 'div', null, 'name', this.name );
+		this.heading = E( this.dom, 'div', this.id, 'heading' );
+		this.domIndent = E( this.heading, 'div', null, 'indent' );
+		this.domGlyph = E( this.heading, 'div', null, 'glyph', GLYPHS[ this.type ] || '?' );
+		this.domName = E( this.heading, 'div', null, 'name', this.name );
+		this.domExpand = E( this.heading, 'div', null, 'expand' );
 		this.domContents = E( this.dom, 'div', null, 'contents' );
 
 		entitiesById[ this.id ] = this;
@@ -114,6 +119,39 @@ class Entity {
 		this.contents.push( entity );
 
 		this.domContents.append( entity.dom );
+
+		entity.indent();
+
+	}
+
+	indent() {
+
+		let depth = 0;
+		let ancestor = this;
+
+		while ( ancestor = ancestor.parent ) depth++;
+
+		this.domIndent.style.minWidth = `${depth * 0.5}em`;
+
+		if ( this.parent && this.parent.parent ) this.parent.domExpand.textContent = `${this.parent.contents.length}`;
+
+		if ( ! this.headingEventsAdded ) {
+			this.heading.addEventListener( 'mouseover', ( e ) => {
+				e.stopPropagation();
+				this.heading.style.background = '#eee';
+				this.heading.style.borderLeft = '2px solid #888';
+			} );
+			this.heading.addEventListener( 'mouseout', ( e ) => {
+				e.stopPropagation();
+				this.heading.style.background = 'white';
+				this.heading.style.borderLeft = '2px solid #fff';
+			} );
+			this.heading.addEventListener( 'click', ( e ) => {
+				e.stopPropagation();
+				this.domContents.style.display = this.domContents.style.display === 'none' ? 'block' : 'none';
+			} );
+			this.headingEventsAdded = true;
+		}
 
 	}
 
