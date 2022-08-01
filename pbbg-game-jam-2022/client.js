@@ -1,14 +1,10 @@
-_____
-MEETS
-___E_
-TYRES
-HYPED
-DOGEE
-
 const updateInterval = 3333;
 const serverURL = new URL( document.location.host === 'localhost:8000' ? 'ws://localhost:6500/' : 'wss://daffodil-polite-seat.glitch.me/' );
+
 let identity = JSON.parse( localStorage.getItem( 'client.identity' ) ) ?? {};
+
 if ( identity.secret ) serverURL.search = `secret=${identity.secret}`;
+
 const socket = new WebSocket( serverURL );
 socket.onopen = () => console.log( `Connected to ${serverURL}` );
 socket.onclose = () => setTimeout( () => window.location.replace( window.location.href ), updateInterval );
