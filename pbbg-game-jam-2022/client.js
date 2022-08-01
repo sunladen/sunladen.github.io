@@ -1,3 +1,10 @@
+_____
+MEETS
+___E_
+TYRES
+HYPED
+DOGEE
+
 const updateInterval = 3333;
 const serverURL = new URL( document.location.host === 'localhost:8000' ? 'ws://localhost:6500/' : 'wss://daffodil-polite-seat.glitch.me/' );
 let identity = JSON.parse( localStorage.getItem( 'client.identity' ) ) ?? {};
@@ -122,6 +129,8 @@ class Entity {
 
 		entity.indent();
 
+		return entity;
+
 	}
 
 	indent() {
@@ -133,7 +142,11 @@ class Entity {
 
 		this.domIndent.style.minWidth = `${depth * 0.5}em`;
 
-		if ( this.parent && this.parent.parent ) this.parent.domExpand.textContent = `${this.parent.contents.length}`;
+		if ( this.parent && this.parent.parent && this.parent.contents.length ) {
+			this.parent.domExpand.textContent = this.parent.domContents.style.display === 'none' ? `${this.parent.contents.length} ›` : `${this.parent.contents.length} ‹`;
+		} else {
+			this.parent.domExpand.textContent = '';
+		}
 
 		if ( ! this.headingEventsAdded ) {
 			this.heading.addEventListener( 'mouseover', ( e ) => {
@@ -148,11 +161,23 @@ class Entity {
 			} );
 			this.heading.addEventListener( 'click', ( e ) => {
 				e.stopPropagation();
-				this.domContents.style.display = this.domContents.style.display === 'none' ? 'block' : 'none';
+				this.domContents.style.display === 'none' ? this.expand() : this.collapse();
 			} );
 			this.headingEventsAdded = true;
 		}
 
+	}
+
+	expand() {
+		this.domContents.style.display = 'block';
+		this.domExpand.textContent = this.contents.length ? `${this.contents.length} ‹` : '';
+		if ( this.parent ) this.parent.expand();
+	}
+
+	collapse() {
+		for ( const content of this.contents ) content.collapse();
+		this.domContents.style.display = 'none';
+		this.domExpand.textContent = this.contents.length ? `${this.contents.length} ›` : '';
 	}
 
 	destroy() {
