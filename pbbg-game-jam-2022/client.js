@@ -92,10 +92,13 @@ class Entity {
 		this.dom = E( null, 'div', this.id, `entity ${this.type}${identity.id===id?' self':''}` );
 
 		this.heading = E( this.dom, 'div', this.id, 'heading' );
+		this.domMoveTo = E( this.heading, 'div', null, 'moveto glyph', '👣' );
 		this.domIndent = E( this.heading, 'div', null, 'indent' );
-		this.domGlyph = E( this.heading, 'div', null, 'glyph', GLYPHS[ this.type ] || '?' );
+		this.domIcon = E( this.heading, 'div', null, 'icon glyph', GLYPHS[ this.type ] || '?' );
 		this.domName = E( this.heading, 'div', null, 'name', this.name );
-		this.domExpand = E( this.heading, 'div', null, 'expand' );
+		this.domContentCount = E( this.heading, 'div', null, 'contentcount' );
+		this.domExpandChevron = E( this.heading, 'div', null, 'expandchevron', '›' );
+		this.domExpandChevron.style.transform = 'rotate(-90deg)';
 		this.domContents = E( this.dom, 'div', null, 'contents' );
 
 		entitiesById[ this.id ] = this;
@@ -125,6 +128,18 @@ class Entity {
 
 		entity.indent();
 
+		this.domContentCount.textContent = `${this.contents.length}`;
+
+		if ( this.parent && this.contents.length ) {
+			this.domContentCount.textContent = `${this.contents.length}`;
+			this.domExpandChevron.style.visibility = 'visible';
+		} else {
+			this.domContentCount.textContent = '';
+			this.domExpandChevron.style.visibility = 'hidden';
+		}
+
+		identity.id === entity.id ? this.expand() : this.collapse();
+
 		return entity;
 
 	}
@@ -138,11 +153,7 @@ class Entity {
 
 		this.domIndent.style.minWidth = `${depth * 0.5}em`;
 
-		if ( this.parent && this.parent.parent && this.parent.contents.length ) {
-			this.parent.domExpand.textContent = this.parent.domContents.style.display === 'none' ? `${this.parent.contents.length} ›` : `${this.parent.contents.length} ‹`;
-		} else {
-			this.parent.domExpand.textContent = '';
-		}
+		this.collapse();
 
 		if ( ! this.headingEventsAdded ) {
 			this.heading.addEventListener( 'mouseover', ( e ) => {
@@ -166,14 +177,16 @@ class Entity {
 
 	expand() {
 		this.domContents.style.display = 'block';
-		this.domExpand.textContent = this.contents.length ? `${this.contents.length} ‹` : '';
+		this.domExpandChevron.style.minWidth = `${this.domExpandChevron.offsetHeight}px`;
+		//this.domExpandChevron.style.transform = 'rotate(-90deg)';
 		if ( this.parent ) this.parent.expand();
 	}
 
 	collapse() {
 		for ( const content of this.contents ) content.collapse();
 		this.domContents.style.display = 'none';
-		this.domExpand.textContent = this.contents.length ? `${this.contents.length} ›` : '';
+		this.domExpandChevron.style.minWidth = `${this.domExpandChevron.offsetHeight}px`;
+		//this.domExpandChevron.style.transform = 'rotate(90deg)';
 	}
 
 	destroy() {

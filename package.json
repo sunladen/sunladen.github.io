@@ -12,7 +12,7 @@
 		"lint": "lint() { sed -i 's/^[ \t]*//g' $*;sed -i '/^$/d' $*;eslint --fix $*;cat $*;};lint"
 	},
 	"devDependencies": {
-		"eslint": "^8.20.0",
-		"npm-check-updates": "^16.0.3"
+		"eslint": "^8.21.0",
+		"npm-check-updates": "^16.0.5"
 	}
 }

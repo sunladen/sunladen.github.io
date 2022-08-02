@@ -6,7 +6,24 @@ let entitiesById = {};
 const playersById = {};
 let dirtyEntities = {};
 
-if ( ! fs.existsSync( '.data/players' ) ) fs.mkdirSync( '.data/players', { recursive: true } );
+function connected( id ) {
+
+	let player;
+	console.log( id in playersById );
+	player = id in playersById ? playersById[ id ] : new Player( { id } );
+	if ( ! player.containsName( /^Hatchet$/ ) ) player.add( new Hatchet() );
+	if ( ! player.parent ) playerspawn.add( player );
+
+}
+
+function disconnected( id ) {
+
+	const player = playersById[ id ];
+	save( player );
+	player.destroy();
+	delete playersById[ id ];
+
+}
 
 function load( file ) {
 
@@ -76,29 +93,6 @@ function save( entity, data = {} ) {
 	}
 
 	return data;
-
-}
-
-function connected( id ) {
-
-	let player;
-	console.log( id in playersById );
-	if ( id in playersById ) {
-		player = playersById[ id ];
-	} else {
-		player = new Player( { id } );
-		player.add( new Hatchet() );
-	}
-	if ( ! player.parent ) playerspawn.add( player );
-
-}
-
-function disconnected( id ) {
-
-	const player = playersById[ id ];
-	save( player );
-	player.destroy();
-	delete playersById[ id ];
 
 }
 
@@ -172,6 +166,12 @@ class Entity {
 		this.delta = {};
 	}
 
+	containsName( regex ) {
+
+		for ( const content of this.contents ) if ( regex.test( content.name ) ) return content;
+
+	}
+
 }
 
 class Location extends Entity {
@@ -225,6 +225,8 @@ function uuid( bytes = uuid.size, id ) {
 
 uuid.size = 4;
 uuid.used = {};
+
+if ( ! fs.existsSync( '.data/players' ) ) fs.mkdirSync( '.data/players', { recursive: true } );
 
 let playerspawn;
 let world = load( '.data/world.json' ) || buildNewWorld();
