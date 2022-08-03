@@ -75,6 +75,16 @@ function read( entityData ) {
 
 }
 
+const headingResizeObserver = new ResizeObserver( entries => {
+
+	for ( const entry of entries ) {
+		const id = entry.target.parentNode.id;
+		const entity = entitiesById[ id ];
+		entity.domExpandChevron.style.minWidth = `${entity.domExpandChevron.offsetHeight}px`;
+	}
+
+} );
+
 class Entity {
 
 	constructor( id, type, args = {} ) {
@@ -91,15 +101,17 @@ class Entity {
 
 		this.dom = E( null, 'div', this.id, `entity ${this.type}${identity.id===id?' self':''}` );
 
-		this.heading = E( this.dom, 'div', this.id, 'heading' );
+		this.heading = E( this.dom, 'div', null, 'heading' );
 		this.domMoveTo = E( this.heading, 'div', null, 'moveto glyph', '👣' );
 		this.domIndent = E( this.heading, 'div', null, 'indent' );
 		this.domIcon = E( this.heading, 'div', null, 'icon glyph', GLYPHS[ this.type ] || '?' );
 		this.domName = E( this.heading, 'div', null, 'name', this.name );
 		this.domContentCount = E( this.heading, 'div', null, 'contentcount' );
 		this.domExpandChevron = E( this.heading, 'div', null, 'expandchevron', '›' );
-		this.domExpandChevron.style.transform = 'rotate(-90deg)';
+		this.domExpandChevron.style.visibility = 'hidden';
 		this.domContents = E( this.dom, 'div', null, 'contents' );
+
+		headingResizeObserver.observe( this.heading );
 
 		entitiesById[ this.id ] = this;
 
@@ -117,7 +129,16 @@ class Entity {
 		if ( entity.parent ) {
 
 			const index = entity.parent.contents.indexOf( entity );
-			if ( index > - 1 ) entity.parent.contents.splice( index, 1 );
+			if ( index > - 1 ) {
+				entity.parent.contents.splice( index, 1 );
+				if ( entity.parent.contents.length ) {
+					entity.parent.domContentCount.textContent = `${this.contents.length}`;
+					entity.parent.domExpandChevron.style.visibility = 'visible';
+				} else {
+					entity.parent.domContentCount.textContent = '';
+					entity.parent.domExpandChevron.style.visibility = 'hidden';
+				}
+			}
 
 		}
 
@@ -177,16 +198,14 @@ class Entity {
 
 	expand() {
 		this.domContents.style.display = 'block';
-		this.domExpandChevron.style.minWidth = `${this.domExpandChevron.offsetHeight}px`;
-		//this.domExpandChevron.style.transform = 'rotate(-90deg)';
+		this.domExpandChevron.style.transform = 'rotate(90deg) scale(-1, 1)';
 		if ( this.parent ) this.parent.expand();
 	}
 
 	collapse() {
 		for ( const content of this.contents ) content.collapse();
 		this.domContents.style.display = 'none';
-		this.domExpandChevron.style.minWidth = `${this.domExpandChevron.offsetHeight}px`;
-		//this.domExpandChevron.style.transform = 'rotate(90deg)';
+		this.domExpandChevron.style.transform = 'rotate(90deg)';
 	}
 
 	destroy() {
