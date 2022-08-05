@@ -80,7 +80,7 @@ const headingResizeObserver = new ResizeObserver( entries => {
 	for ( const entry of entries ) {
 		const id = entry.target.parentNode.id;
 		const entity = entitiesById[ id ];
-		entity.domExpandChevron.style.minWidth = `${entity.domExpandChevron.offsetHeight}px`;
+		entity.domExpandChevron.style.minWidth = entity.domExpandChevron.style.maxWidth = `${entity.domExpandChevron.offsetHeight}px`;
 	}
 
 } );
