@@ -7,7 +7,7 @@ if ( identity.secret ) serverURL.search = `secret=${identity.secret}`;
 
 const socket = new WebSocket( serverURL );
 socket.onopen = () => console.log( `Connected to ${serverURL}` );
-socket.onclose = () => setTimeout( () => window.location.replace( window.location.href ), updateInterval );
+//socket.onclose = () => setTimeout( () => window.location.replace( window.location.href ), updateInterval );
 socket.onmessage = ( e ) => {
 	const messages = JSON.parse( e.data );
 	console.log( 'Messages from server ', messages );
@@ -67,6 +67,7 @@ function read( entityData ) {
 	if ( ! ( entityData.id in entitiesById ) ) {
 		const entity = new Entity( entityData.id, entityData.type, entityData );
 		if ( entity.type === 'Entity' )	document.getElementById( 'world' ).append( entity.dom );
+		if ( entity.type === 'Entity' )	document.getElementById( 'entities' ).append( entity.domNav );
 	} else {
 		entitiesById[ entityData.id ].update( entityData );
 	}
@@ -80,7 +81,9 @@ const headingResizeObserver = new ResizeObserver( entries => {
 	for ( const entry of entries ) {
 		const id = entry.target.parentNode.id;
 		const entity = entitiesById[ id ];
-		entity.domExpandChevron.style.minWidth = entity.domExpandChevron.style.maxWidth = `${entity.domExpandChevron.offsetHeight}px`;
+		const style = entity.domExpandChevron.style;
+		style.width = '100%';
+		style.minWidth = style.maxWidth = `${entity.domExpandChevron.offsetHeight}px`;
 	}
 
 } );
@@ -112,6 +115,11 @@ class Entity {
 		this.domContents = E( this.dom, 'div', null, 'contents' );
 
 		headingResizeObserver.observe( this.heading );
+
+		this.domNav = E( null, 'tr', this.id );
+		this.domNavHeading = E( this.domNav, 'div' );
+		this.domNavName = E( this.domNavHeading, 'div', null, null, this.name );
+		this.domNavContents = E( this.domNavHeading, 'table' );
 
 		entitiesById[ this.id ] = this;
 
@@ -146,6 +154,7 @@ class Entity {
 		this.contents.push( entity );
 
 		this.domContents.append( entity.dom );
+		this.domNavContents.append( entity.domNav );
 
 		entity.indent();
 
@@ -246,3 +255,11 @@ const GLYPHS = {
 	'Hatchet': '🪓',
 	'Tree': '🌲'
 };
+
+const domWorld = E( document.body, 'table', 'world' );
+for ( let y = 0; y < 11; y++ ) {
+	let row = E( domWorld, 'tr' );
+	for ( let x = 0; x < 11; x++ ) {
+		let cell = E( row, 'td', null, null, '░' );
+	}
+}
