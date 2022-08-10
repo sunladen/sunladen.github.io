@@ -8,6 +8,7 @@
 // @icon         https://monarchygame.net/favicon.ico
 // @grant        none
 // //require      file://\\wsl$\Ubuntu\home\sunladen\sunladen.github.io\morgue\docs\userscripts\monarchy.user.js
+// //require	  file://\\wsl$\Ubuntu-20.04\home\scarmody\sunladen.github.io\morgue\docs\userscripts\monarchy.user.js
 // ==/UserScript==
 ( function () {
 
@@ -16,12 +17,14 @@
 	window.defaultbot = {
 		sleep: 0,
 		enabled: true,
-		interval: 50,
+		interval: 60,
 	};
 
 	const bot = window.bot = Object.assign( {}, window.defaultbot );
 	Object.assign( bot, JSON.parse( localStorage.getItem( 'bot' ) ) );
 	window.addEventListener( 'beforeunload', () => localStorage.setItem( 'bot', JSON.stringify( window.bot ) ) );
+
+	console.log( window.bot );
 
 	document.addEventListener( 'mousemove', () => bot.sleep = Date.now() + 20000 );
 

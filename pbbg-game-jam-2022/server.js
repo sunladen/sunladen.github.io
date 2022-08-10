@@ -3,14 +3,13 @@ import crypto from 'crypto';
 import fs from 'fs';
 
 let entitiesById = {};
-const playersById = {};
+let entitiesByType = {};
 let dirtyEntities = {};
 
 function connected( id ) {
 
 	let player;
-	console.log( id in playersById );
-	player = id in playersById ? playersById[ id ] : new Player( { id } );
+	player = id in entitiesByType[ 'Player' ] ? entitiesByType[ 'Player' ][ id ] : new Player( { id } );
 	if ( ! player.containsName( /^Hatchet$/ ) ) player.add( new Hatchet() );
 	if ( ! player.parent ) playerspawn.add( player );
 
@@ -18,10 +17,10 @@ function connected( id ) {
 
 function disconnected( id ) {
 
-	const player = playersById[ id ];
+	const player = entitiesByType[ 'Player' ][ id ];
 	save( player );
 	player.destroy();
-	delete playersById[ id ];
+	delete entitiesByType[ 'Player' ][ id ];
 
 }
 
@@ -51,11 +50,7 @@ function load( file ) {
 
 	}
 
-	for ( const id in parent ) {
-		if ( parent[ id ] in entitiesById ) {
-			entitiesById[ parent[ id ] ].add( entitiesById[ id ] );
-		}
-	}
+	for ( const id in parent ) parent[ id ] in entitiesById && entitiesById[ parent[ id ] ].add( entitiesById[ id ] );
 
 	return first;
 
@@ -105,12 +100,14 @@ class Entity {
 		this.id || ( this.id = uuid() );
 		this.type = this.constructor.name;
 		this.name || ( this.name = '[Unnamed]' );
+		this.value = null;
 		this.parent = null;
 		this.contents = [];
 		this.world = { id: this.id, type: this.type, name: this.name, contents: [] };
 		this.delta = { type: this.type, name: this.name };
 
-		entitiesById[ this.id ] = this;
+		if ( ! ( this.type in entitiesByType ) ) entitiesByType[ this.type ] = {};
+		entitiesByType[ this.type ][ this.id ] = entitiesById[ this.id ] = this;
 		dirtyEntities[ this.id ] = this;
 
 	}
@@ -137,6 +134,7 @@ class Entity {
 		}
 
 		entity.setProperty( 'parent', this );
+
 		const index = this.contents.indexOf( entity );
 		if ( index === - 1 ) {
 			this.contents.push( entity );
@@ -189,7 +187,28 @@ class Player extends Entity {
 	constructor( args = {} ) {
 
 		super( Object.assign( { name: `Guest-${args.id}` }, args ) );
-		playersById[ this.id ] = this;
+
+	}
+
+}
+
+class NPC extends Entity {
+
+	constructor( args = {} ) {
+
+		super( Object.assign( {}, args ) );
+		if ( ! ( 'NPC' in entitiesByType ) ) entitiesByType[ 'NPC' ] = {};
+		entitiesByType[ 'NPC' ][ this.id ] = this;
+
+	}
+
+}
+
+class Rabbit extends NPC {
+
+	constructor( args = {} ) {
+
+		super( Object.assign( { name: `Rabbit` }, args ) );
 
 	}
 
@@ -208,10 +227,26 @@ class Hatchet extends Entity {
 function buildNewWorld() {
 
 	entitiesById = {};
+	entitiesByType = {};
 	const world = new Entity();
-	const sunvalley = world.add( new Location( { name: 'Sun valley' } ) );
-	const millscreek = sunvalley.add( new Location( { name: 'Mills creek' } ) );
-	millscreek.add( playerspawn = new Location( { name: 'Mills creek camp' } ) );
+	playerspawn = world.add( new Location( { name: 'Start Location' } ) );
+
+	function playerspawnUpdate() {
+
+		if ( ! playerspawn.containsName( /^Rabbit$/ ) ) {
+		// 	playerspawn.add( new Rabbit() );
+		// 	playerspawn.add( new Rabbit() );
+		// 	playerspawn.add( new Rabbit() );
+		// 	playerspawn.add( new Rabbit() );
+		// 	playerspawn.add( new Rabbit() );
+		}
+
+		dirtyEntities[ this.id ] = this;
+
+	}
+
+	playerspawn.update = playerspawnUpdate.bind( playerspawn );
+
 	return world;
 
 }
@@ -236,8 +271,6 @@ process.on( 'exit', () => save( world ) );
 process.on( 'SIGINT', () => process.exit( 2 ) );
 process.on( 'uncaughtException', ( e ) => { console.log( e.stack ); process.exit( 99 ); } );
 
-// update; dont' start until end of setup
-
 const wsById = {};
 const wsBySecret = {};
 
@@ -254,7 +287,7 @@ function send( _, message, to = 'global' ) {
 
 }
 
-const updateInterval = 3333;
+const heartbeat = 3333;
 
 function update() {
 	try {
@@ -263,7 +296,7 @@ function update() {
 
 		for ( const _in of _inMessages ) this[ `on${_in.message._}` ]( _in.message, _in.from );
 
-		const disconnectedHorizon = Date.now() - updateInterval * 2;
+		const disconnectedHorizon = Date.now() - heartbeat * 2;
 
 		for ( const id in wsById ) {
 			const ws = wsById[ id ];
@@ -371,7 +404,7 @@ function listen() {
 		wsById[ ws.id ] = wsBySecret[ ws.secret ] = ws;
 		wsCount++;
 
-		send( 'verified', { id: ws.id, secret: ws.secret, world: world.world }, ws.id );
+		send( 'verified', { id: ws.id, secret: ws.secret, heartbeat: heartbeat, world: world.world }, ws.id );
 
 		if ( isNewConnection ) {
 			send( 'connected', { id: ws.id } );
@@ -383,4 +416,4 @@ function listen() {
 
 update();
 listen();
-setInterval( update, updateInterval );
+setInterval( update, heartbeat );

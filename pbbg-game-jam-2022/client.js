@@ -1,44 +1,16 @@
-const updateInterval = 3333;
 const serverURL = new URL( document.location.host === 'localhost:8000' ? 'ws://localhost:6500/' : 'wss://daffodil-polite-seat.glitch.me/' );
 
-let identity = JSON.parse( localStorage.getItem( 'client.identity' ) ) ?? {};
-
-if ( identity.secret ) serverURL.search = `secret=${identity.secret}`;
-
-const socket = new WebSocket( serverURL );
-socket.onopen = () => console.log( `Connected to ${serverURL}` );
-//socket.onclose = () => setTimeout( () => window.location.replace( window.location.href ), updateInterval );
-socket.onmessage = ( e ) => {
-	const messages = JSON.parse( e.data );
-	console.log( 'Messages from server ', messages );
-	for ( const message of messages ) {
-		const funcName = '_' in message ? `on${message._}` : 'onupdate';
-		try {
-			eval( funcName )( message );
-		} catch ( err ) {
-			console.log( err );
-		}
-	}
-}
-
-const heartbeat = new Worker( URL.createObjectURL( new Blob( [ `onmessage = () => setInterval( () => postMessage( 0 ), ${updateInterval} )` ] ) ) );
-heartbeat.onmessage = () => { const _outMessages = outMessages; outMessages = []; socket.send( JSON.stringify( _outMessages ) ); };
-heartbeat.postMessage( 0 );
-
-let inMessages = [];
-let outMessages = [];
-
-function send( message ) {
-
-	outbound.push( message );
-
-}
+const domNav = document.getElementById( 'nav' );
 
 function onverified( message ) {
 
 	identity = { id: message.id, secret: message.secret };
 	localStorage.setItem( 'client.identity', JSON.stringify( identity ) );
 	read( message.world );
+
+	const worker = new Worker( URL.createObjectURL( new Blob( [ `onmessage = () => setInterval( () => postMessage( 0 ), ${message.heartbeat} )` ] ) ) );
+	worker.onmessage = () => { const _outMessages = outMessages; outMessages = []; socket.send( JSON.stringify( _outMessages ) ); };
+	worker.postMessage( 0 );
 
 }
 
@@ -50,7 +22,9 @@ function ondestroy( message ) {
 
 function onconnected( message ) {
 
-	//might not need this? maybe for notification purposes?
+}
+
+function ondisconnected( message ) {
 
 }
 
@@ -64,12 +38,13 @@ function read( entityData ) {
 
 	console.log( 'read', entityData );
 
-	if ( ! ( entityData.id in entitiesById ) ) {
-		const entity = new Entity( entityData.id, entityData.type, entityData );
-		if ( entity.type === 'Entity' )	document.getElementById( 'world' ).append( entity.dom );
-		if ( entity.type === 'Entity' )	document.getElementById( 'entities' ).append( entity.domNav );
+	const id = entityData.id;
+
+	if ( id in entitiesById ) {
+		entitiesById[ id ].update( entityData );
 	} else {
-		entitiesById[ entityData.id ].update( entityData );
+		const Class = eval( entityData.type );
+		const entity = new Class( entityData );
 	}
 
 	if ( 'contents' in entityData ) for ( const content of entityData.contents ) read( content );
@@ -88,40 +63,21 @@ const headingResizeObserver = new ResizeObserver( entries => {
 
 } );
 
+const entitiesById = {};
+const entitiesByType = {}
+
 class Entity {
 
-	constructor( id, type, args = {} ) {
+	constructor( args = {} ) {
 
 		Object.assign( this, args );
 
-		this.id = id;
-		this.type = type;
 		this.name || ( this.name = '[Unnamed]' );
 		this.parent = null;
 		this.contents = [];
 
-		this.headingEventsAdded = false;
-
-		this.dom = E( null, 'div', this.id, `entity ${this.type}${identity.id===id?' self':''}` );
-
-		this.heading = E( this.dom, 'div', null, 'heading' );
-		this.domMoveTo = E( this.heading, 'div', null, 'moveto glyph', '👣' );
-		this.domIndent = E( this.heading, 'div', null, 'indent' );
-		this.domIcon = E( this.heading, 'div', null, 'icon glyph', GLYPHS[ this.type ] || '?' );
-		this.domName = E( this.heading, 'div', null, 'name', this.name );
-		this.domContentCount = E( this.heading, 'div', null, 'contentcount' );
-		this.domExpandChevron = E( this.heading, 'div', null, 'expandchevron', '›' );
-		this.domExpandChevron.style.visibility = 'hidden';
-		this.domContents = E( this.dom, 'div', null, 'contents' );
-
-		headingResizeObserver.observe( this.heading );
-
-		this.domNav = E( null, 'tr', this.id );
-		this.domNavHeading = E( this.domNav, 'div' );
-		this.domNavName = E( this.domNavHeading, 'div', null, null, this.name );
-		this.domNavContents = E( this.domNavHeading, 'table' );
-
-		entitiesById[ this.id ] = this;
+		if ( ! ( this.type in entitiesByType ) ) entitiesByType[ this.type ] = {};
+		entitiesByType[ this.type ][ this.id ] = entitiesById[ this.id ] = this;
 
 		if ( args.parent in entitiesById ) entitiesById[ args.parent ].add( this );
 
@@ -137,84 +93,15 @@ class Entity {
 		if ( entity.parent ) {
 
 			const index = entity.parent.contents.indexOf( entity );
-			if ( index > - 1 ) {
-				entity.parent.contents.splice( index, 1 );
-				if ( entity.parent.contents.length ) {
-					entity.parent.domContentCount.textContent = `${this.contents.length}`;
-					entity.parent.domExpandChevron.style.visibility = 'visible';
-				} else {
-					entity.parent.domContentCount.textContent = '';
-					entity.parent.domExpandChevron.style.visibility = 'hidden';
-				}
-			}
+			if ( index > - 1 ) entity.parent.contents.splice( index, 1 );
 
 		}
 
 		entity.parent = this;
 		this.contents.push( entity );
 
-		this.domContents.append( entity.dom );
-		this.domNavContents.append( entity.domNav );
-
-		entity.indent();
-
-		this.domContentCount.textContent = `${this.contents.length}`;
-
-		if ( this.parent && this.contents.length ) {
-			this.domContentCount.textContent = `${this.contents.length}`;
-			this.domExpandChevron.style.visibility = 'visible';
-		} else {
-			this.domContentCount.textContent = '';
-			this.domExpandChevron.style.visibility = 'hidden';
-		}
-
-		identity.id === entity.id ? this.expand() : this.collapse();
-
 		return entity;
 
-	}
-
-	indent() {
-
-		let depth = 0;
-		let ancestor = this;
-
-		while ( ancestor = ancestor.parent ) depth++;
-
-		this.domIndent.style.minWidth = `${depth * 0.5}em`;
-
-		this.collapse();
-
-		if ( ! this.headingEventsAdded ) {
-			this.heading.addEventListener( 'mouseover', ( e ) => {
-				e.stopPropagation();
-				this.heading.style.background = '#eee';
-				this.heading.style.borderLeft = '2px solid #888';
-			} );
-			this.heading.addEventListener( 'mouseout', ( e ) => {
-				e.stopPropagation();
-				this.heading.style.background = 'white';
-				this.heading.style.borderLeft = '2px solid #fff';
-			} );
-			this.heading.addEventListener( 'click', ( e ) => {
-				e.stopPropagation();
-				this.domContents.style.display === 'none' ? this.expand() : this.collapse();
-			} );
-			this.headingEventsAdded = true;
-		}
-
-	}
-
-	expand() {
-		this.domContents.style.display = 'block';
-		this.domExpandChevron.style.transform = 'rotate(90deg) scale(-1, 1)';
-		if ( this.parent ) this.parent.expand();
-	}
-
-	collapse() {
-		for ( const content of this.contents ) content.collapse();
-		this.domContents.style.display = 'none';
-		this.domExpandChevron.style.transform = 'rotate(90deg)';
 	}
 
 	destroy() {
@@ -223,20 +110,72 @@ class Entity {
 			const siblings = this.parent.contents;
 			const index = siblings.indexOf( this );
 			if ( index > - 1 ) siblings.splice( index, 1 );
-			this.dom.remove();
 		}
 	}
 
 	update( data ) {
 
 		if ( data.name !== this.name ) this.name = data.name;
-		if ( data.parent !== this.parent ) entitiesById[ data.parent ].add( this );
+		if ( data.parent && data.parent !== this.parent ) entitiesById[ data.parent ].add( this );
 
 	}
 
 }
 
-const entitiesById = {};
+class Location extends Entity {
+
+	constructor( args = {} ) {
+
+		super( Object.assign( { name: '[Unnamed location]' }, args ) );
+		this.domNav = E( domNav, 'div', this.id, 'location' );
+		this.domNavLabel = E( this.domNav, 'div', null, 'label' );
+		this.domNavIcon = E( this.domNavLabel, 'div', null, 'icon', GLYPHS.Location );
+		this.domNavName = E( this.domNavLabel, 'div', null, 'name', this.name );
+		this.domNavContents = E( this.domNav, 'div', null, 'contents' );
+
+	}
+
+	destroy() {
+
+		super.destroy();
+		this.domNav.remove();
+
+	}
+
+}
+
+class Player extends Entity {
+
+	constructor( args = {} ) {
+
+		super( Object.assign( { name: `Guest-${args.id}` }, args ) );
+
+		let domParent = this.parent && this.parent.domNavContents ? this.parent.domNavContents : domNav;
+
+		this.domNav = E( domParent, 'div', this.id, `player${identity.id===this.id?' self':''}` );
+		this.domNavIcon = E( this.domNav, 'div', null, 'icon', GLYPHS.Player );
+		this.domNavName = E( this.domNav, 'div', null, 'name', this.name );
+
+	}
+
+	destroy() {
+
+		super.destroy();
+		this.domNav.remove();
+
+	}
+
+}
+
+class Hatchet extends Entity {
+
+	constructor( args = {} ) {
+
+		super( Object.assign( { name: 'Hatchet' }, args ) );
+
+	}
+
+}
 
 function E( parent, tagName, id, className, content ) {
 
@@ -251,15 +190,36 @@ function E( parent, tagName, id, className, content ) {
 
 const GLYPHS = {
 	'Location': '🏞',
-	'Player': '🧍',
-	'Hatchet': '🪓',
-	'Tree': '🌲'
+	'Player': '웃',
+	'Hatchet': 'ᨚ',
+	'Tree': '⽊'
 };
 
-const domWorld = E( document.body, 'table', 'world' );
-for ( let y = 0; y < 11; y++ ) {
-	let row = E( domWorld, 'tr' );
-	for ( let x = 0; x < 11; x++ ) {
-		let cell = E( row, 'td', null, null, '░' );
+let inMessages = [];
+let outMessages = [];
+
+function send( message ) {
+
+	outbound.push( message );
+
+}
+
+let identity = JSON.parse( localStorage.getItem( 'client.identity' ) ) ?? {};
+
+if ( identity.secret ) serverURL.search = `secret=${identity.secret}`;
+
+const socket = new WebSocket( serverURL );
+socket.onopen = () => console.log( `Connected to ${serverURL}` );
+socket.onclose = () => setTimeout( () => window.location.replace( window.location.href ), 1000 );
+socket.onmessage = ( e ) => {
+	const messages = JSON.parse( e.data );
+	console.log( 'Messages from server ', messages );
+	for ( const message of messages ) {
+		const funcName = '_' in message ? `on${message._}` : 'onupdate';
+		try {
+			eval( funcName )( message );
+		} catch ( err ) {
+			console.log( err );
+		}
 	}
 }

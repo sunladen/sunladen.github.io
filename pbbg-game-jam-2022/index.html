@@ -14,19 +14,28 @@
         font-size: 20pt;
         height: 100%;
       }
-      #world {
+      #nav {
+        background: #777;
+        width: 33%;
         height: 100%;
-        width: 100%;
       }
-
-      #world td {
-        background: #555;
+      .icon {
+        display: inline-block;
+        color: #555;
+        width: 1em;
+      }
+      .name {
+        display: inline-block;
+        color: #222;
+      }
+      #nav .contents {
+        margin-left: 1em;
       }
     </style>
   </head>
   <body>
-    <div id="sidebar"></div>
-    <div id="content"></div>
+    <div id="nav"></div>
+    <div id="main"></div>
     <script type="module">
   	import './client.js';
     </script>
