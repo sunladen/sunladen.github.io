@@ -10,7 +10,7 @@ function connected( id ) {
 
 	let player;
 	player = id in entitiesByType[ 'Player' ] ? entitiesByType[ 'Player' ][ id ] : new Player( { id } );
-	if ( ! player.containsName( /^Hatchet$/ ) ) player.add( new Hatchet() );
+	//if ( ! player.containsName( /^Hatchet$/ ) ) player.add( new Hatchet() );
 	if ( ! player.parent ) playerspawn.add( player );
 
 }
@@ -234,7 +234,7 @@ function buildNewWorld() {
 	function playerspawnUpdate() {
 
 		if ( ! playerspawn.containsName( /^Rabbit$/ ) ) {
-		// 	playerspawn.add( new Rabbit() );
+		 	playerspawn.add( new Rabbit() );
 		// 	playerspawn.add( new Rabbit() );
 		// 	playerspawn.add( new Rabbit() );
 		// 	playerspawn.add( new Rabbit() );

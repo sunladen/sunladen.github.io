@@ -43,8 +43,12 @@ function read( entityData ) {
 	if ( id in entitiesById ) {
 		entitiesById[ id ].update( entityData );
 	} else {
-		const Class = eval( entityData.type );
-		const entity = new Class( entityData );
+		try {
+			const Class = eval( entityData.type );
+			const entity = new Class( entityData );
+		} catch( err ) {
+			console.log( `Unknown type "${entityData.type}"` );
+		}
 	}
 
 	if ( 'contents' in entityData ) for ( const content of entityData.contents ) read( content );
@@ -177,6 +181,16 @@ class Hatchet extends Entity {
 
 }
 
+class Rabbit extends Entity {
+
+	constructor( args = {} ) {
+
+		super( Object.assign( { name: 'Rabbit' }, args ) );
+
+	}
+
+}
+
 function E( parent, tagName, id, className, content ) {
 
 	const element = document.createElement( tagName );
@@ -195,12 +209,11 @@ const GLYPHS = {
 	'Tree': '⽊'
 };
 
-let inMessages = [];
 let outMessages = [];
 
 function send( message ) {
 
-	outbound.push( message );
+	outMessages.push( message );
 
 }
 
