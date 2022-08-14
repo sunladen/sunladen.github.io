@@ -164,6 +164,12 @@ class Entity {
 		this.delta = {};
 	}
 
+	containsType( regex ) {
+
+		for ( const content of this.contents ) if ( regex.test( content.type ) ) return content;
+
+	}
+
 	containsName( regex ) {
 
 		for ( const content of this.contents ) if ( regex.test( content.name ) ) return content;
@@ -187,6 +193,27 @@ class Player extends Entity {
 	constructor( args = {} ) {
 
 		super( Object.assign( { name: `Guest-${args.id}` }, args ) );
+
+	}
+
+}
+
+class Mob extends Entity {
+
+	constructor( args = {} ) {
+
+		args.id = args.id || uuid();
+		super( Object.assign( { name: `Mob-${args.id}` }, args ) );
+
+	}
+
+}
+
+class InstancedMob extends Mob {
+
+	constructor( args = {} ) {
+
+		super( args );
 
 	}
 
@@ -228,18 +255,36 @@ function buildNewWorld() {
 
 	entitiesById = {};
 	entitiesByType = {};
+
 	const world = new Entity();
+
 	playerspawn = world.add( new Location( { name: 'Start Location' } ) );
 
 	function playerspawnUpdate() {
 
-		if ( ! playerspawn.containsName( /^Rabbit$/ ) ) {
-		 	playerspawn.add( new Rabbit() );
-		// 	playerspawn.add( new Rabbit() );
-		// 	playerspawn.add( new Rabbit() );
-		// 	playerspawn.add( new Rabbit() );
-		// 	playerspawn.add( new Rabbit() );
+		for ( const content of playerspawn.contents ) {
+
+			if ( content.type === 'Player' ) {
+
+				const player = content;
+				const instancedMobName = `InstancedMob-${player.id}`;
+
+				if ( ! playerspawn.containsName( new RegExp( `^${instancedMobName}$` ) ) ) {
+
+					playerspawn.add( new InstancedMob( { name: instancedMobName} ) );
+
+				}
+
+			}
+
 		}
+		//if ( ! playerspawn.containsName( /^Rabbit$/ ) ) {
+		// 	playerspawn.add( new Rabbit() );
+		// 	playerspawn.add( new Rabbit() );
+		// 	playerspawn.add( new Rabbit() );
+		// 	playerspawn.add( new Rabbit() );
+		// 	playerspawn.add( new Rabbit() );
+		//}
 
 		dirtyEntities[ this.id ] = this;
 
@@ -290,6 +335,7 @@ function send( _, message, to = 'global' ) {
 const heartbeat = 3333;
 
 function update() {
+
 	try {
 		const _inMessages = inMessages;
 		inMessages = [];
@@ -354,9 +400,11 @@ function update() {
 	} catch ( e ) {
 		console.error( e );
 	}
+
 }
 
 function listen() {
+
 	const port = process.env.PORT;
 	const verifyClient = ( info ) => [ 'http://localhost:8000', 'https://sunladen.github.io' ].indexOf( info.req.headers.origin ) > - 1;
 	const secretRE = /[?&]{1}secret=([0-9a-fA-F]{8})/;
@@ -412,8 +460,11 @@ function listen() {
 		}
 
 	} );
+
 }
 
 update();
 listen();
+
 setInterval( update, heartbeat );
+
