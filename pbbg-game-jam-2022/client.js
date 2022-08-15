@@ -8,8 +8,10 @@ function onverified( message ) {
 	localStorage.setItem( 'client.identity', JSON.stringify( identity ) );
 	read( message.world );
 
-	const worker = new Worker( URL.createObjectURL( new Blob( [ `onmessage = () => setInterval( () => postMessage( 0 ), ${message.heartbeat} )` ] ) ) );
-	worker.onmessage = () => { const _outMessages = outMessages; outMessages = []; socket.send( JSON.stringify( _outMessages ) ); };
+	const worker = new Worker( URL.createObjectURL( new Blob( [
+		`onmessage = () => setInterval( () => postMessage( 0 ), ${message.heartbeat} )`
+	] ) ) );
+	worker.onmessage = () => { socket.send( JSON.stringify( outMessages ) ); outMessages = []; };
 	worker.postMessage( 0 );
 
 }
@@ -41,31 +43,31 @@ function read( entityData ) {
 	const id = entityData.id;
 
 	if ( id in entitiesById ) {
+
 		entitiesById[ id ].update( entityData );
+
 	} else {
+
 		try {
+
 			const Class = eval( entityData.type );
 			const entity = new Class( entityData );
+
 		} catch( err ) {
+
 			console.log( `Unknown type "${entityData.type}"` );
+
 		}
+
 	}
 
-	if ( 'contents' in entityData ) for ( const content of entityData.contents ) read( content );
+	if ( 'contents' in entityData ) {
+
+		for ( const content of entityData.contents ) read( content );
+
+	}
 
 }
-
-const headingResizeObserver = new ResizeObserver( entries => {
-
-	for ( const entry of entries ) {
-		const id = entry.target.parentNode.id;
-		const entity = entitiesById[ id ];
-		const style = entity.domExpandChevron.style;
-		style.width = '100%';
-		style.minWidth = style.maxWidth = `${entity.domExpandChevron.offsetHeight}px`;
-	}
-
-} );
 
 const entitiesById = {};
 const entitiesByType = {}
@@ -109,12 +111,14 @@ class Entity {
 	}
 
 	destroy() {
+
 		if ( this.parent ) {
 			for ( const content of this.contents ) this.parent.add( content, true );
 			const siblings = this.parent.contents;
 			const index = siblings.indexOf( this );
 			if ( index > - 1 ) siblings.splice( index, 1 );
 		}
+
 	}
 
 	update( data ) {
@@ -171,23 +175,11 @@ class Player extends Entity {
 
 }
 
-class Hatchet extends Entity {
-
-	constructor( args = {} ) {
-
-		super( Object.assign( { name: 'Hatchet' }, args ) );
-
-	}
+class NPC extends Entity {
 
 }
 
-class Rabbit extends Entity {
-
-	constructor( args = {} ) {
-
-		super( Object.assign( { name: 'Rabbit' }, args ) );
-
-	}
+class InstancedMob extends Entity {
 
 }
 
@@ -205,7 +197,6 @@ function E( parent, tagName, id, className, content ) {
 const GLYPHS = {
 	'Location': '🏞',
 	'Player': '웃',
-	'Hatchet': 'ᨚ',
 	'Tree': '⽊'
 };
 

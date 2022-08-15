@@ -9,8 +9,7 @@ let dirtyEntities = {};
 function connected( id ) {
 
 	let player;
-	player = id in entitiesByType[ 'Player' ] ? entitiesByType[ 'Player' ][ id ] : new Player( { id } );
-	//if ( ! player.containsName( /^Hatchet$/ ) ) player.add( new Hatchet() );
+	player = 'Player' in entitiesByType && id in entitiesByType[ 'Player' ] ? entitiesByType[ 'Player' ][ id ] : new Player( { id } );
 	if ( ! player.parent ) playerspawn.add( player );
 
 }
@@ -98,13 +97,15 @@ class Entity {
 		Object.assign( this, args );
 
 		this.id || ( this.id = uuid() );
-		this.type = this.constructor.name;
+		this.type = this.type || this.constructor.name;
 		this.name || ( this.name = '[Unnamed]' );
 		this.value = null;
 		this.parent = null;
 		this.contents = [];
 		this.world = { id: this.id, type: this.type, name: this.name, contents: [] };
 		this.delta = { type: this.type, name: this.name };
+
+		console.log( `type: ${this.type}` );
 
 		if ( ! ( this.type in entitiesByType ) ) entitiesByType[ this.type ] = {};
 		entitiesByType[ this.type ][ this.id ] = entitiesById[ this.id ] = this;
@@ -162,6 +163,7 @@ class Entity {
 		this.delta.id = this.id;
 		send( null, this.delta );
 		this.delta = {};
+
 	}
 
 	containsType( regex ) {
@@ -173,6 +175,12 @@ class Entity {
 	containsName( regex ) {
 
 		for ( const content of this.contents ) if ( regex.test( content.name ) ) return content;
+
+	}
+
+	forContentType( type, callback ) {
+
+		for ( const content of this.contents ) content.type === type && callback( content );
 
 	}
 
@@ -223,9 +231,7 @@ class NPC extends Entity {
 
 	constructor( args = {} ) {
 
-		super( Object.assign( {}, args ) );
-		if ( ! ( 'NPC' in entitiesByType ) ) entitiesByType[ 'NPC' ] = {};
-		entitiesByType[ 'NPC' ][ this.id ] = this;
+		super( Object.assign( { type: 'NPC' }, args ) );
 
 	}
 
@@ -235,17 +241,7 @@ class Rabbit extends NPC {
 
 	constructor( args = {} ) {
 
-		super( Object.assign( { name: `Rabbit` }, args ) );
-
-	}
-
-}
-
-class Hatchet extends Entity {
-
-	constructor( args = {} ) {
-
-		super( Object.assign( { name: 'Hatchet' }, args ) );
+		super( Object.assign( { name: 'Rabbit' }, args ) );
 
 	}
 
@@ -262,29 +258,19 @@ function buildNewWorld() {
 
 	function playerspawnUpdate() {
 
-		for ( const content of playerspawn.contents ) {
+		playerspawn.forContentType( 'Player', player => {
 
-			if ( content.type === 'Player' ) {
+			const instancedMobName = `InstancedMob-${player.id}`;
 
-				const player = content;
-				const instancedMobName = `InstancedMob-${player.id}`;
+			if ( ! playerspawn.containsName( new RegExp( `^${instancedMobName}$` ) ) ) {
 
-				if ( ! playerspawn.containsName( new RegExp( `^${instancedMobName}$` ) ) ) {
-
-					playerspawn.add( new InstancedMob( { name: instancedMobName} ) );
-
-				}
+				const mob = new InstancedMob( { name: instancedMobName} );
+				mob.add( new Rabbit() );
+				playerspawn.add( mob );
 
 			}
 
-		}
-		//if ( ! playerspawn.containsName( /^Rabbit$/ ) ) {
-		// 	playerspawn.add( new Rabbit() );
-		// 	playerspawn.add( new Rabbit() );
-		// 	playerspawn.add( new Rabbit() );
-		// 	playerspawn.add( new Rabbit() );
-		// 	playerspawn.add( new Rabbit() );
-		//}
+		} );
 
 		dirtyEntities[ this.id ] = this;
 
