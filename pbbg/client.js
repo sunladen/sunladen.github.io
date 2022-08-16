@@ -1,6 +1,7 @@
 const serverURL = new URL( document.location.host === 'localhost:8000' ? 'ws://localhost:6500/' : 'wss://daffodil-polite-seat.glitch.me/' );
 
 const domNav = document.getElementById( 'nav' );
+const domMain = document.getElementById( 'main' );
 
 function onverified( message ) {
 
@@ -55,6 +56,8 @@ function read( entityData ) {
 
 		} catch( err ) {
 
+			console.log( err );
+
 			console.log( `Unknown type "${entityData.type}"` );
 
 		}
@@ -86,6 +89,24 @@ class Entity {
 		entitiesByType[ this.type ][ this.id ] = entitiesById[ this.id ] = this;
 
 		if ( args.parent in entitiesById ) entitiesById[ args.parent ].add( this );
+
+		let domNavParent = this.parent && this.parent.domNavContents ? this.parent.domNavContents : domNav;
+
+		this.domNav = E( domNavParent, 'div', this.id, this.constructor.name );
+		this.domNavLabel = E( this.domNav, 'div', null, 'label' );
+		this.domNavIcon = E( this.domNavLabel, 'div', null, 'icon', getGlyph( this.constructor.name ) );
+		this.domNavName = E( this.domNavLabel, 'div', null, 'name', this.name );
+		this.domNavContents = E( this.domNav, 'div', null, 'contents' );
+
+		this.domNavLabel.addEventListener( 'click', () => {
+			this.show();
+		} );
+
+		this.domMain = E( null, 'div', this.id, 'location' );
+		this.domMainHeader = E( this.domMain, 'div', null, 'header' );
+		this.domMainIcon = E( this.domMainHeader, 'div', null, 'icon', getGlyph( this.constructor.name ) );
+		this.domMainName = E( this.domMainHeader, 'div', null, 'name', this.name );
+		this.domMainContents = E( this.domMain, 'div', null, 'contents' );
 
 	}
 
@@ -119,12 +140,21 @@ class Entity {
 			if ( index > - 1 ) siblings.splice( index, 1 );
 		}
 
+		this.domNav.remove();
+
 	}
 
 	update( data ) {
 
 		if ( data.name !== this.name ) this.name = data.name;
 		if ( data.parent && data.parent !== this.parent ) entitiesById[ data.parent ].add( this );
+
+	}
+
+	show() {
+
+		domMain.innerHTML = '';
+		domMain.append( this.domMain );
 
 	}
 
@@ -135,18 +165,6 @@ class Location extends Entity {
 	constructor( args = {} ) {
 
 		super( Object.assign( { name: '[Unnamed location]' }, args ) );
-		this.domNav = E( domNav, 'div', this.id, 'location' );
-		this.domNavLabel = E( this.domNav, 'div', null, 'label' );
-		this.domNavIcon = E( this.domNavLabel, 'div', null, 'icon', GLYPHS.Location );
-		this.domNavName = E( this.domNavLabel, 'div', null, 'name', this.name );
-		this.domNavContents = E( this.domNav, 'div', null, 'contents' );
-
-	}
-
-	destroy() {
-
-		super.destroy();
-		this.domNav.remove();
 
 	}
 
@@ -157,19 +175,6 @@ class Player extends Entity {
 	constructor( args = {} ) {
 
 		super( Object.assign( { name: `Guest-${args.id}` }, args ) );
-
-		let domParent = this.parent && this.parent.domNavContents ? this.parent.domNavContents : domNav;
-
-		this.domNav = E( domParent, 'div', this.id, `player${identity.id===this.id?' self':''}` );
-		this.domNavIcon = E( this.domNav, 'div', null, 'icon', GLYPHS.Player );
-		this.domNavName = E( this.domNav, 'div', null, 'name', this.name );
-
-	}
-
-	destroy() {
-
-		super.destroy();
-		this.domNav.remove();
 
 	}
 
@@ -195,10 +200,16 @@ function E( parent, tagName, id, className, content ) {
 }
 
 const GLYPHS = {
-	'Location': '🏞',
-	'Player': '웃',
-	'Tree': '⽊'
+	Location: '🏞',
+	Player: '웃',
+	InstancedMob: '⧉'
 };
+
+function getGlyph( name ) {
+
+	return name in GLYPHS ? GLYPHS[ name ] : '?';
+
+}
 
 let outMessages = [];
 

@@ -262,11 +262,11 @@ function buildNewWorld() {
 
 			const instancedMobName = `InstancedMob-${player.id}`;
 
-			if ( ! playerspawn.containsName( new RegExp( `^${instancedMobName}$` ) ) ) {
+			if ( ! player.containsType( /^InstancedMob$/ ) ) {
 
-				const mob = new InstancedMob( { name: instancedMobName} );
+				const mob = new InstancedMob( { name: 'Mob of rabbits' } );
 				mob.add( new Rabbit() );
-				playerspawn.add( mob );
+				player.add( mob );
 
 			}
 

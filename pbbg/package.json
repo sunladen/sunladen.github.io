@@ -1,13 +1,13 @@
 {
-    "name": "pbbg-game-jam-2022",
+    "name": "pbbg",
     "version": "0.1.0",
-    "description": "An entry for the 2022 PBBG Game Jam",
+    "description": "An attempt at a PBBG",
 	"author": "Sunladen",
     "license": "MIT",
     "main": "server.js",
     "type": "module",
     "scripts": {
-        "devhttp": "python3 -m http.server",
+        "dev": "python3 -m http.server",
         "start": "if [ ! -f '.env' ]; then echo 'PORT=6500\n' > .env; fi; export $(sed -e '/^[ ]*#/d' .env | xargs) && npm install && node server.js"
     },
     "dependencies": {
@@ -17,6 +17,6 @@
         "node": "16.x"
     },
     "repository": {
-        "url": "https://github.com/sunladen/sunladen.github.io/tree/master/pbbg-game-jam-2022"
+        "url": "https://github.com/sunladen/sunladen.github.io/tree/master/pbbg"
     }
   }
