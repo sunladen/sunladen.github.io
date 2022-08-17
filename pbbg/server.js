@@ -178,7 +178,17 @@ class Entity {
 
 	}
 
-	forContentType( type, callback ) {
+	forContent( type, callback ) {
+
+		if ( typeof type === 'function' ) {
+			callback = type;
+			type = null;
+		}
+
+		if ( ! type ) {
+			for ( const content of this.contents ) callback( content );
+			return;
+		}
 
 		for ( const content of this.contents ) content.type === type && callback( content );
 
@@ -196,11 +206,36 @@ class Location extends Entity {
 
 }
 
-class Player extends Entity {
+class Character extends Entity {
+
+	constructor( args = {} ) {
+
+		super( args );
+
+		this.setProperty( 'health', {
+			total: 100,
+			amount: 100
+		} );
+
+	}
+
+}
+
+class Player extends Character {
 
 	constructor( args = {} ) {
 
 		super( Object.assign( { name: `Guest-${args.id}` }, args ) );
+
+	}
+
+}
+
+class NPC extends Character {
+
+	constructor( args = {} ) {
+
+		super( Object.assign( { type: 'NPC' }, args ) );
 
 	}
 
@@ -225,13 +260,13 @@ class InstancedMob extends Mob {
 
 	}
 
-}
+	update() {
 
-class NPC extends Entity {
+		this.forContent( content => {
+			console.log( content.name );
+		} );
 
-	constructor( args = {} ) {
-
-		super( Object.assign( { type: 'NPC' }, args ) );
+		return true;
 
 	}
 
@@ -258,7 +293,7 @@ function buildNewWorld() {
 
 	function playerspawnUpdate() {
 
-		playerspawn.forContentType( 'Player', player => {
+		playerspawn.forContent( 'Player', player => {
 
 			const instancedMobName = `InstancedMob-${player.id}`;
 
@@ -272,7 +307,7 @@ function buildNewWorld() {
 
 		} );
 
-		dirtyEntities[ this.id ] = this;
+		return true;
 
 	}
 
@@ -348,7 +383,7 @@ function update() {
 		for ( const id in _dirtyEntities ) {
 			const entity = _dirtyEntities[ id ];
 			if ( entity.destroyed ) continue;
-			entity.update();
+			if ( entity.update() ) dirtyEntities[ id ] = entity;
 		}
 
 		const _outMessages = outMessages;

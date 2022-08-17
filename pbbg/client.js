@@ -42,33 +42,30 @@ function read( entityData ) {
 	console.log( 'read', entityData );
 
 	const id = entityData.id;
+	let entity = null;
 
 	if ( id in entitiesById ) {
 
-		entitiesById[ id ].update( entityData );
+		entity = entitiesById[ id ];
 
 	} else {
 
 		try {
 
 			const Class = eval( entityData.type );
-			const entity = new Class( entityData );
+			entity = new Class( entityData );
 
 		} catch( err ) {
 
-			console.log( err );
-
-			console.log( `Unknown type "${entityData.type}"` );
+			console.log( `Unknown type "${entityData.type}"`, err );
 
 		}
 
 	}
 
-	if ( 'contents' in entityData ) {
+	entity.update( entityData );
 
-		for ( const content of entityData.contents ) read( content );
-
-	}
+	if ( 'contents' in entityData ) for ( const content of entityData.contents ) read( content );
 
 }
 
@@ -99,14 +96,43 @@ class Entity {
 		this.domNavContents = E( this.domNav, 'div', null, 'contents' );
 
 		this.domNavLabel.addEventListener( 'click', () => {
-			this.show();
+			this.showMain();
 		} );
 
-		this.domMain = E( null, 'div', this.id, 'location' );
+		this.domMain = E( null, 'div', this.id, this.constructor.name );
 		this.domMainHeader = E( this.domMain, 'div', null, 'header' );
 		this.domMainIcon = E( this.domMainHeader, 'div', null, 'icon', getGlyph( this.constructor.name ) );
 		this.domMainName = E( this.domMainHeader, 'div', null, 'name', this.name );
 		this.domMainContents = E( this.domMain, 'div', null, 'contents' );
+
+		this.domItem = E( null, 'div', this.id, this.constructor.name );
+		this.domItemLabel = E( this.domItem, 'div', null, 'label' );
+		this.domItemIcon = E( this.domItemLabel, 'div', null, 'icon', getGlyph( this.constructor.name ) );
+		this.domItemName = E( this.domItemLabel, 'div', null, 'name', this.name );
+
+	}
+
+	setProperty( property, value ) {
+
+		property === 'parent' ? entitiesById[ value ].add( this ) : this[ property ] = value;
+		const onproperty = `on${property}`;
+		if ( onproperty in this ) this[ onproperty ]();
+
+	}
+
+	forContent( type, callback ) {
+
+		if ( typeof type === 'function' ) {
+			callback = type;
+			type = null;
+		}
+
+		if ( ! type ) {
+			for ( const content of this.contents ) callback( content );
+			return;
+		}
+
+		for ( const content of this.contents ) content.type === type && callback( content );
 
 	}
 
@@ -146,12 +172,23 @@ class Entity {
 
 	update( data ) {
 
-		if ( data.name !== this.name ) this.name = data.name;
-		if ( data.parent && data.parent !== this.parent ) entitiesById[ data.parent ].add( this );
+		for ( const p of Object.keys( data ) ) {
+
+			if ( p !== 'id' && p !== 'type' && p !== 'contents' ) this.setProperty( p, data[ p ] );
+
+		}
 
 	}
 
-	show() {
+	showMain() {
+
+		this.domMainContents.innerHTML = '';
+
+		this.forContent( content => {
+
+			this.domMainContents.append( content.domItem );
+
+		} );
 
 		domMain.innerHTML = '';
 		domMain.append( this.domMain );
@@ -170,7 +207,27 @@ class Location extends Entity {
 
 }
 
-class Player extends Entity {
+class Character extends Entity {
+
+	constructor( args = {} ) {
+
+		super( args );
+
+		this.domNavHealth = E( this.domNavLabel, 'div', null, 'health' );
+		this.domNavHealth.style.minWidth = '33%';
+
+	}
+
+	onhealth() {
+
+		const percent = Math.round( ( this.health.amount / this.health.total ) * 100 ).toFixed( 2 )
+		this.domNavHealth.style.minWidth = `${percent}%`;
+
+	}
+
+}
+
+class Player extends Character {
 
 	constructor( args = {} ) {
 
@@ -180,7 +237,7 @@ class Player extends Entity {
 
 }
 
-class NPC extends Entity {
+class NPC extends Character {
 
 }
 
