@@ -99,11 +99,11 @@ class Entity {
 			this.showMain();
 		} );
 
-		this.domMain = E( null, 'div', this.id, this.constructor.name );
-		this.domMainHeader = E( this.domMain, 'div', null, 'header' );
-		this.domMainIcon = E( this.domMainHeader, 'div', null, 'icon', getGlyph( this.constructor.name ) );
-		this.domMainName = E( this.domMainHeader, 'div', null, 'name', this.name );
-		this.domMainContents = E( this.domMain, 'div', null, 'contents' );
+		this.domFocus = E( null, 'div', this.id, this.constructor.name );
+		this.domFocusLabel = E( this.domFocus, 'div', null, 'label' );
+		this.domFocusIcon = E( this.domFocusLabel, 'div', null, 'icon', getGlyph( this.constructor.name ) );
+		this.domFocusName = E( this.domFocusLabel, 'div', null, 'name', this.name );
+		this.domFocusContents = E( this.domFocus, 'div', null, 'contents' );
 
 		this.domItem = E( null, 'div', this.id, this.constructor.name );
 		this.domItemLabel = E( this.domItem, 'div', null, 'label' );
@@ -116,7 +116,11 @@ class Entity {
 
 		property === 'parent' ? entitiesById[ value ].add( this ) : this[ property ] = value;
 		const onproperty = `on${property}`;
-		if ( onproperty in this ) this[ onproperty ]();
+		try {
+			if ( onproperty in this ) this[ onproperty ]( value );
+		} catch( e ) {
+			console.log( e );
+		}
 
 	}
 
@@ -182,16 +186,16 @@ class Entity {
 
 	showMain() {
 
-		this.domMainContents.innerHTML = '';
+		this.domFocusContents.innerHTML = '';
 
 		this.forContent( content => {
 
-			this.domMainContents.append( content.domItem );
+			this.domFocusContents.append( content.domItem );
 
 		} );
 
 		domMain.innerHTML = '';
-		domMain.append( this.domMain );
+		domMain.append( this.domFocus );
 
 	}
 
@@ -214,14 +218,26 @@ class Character extends Entity {
 		super( args );
 
 		this.domNavHealth = E( this.domNavLabel, 'div', null, 'health' );
-		this.domNavHealth.style.minWidth = '33%';
+		this.domFocusHealth = E( this.domFocusLabel, 'div', null, 'health' );
+		this.domItemHealth = E( this.domItemLabel, 'div', null, 'health' );
 
 	}
 
-	onhealth() {
+	onhealthAmount( value ) {
 
-		const percent = Math.round( ( this.health.amount / this.health.total ) * 100 ).toFixed( 2 )
+		let percent = this.healthTotal > 0 ? Math.round( ( ( this.healthAmount || 0 ) / this.healthTotal ) * 100 ).toFixed( 2 ) : 0;
 		this.domNavHealth.style.minWidth = `${percent}%`;
+		this.domFocusHealth.style.minWidth = `${percent}%`;
+		this.domItemHealth.style.minWidth = `${percent}%`;
+
+	}
+
+	onhealthTotal( value ) {
+
+		let percent = this.healthTotal > 0 ? Math.round( ( ( this.healthAmount || 0 ) / this.healthTotal ) * 100 ).toFixed( 2 ) : 0;
+		this.domNavHealth.style.minWidth = `${percent}%`;
+		this.domFocusHealth.style.minWidth = `${percent}%`;
+		this.domItemHealth.style.minWidth = `${percent}%`;
 
 	}
 
@@ -239,9 +255,37 @@ class Player extends Character {
 
 class NPC extends Character {
 
+	onhealthAmount( value ) {
+
+		super.onhealthAmount( value );
+
+		if ( this.parent.type === 'InstancedMob' ) this.parent.onhealthAmount( value );
+
+	}
+
+	onhealthTotal( value ) {
+
+		super.onhealthAmount( value );
+
+		if ( this.parent.type === 'InstancedMob' ) this.parent.onhealthTotal( value );
+
+	}
+
 }
 
 class InstancedMob extends Entity {
+
+	onhealthAmount( value ) {
+
+		console.log( value );
+
+	}
+
+	onhealthTotal( value ) {
+
+		console.log( value );
+
+	}
 
 }
 

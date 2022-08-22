@@ -2,10 +2,6 @@ import { WebSocketServer } from 'ws';
 import crypto from 'crypto';
 import fs from 'fs';
 
-let entitiesById = {};
-let entitiesByType = {};
-let dirtyEntities = {};
-
 function connected( id ) {
 
 	let player;
@@ -89,6 +85,10 @@ function save( entity, data = {} ) {
 	return data;
 
 }
+
+let entitiesById = {};
+let entitiesByType = {};
+let dirtyEntities = {};
 
 class Entity {
 
@@ -212,10 +212,8 @@ class Character extends Entity {
 
 		super( args );
 
-		this.setProperty( 'health', {
-			total: 100,
-			amount: 100
-		} );
+		this.setProperty( 'healthTotal', 100 );
+		this.setProperty( 'healthAmount', 100 );
 
 	}
 
@@ -261,6 +259,10 @@ class InstancedMob extends Mob {
 	}
 
 	update() {
+
+		const character = this.parent;
+
+		character.setProperty( 'healthAmount', character.healthAmount > 0 ? character.healthAmount - 1 : 0 );
 
 		this.forContent( content => {
 			console.log( content.name );
